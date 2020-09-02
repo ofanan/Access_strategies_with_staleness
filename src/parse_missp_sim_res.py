@@ -28,7 +28,7 @@ def get_tc_ratio (sim_dict, kloc, missp, alg_num):
 
 
 full_path = "../res/" #os.getcwd() + 
-filename = full_path + "2020_08_30_18_19_53_sim_dict_missp_100"
+filename = full_path + "2020_08_31_18_10_09_sim_dict_missp_100"
 
 sim_dict = {}
 f = open(filename, 'rb')
@@ -50,14 +50,6 @@ for alg_num in list_of_algs: #(['\opt', '\pgmalg', '\cpi', '\epi', '\\umb', '\po
 		printf ('& {} ' .format(alg_name))
 		for k in sim_dict[missp]:
 			printf ('& {:.3f} & {:.3f} ' .format (get_ac_to_opt_tc_ratio (sim_dict, k, missp, alg_num), get_tc_ratio (sim_dict, k, missp, alg_num)))
-
-		# print('& {} & {:.2f} & {:.2f} & {:.2f} & {:.2f} &    {:.2f} & {:.2f} bb'.format(alg_name, \
-		# 	get_ac_to_opt_tc_ratio (sim_dict, 1, missp, alg_num), \
-		# 	get_tc_ratio (sim_dict, 1, missp, alg_num), \
-		# 	get_ac_to_opt_tc_ratio(sim_dict, 3, missp, alg_num), \
-		# 	get_tc_ratio(sim_dict, 3, missp, alg_num), \
-		# 	get_ac_to_opt_tc_ratio (sim_dict, 5, missp, alg_num), \
-		# 	get_tc_ratio (sim_dict, 5, missp, alg_num)))
 
 
 # for alg_num, alg_name in enumerate (['\opt', '\pgmalg'], start=1): #(['\opt', '\pgmalg', '\cpi', '\epi', '\\umb', '\pot'], start=1):

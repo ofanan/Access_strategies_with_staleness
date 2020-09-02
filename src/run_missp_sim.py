@@ -17,8 +17,9 @@ num_of_DSs = 19
 num_of_clients = 19
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_trace_length = 10000000
-requests = gen_requests ('C:/Users/ofanan/Documents/traces/wiki/wiki1.1190448987.csv', max_trace_length)
+max_trace_length = 1000
+trace_path = 'C:/Users/ofanan/Documents/traces/wiki/'
+requests = gen_requests (trace_path + 'wiki1.1190448987.csv', max_trace_length)
 
 # load the OVH network distances and BWs
 full_path_to_rsrc = os.getcwd() + "\\..\\resources\\"
@@ -44,7 +45,7 @@ def run_sim_collection(DS_size, BF_size, missp, requests, client_DS_dist, client
     DS_insert_mode = 1
 
     main_sim_dict = {}
-    for k_loc in [3,5]: #[1, 3, 5]
+    for k_loc in [3]: #[1, 3, 5]
         print ('k_loc = ', k_loc)
         k_loc_sim_dict = {}
         for alg_mode in [sim.ALG_OPT, sim.ALG_PGM_FNO]: #, sim.ALG_CHEAP, sim.ALG_ALL, sim.ALG_KNAP, sim.ALG_POT]:
