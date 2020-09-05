@@ -29,12 +29,12 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        return [DataStore.DataStore(ID = i, size = self.DS_size, miss_rate_window = self.mr_win, bf_size = self.BF_size) for i in range(self.num_of_DSs)]
+        return [DataStore.DataStore(ID = i, size = self.DS_size, estimation_window = self.esimation_window, bf_size = self.BF_size) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
         return [Client.Client(ID = i) for i in range(self.num_of_clients)]
     
-    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_dist, client_DS_BW, bw_regularization, missp, k_loc, DS_size = 1000, mr_win = 100, BF_size = 8000, alpha=0.5, rand_seed = 42, verbose = 0, uInterval = 1):
+    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_dist, client_DS_BW, bw_regularization, missp, k_loc, DS_size = 1000, esimation_window = 1000, BF_size = 8000, alpha=0.5, rand_seed = 42, verbose = 0, uInterval = 1):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -46,7 +46,7 @@ class Simulator(object):
             missp:               miss penalty
             k_loc:              number of DSs a missed key is inserted to
             DS_size:            size of DS (default 1000)
-            mr_win:             miss_rate_window for miss rate update in each DS (default 100)
+            esimation_window:   window for parameters' estimation 
             BF_size:            size of Bloom filter to use in each DS (default 8000, compatible with default DS size of 1000, and FP ratio of 0.02)
             alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
             uInterval:          Update interval - number of requests to each DS between updates it sends. Updates are assumed to arrive immediately.  
@@ -61,7 +61,7 @@ class Simulator(object):
         self.missp = missp
         self.k_loc = k_loc
         self.DS_size = DS_size
-        self.mr_win = mr_win
+        self.esimation_window = esimation_window
         self.BF_size = BF_size
         self.alpha = alpha
         self.rand_seed = rand_seed
@@ -83,7 +83,7 @@ class Simulator(object):
         self.client_list = self.init_client_list()
         
         self.cur_req_cnt = float(-1)
-        self.cur_pos_DS_list = [] #list of the DSs with pos' ind' (positive indication) for the current request
+        self.cur_pos_DS_list = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
 
         self.total_cost = float(0)
         self.total_access_cost = float(0)
@@ -95,10 +95,26 @@ class Simulator(object):
         self.num_DS_accessed = float(0)
         self.avg_DS_accessed_per_req = float(0)
         self.avg_DS_hit_ratio = float(0)
+        self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
+        self.q_estimation = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
+        self.estimation_window = 1000
+        self.q_window = self.num_of_DSs * self.estimation_window  
+        self.window_alhpa = 0.1 # window's alpha parameter 
 
     # Returns an np.array of the DSs with positive ind'
     def get_indications(self):
-        return np.array([DS.ID for DS in self.DS_list if (DS.get_indication(self.cur_req.key)) ])
+        for i in range (self.num_of_DSs):
+            if self.DS_list[i].get_indication(self.cur_req.key):
+                self.cur_pos_DS_list = np.append (self.cur_pos_DS_list, i)
+                self.pos_ind_cnt[i] += 1 
+
+
+    def update_q_estimation (self):
+        for i in range (self.num_of_DSs):
+            new_q_estimation = self.pos_ind_cnt[i] / self.q_window
+            self.q_estimation[i] = self.window_alhpa * new_q_estimation + (1 - self.window_alhpa) * self.q_estimation[i];
+        self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint') #reset the cntrs
+
 
     # Returns true iff key is found in at least of one of DSs specified by DS_index_list
     def req_in_DS_list(self, key, DS_index_list):
@@ -140,6 +156,8 @@ class Simulator(object):
                 self.handle_request(self.req_df.iloc[req_id]) #fix mode (the one that is currently used): assign each request to a single DS, which is picked uar from all DSs  
                 if self.DS_insert_mode == 2: # distributed mode
                     self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
+            if (req_id % self.estimation_window):
+                self.update_q_estimation ()
         self.gather_statistics()
         print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
         
@@ -184,7 +202,7 @@ class Simulator(object):
     def handle_request(self, req):
         self.cur_req = req
         self.cur_req_cnt += 1
-        self.cur_pos_DS_list = self.get_indications() # cur_pos_DS_list <- list of DSs with positive indications
+        self.get_indications() # self.cur_pos_DS_list <- list of DSs with positive indications
         self.update_mr_of_DS()                               # Update the miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
 
         if self.alg_mode == ALG_OPT:
@@ -225,7 +243,7 @@ class Simulator(object):
         
     def access_pgm_fno (self):
 
-        if (self.cur_pos_DS_list.size == 0): # No positive indications --> FNO alg' has a miss
+        if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
             self.handle_miss ()
             return
         req = self.cur_req

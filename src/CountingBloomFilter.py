@@ -1,7 +1,7 @@
 import numpy as np
 import mmh3
 import copy
-
+import SimpleBloomFilter
 
 class CountingBloomFilter(object):
     
@@ -14,7 +14,7 @@ class CountingBloomFilter(object):
         """
         self.size               = size
         self.hash_count         = hash_count
-        self.array              = np.zeros(size, dtype='uint')
+        self.array              = np.zeros(size, dtype='uint8')
         self.max_array_val      = max_array_val
         self.num_of_cntrs_set   = 0 # number of cntrs set since last update was sent 
         self.num_of_cntrs_reset = 0 # number of cntrs set since last update was sent
@@ -26,6 +26,7 @@ class CountingBloomFilter(object):
         self.num_of_cntrs_set               = 0 # number of cntrs set since last update was sent 
         self.num_of_cntrs_reset             = 0 # number of cntrs set since last update was sent        
         self.insertions_since_last_update   = 0
+
 
     def add(self, key):
         """
@@ -68,17 +69,15 @@ class CountingBloomFilter(object):
             return True
         return False
 
-    def genSimpleBloomFilter (self):
+    def gen_SimpleBloomFilter (self):
         """
         Returns a simple BF, which is the compression of this counting BF: each entry is True iff the respective entry in the CBF is > 0
         """
-        sbf = np.zeros (self.size, dtype=bool)
-        sbf = [True for entry in self.array if (entry > 0)]
+        sbf = SimpleBloomFilter.SimpleBloomFilter (size=self.size, hash_count = self.hash_count)
+        for i in range (self.size):
+            if (self.array[i] > 0):
+                sbf.array[i] = True
         return sbf
-
-    # def calc_delta_1 (self):
-    #     stale_SBF = 
-
 
     def lookup(self, key):
         """
@@ -95,6 +94,21 @@ class CountingBloomFilter(object):
         return the estimate false-positive ratio
         CHECK THE FORMULA!!!
         """
-        return (sum(self.array > 0) / self.size) ** self.hash_count
+        return (sum(self.array > 0) / self.size) ** s.hash_count
 
 
+    def calc_deltas (self, stale_sbf):
+        """
+        returns an array, delta, where
+        delta[0] represents the number of cntr that are reset in self (the updated BF), but set   in the input sbf (Simple BF - the stale BF)
+        delta[1] represents the number of cntr that are set   in self (the updated BF), but reset in the input sbf (Simple BF - the stale BF)
+        """
+        updated_sbf = self.gen_SimpleBloomFilter ()
+        return [sum (np.bitwise_and (~updated_sbf.array, stale_sbf.array)), sum (np.bitwise_and (updated_sbf.array, ~stale_sbf.array)) ] 
+
+    def estimate_rho0_rho1 (self):
+        """
+        returns:
+        rho0: the probability that the datum is not in the cache, given a negative indication 
+        rho1: the probability that the datum is not in the cache, given a positive indication 
+        """

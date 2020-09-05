@@ -7,7 +7,7 @@ import pickle
 
 import python_simulator as sim
 from gen_requests import gen_requests
-from gen_requests import optimal_BF_size_per_cache_size
+from gen_requests import optimal_BF_size_per_DS_size
 # A main file for running a sim of access strategies for different DSs (Data Stores) sizes.
 
 num_of_DSs = 19
@@ -33,22 +33,23 @@ client_DS_dist = np.zeros((num_of_clients,num_of_DSs)) # np.ones((num_of_clients
 client_DS_BW = np.ones((num_of_clients,num_of_DSs)) # + np.diag(np.infty * np.ones(num_of_clients))
 bw_regularization = 0. # np.max(np.tril(client_DS_BW,-1))
 
-# Sizes of the bloom filters (number of cntrs), for chosen cache sizes, k=5 hash funcs, and designed false positive rate.
-BF_size_for_DS_size = optimal_BF_size_per_cache_size ()
+# Sizes of the bloom filters (number of cntrs), for chosen DS sizes, k=5 hash funcs, and designed false positive rate.
+BF_size_for_DS_size = optimal_BF_size_per_DS_size ()
 
 # Loop over all data store sizes, and all algorithms, and collect the data
-def run_sim_collection(DS_size_vals, FP_rate, beta, k_loc, requests, client_DS_dist, client_DS_BW, bw_regularization):
+def run_sim_collection(DS_size_vals, FP_rate, missp, k_loc, requests, client_DS_dist, client_DS_BW, bw_regularization):
     DS_insert_mode = 1
 
     main_sim_dict = {}
     for DS_size in DS_size_vals:
         BF_size = BF_size_for_DS_size[FP_rate][DS_size]
+        uInterval = DS_size / 2;
         print ('DS_size = ', DS_size)
         DS_size_sim_dict = {}
         for alg_mode in [sim.ALG_OPT]: #, sim.ALG_ALL, sim.ALG_CHEAP, sim.ALG_POT, sim.ALG_PGM]: # in the homogeneous setting, no need to run Knap since it is equivalent to 6 (Pot)
             tic()
             print (datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
-            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_dist, client_DS_BW, bw_regularization, beta, k_loc, DS_size = DS_size, BF_size = BF_size)
+            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_dist, client_DS_BW, bw_regularization, missp, k_loc, DS_size = DS_size, BF_size = BF_size, uInterval = uInterval)
             sm.start_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
@@ -56,18 +57,18 @@ def run_sim_collection(DS_size_vals, FP_rate, beta, k_loc, requests, client_DS_d
     return main_sim_dict
 
 ## Choose parameters for running simulator    
-beta = 100
+missp = 100
 FP_rate = 0.02
-k_loc = 3
+k_loc = 1
 
 DS_size_vals = [200] #, 400, 600, 800, 1000, 1200, 1400, 1600]
 
-main_sim_dict = run_sim_collection(DS_size_vals, FP_rate, beta, k_loc, requests, client_DS_dist, client_DS_BW, bw_regularization)
+main_sim_dict = run_sim_collection(DS_size_vals, FP_rate, missp, k_loc, requests, client_DS_dist, client_DS_BW, bw_regularization)
 
 time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
 sys.setrecursionlimit(50000)
-res_file = open('../res/%s_pickle_sim_dict_DS_size_%d_%d_beta_%d_kloc_%d_FP_%.2f' % (time_str ,DS_size_vals[0], DS_size_vals[-1], beta, k_loc, FP_rate) , 'wb')
-pickle.dump(main_sim_dict , res_file)
+res_file = open('../res/%s_pickle_sim_dict_DS_size_%d_%d_missp_%d_kloc_%d_FP_%.2f' % (time_str ,DS_size_vals[0], DS_size_vals[-1], missp, k_loc, FP_rate) , 'wb')
+#pickle.dump(main_sim_dict , res_file)
 res_file.close()
 

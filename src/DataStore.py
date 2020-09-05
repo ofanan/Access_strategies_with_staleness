@@ -5,20 +5,20 @@ import copy
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bf_hash_count = 5, miss_rate_alpha = 0.1, miss_rate_window = 1000, miss_rate_init = 0.5,
+    def __init__(self, ID, size = 1000, bf_hash_count = 5, miss_rate_alpha = 0.1, estimation_window = 1000, miss_rate_init = 0.5,
                  bf_size = 8000):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
             size:               number of elements that can be stored in the datastore (default 1000)
             miss_rate_alpha:    sliding window parameter for miss-rate estimation (default 0.1)
-            miss_rate_window:   how often (queries) should the miss-rate estimation be updated (default 1000, same as size)
+            estimation_window:   how often (queries) should the miss-rate estimation be updated (default 1000, same as size)
             miss_rate_init:     initial miss-rate estimation (default 0.5)
         """
         self.ID                     = ID
         self.size                   = size
         self.mr_alpha               = miss_rate_alpha
-        self.mr_win                 = miss_rate_window
+        self.estimation_window      = estimation_window
         self.bf_size                = bf_size
         self.bf_hash_count          = bf_hash_count
         self.mr_cur                 = [miss_rate_init]
@@ -60,7 +60,7 @@ class DataStore (object):
         self.access_cnt += 1
         
         # check to see if an update to the miss-rate is required
-        if (self.access_cnt % self.mr_win == 0):
+        if (self.access_cnt % self.estimation_window == 0):
             self.update_mr()
             self.update_FN_mr()
         if key in self.cache:
@@ -103,15 +103,14 @@ class DataStore (object):
 
     def send_update (self):
         self.updated_indicator.reset_delta_cntrs ()
-        self.stale_indicator = copy.deepcopy(self.updated_indicator)
-        #gamad = self.updated_indicator.genSimpleBloomFilter ()
+        self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
 
     def update_FN_mr(self):
         """
         update the miss-rate estimate of speculative accesses
         done using an exponential moving average
         """
-        self.FN_mr_win_estimate.append(float(self.FN_mr_win_miss_cnt[-1]) / self.mr_win)
+        self.FN_mr_win_estimate.append(float(self.FN_mr_win_miss_cnt[-1]) / self.estimation_window)
         self.FN_mr_cur.append (self.mr_alpha * (self.FN_mr_win_estimate[-1]) + (1 - self.mr_alpha) * self.FN_mr_cur[-1] )
         self.FN_mr_win_miss_cnt.append(0)
         
@@ -120,7 +119,7 @@ class DataStore (object):
         update the miss-rate estimate
         done using an exponential moving average
         """
-        self.mr_win_estimate.append(float(self.mr_win_miss_cnt[-1]) / self.mr_win)
+        self.mr_win_estimate.append(float(self.mr_win_miss_cnt[-1]) / self.estimation_window)
         self.mr_cur.append( self.mr_alpha * (self.mr_win_estimate[-1]) + (1 - self.mr_alpha) * self.mr_cur[-1] )
         self.mr_win_miss_cnt.append(0)
         

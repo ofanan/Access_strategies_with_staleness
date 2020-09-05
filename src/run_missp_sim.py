@@ -33,7 +33,7 @@ bw_regularization = np.max(np.tril(client_DS_BW,-1))
 # online resource calculating the optimal values
 # these values are for k=5 hash functions, and a target of false positive = 0.01, 0.02, 0.05}
 
-# Sizes of the bloom filters (number of cntrs), for chosen cache sizes, k=5 hash funcs, and designed false positive rate.
+# Sizes of the bloom filters (number of cntrs), for chosen DS sizes, k=5 hash funcs, and designed false positive rate.
 BF_size_for_DS_size = optimal_BF_size_per_DS_size ()
 DS_size = 1000
 uInterval = DS_size / 2;
@@ -64,6 +64,6 @@ time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 sys.setrecursionlimit(50000)
 full_path_to_res = os.getcwd() + "\\..\\res\\"
 res_file = open (full_path_to_res + '%s_sim_dict_missp_%d' % (time_str , missp) , 'wb') 
-pickle.dump(main_sim_dict, res_file)
+#pickle.dump(main_sim_dict, res_file)
 res_file.close()
 
