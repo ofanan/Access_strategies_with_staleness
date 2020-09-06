@@ -1,17 +1,18 @@
 import numpy as np
 import pandas as pd
-from tictoc import tic, toc
 import datetime
 import sys
 import pickle
+from   tictoc import tic, toc
 
 import python_simulator as sim
+from MyConfig import getTracesPath 
 from gen_requests import gen_requests
 from gen_requests import optimal_BF_size_per_DS_size
 # A main file for running a sim of access strategies for different DSs (Data Stores) sizes.
 
-num_of_DSs = 19
-num_of_clients = 19
+num_of_DSs = 4
+num_of_clients = 4
 
 ## This produces a random matrix with a specific value on the diagonal.
 ## Can be used to produce a random distance matrix (with 0 on diag) and a BW matrix (with infty on diag)
@@ -22,7 +23,8 @@ num_of_clients = 19
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
 max_trace_length=10000
-requests = gen_requests ('C:/Users/ofanan/Documents/traces/wiki/wiki1.1190448987.csv', max_trace_length)
+tracePath = getTracesPath()
+requests = gen_requests (tracePath + 'wiki/wiki1.1190448987.csv', max_trace_length)
 
 ## Code for generating a random dist and BW matrices
 #client_DS_dist = gen_rand_matrix(17)

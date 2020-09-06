@@ -5,15 +5,19 @@ import hashlib
 import matplotlib as plt
 import datetime
 import mmh3
+import sys
+
+from MyConfig import getTracesPath 
 
 file_index = 7
-traces_path = "C:/Users/ofanan/Documents/traces/wiki/"
-filename = traces_path + 'wiki1.1190448987_130K.txt' 
+traces_path = getTracesPath()
+print (traces_path)
+filename = traces_path + 'wiki/wiki.1190448987_50K.txt' 
 
 df = pd.read_csv(filename, sep=' ', header=None)
 
-num_of_clients = 19
-num_of_locations = 19
+num_of_clients = 4
+num_of_locations = 4
 
 # take only "read" requests
 df = df.loc[df[3] == '-']
