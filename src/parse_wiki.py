@@ -11,10 +11,8 @@ from MyConfig import getTracesPath
 
 file_index = 7
 traces_path = getTracesPath()
-print (traces_path)
-filename = traces_path + 'wiki/wiki.1190448987_50K.txt' 
-
-df = pd.read_csv(filename, sep=' ', header=None)
+input_file_name = 'wiki/wiki1.1190448987_50K.txt'
+df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
 
 num_of_clients = 4
 num_of_locations = 4
@@ -44,14 +42,6 @@ client_assignment = np.random.RandomState(seed=42).randint(0 , num_of_clients , 
 # generate request ids
 req_id = np.array(range(df_Xm.shape[0])).astype('uint32')
 
-# Calculate the hashes for each unique key in the trace
-hash_count = 5 # Assuming 5 hash functions
-key_hash = []
-seed = 0
-key_hash0 = np.array( [mmh3.hash(key, seed) for key in keys])
-key_hash = np.empty([hash_count, keys.size])
-for seed in range(hash_count):
-	key_hash [seed, :] = np.array ([mmh3.hash(key, seed) for key in keys]).astype('uint32') 
 
 # generate permutation for each unique key in the trace
 unique_permutations_array  = np.array ([np.random.RandomState(seed=i).permutation(range(num_of_locations)) for i in range(unique_urls.size)]).astype('uint8')
@@ -60,13 +50,24 @@ permutation_lut_dict = dict(zip(unique_urls , unique_permutations_array)) # gene
 permutations_array = np.array([permutation_lut_dict[url] for url in df_Xm[2]]).astype('uint8')
 permutations_df = pd.DataFrame(permutations_array)
 
-trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment, key_hash[0, :], key_hash[1, :], key_hash[2, :], key_hash[3, :], key_hash[4, :]]))
-trace_df.columns = ['req_id', 'key', 'client_id', 'hash0', 'hash1', 'hash2', 'hash3', 'hash4']
+trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment]))
+trace_df.columns = ['req_id', 'key', 'client_id']
+
+# # For Calculating all the hashes for each unique key in advance, then during sim-time, uncomment the lines below
+# hash_count = 5 # Assuming 5 hash functions
+# key_hash = []
+# seed = 0
+# key_hash0 = np.array( [mmh3.hash(key, seed) for key in keys])
+# key_hash = np.empty([hash_count, keys.size])
+# for seed in range(hash_count):
+# 	key_hash [seed, :] = np.array ([mmh3.hash(key, seed) for key in keys]).astype('uint32') 
+# trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment, key_hash[0, :], key_hash[1, :], key_hash[2, :], key_hash[3, :], key_hash[4, :]]))
+# trace_df.columns = ['req_id', 'key', 'client_id', 'hash0', 'hash1', 'hash2', 'hash3', 'hash4']
 
 full_trace_df = pd.concat([ trace_df, permutations_df ], axis=1)
 
-filename = 'wiki1.1190448987_130K.csv' #'wiki1.1190448987_130K.csv'
-full_trace_df.to_csv (traces_path + filename, index=False, header=True)
+
+full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".csv", index=False, header=True)
 
 ## check memory space used by dataframe
 #trace_df.info(memory_usage='deep')

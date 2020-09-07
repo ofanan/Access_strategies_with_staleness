@@ -1,15 +1,18 @@
 import pandas
+
+
+
 ## This reduces the memory print of the trace by using the smallest type that still supports the values in the trace
 ## Note: this configuration can support up to 2^8 locations, and traces of length up to 2^32
-def reduce_trace_mem_print(trace_df):
-    max_k_loc = 5
+def reduce_trace_mem_print(trace_df, num_of_DSs):
     new_trace_df = trace_df
     new_trace_df['req_id']    = trace_df['req_id'].astype('uint32')        # id (running cnt number) of the request
     new_trace_df['key']       = trace_df['key'].astype('uint32')              # key. No need for value in the sim'
     new_trace_df['client_id'] = trace_df['client_id'].astype('uint8')   # client to which this request is assigned
-#    for i in range (max_k_loc):
-#        new_trace_df['kloc%d' %i] = trace_df['kloc%d' %i].astype('uint8')   # client to which this request is assigned
-    for i in range(17):
+    # max_k_loc = min (num_of_DSs, 5)
+    #    for i in range (max_k_loc):
+    #        new_trace_df['kloc%d' %i] = trace_df['kloc%d' %i].astype('uint8')   # client to which this request is assigned
+    for i in range (min(num_of_DSs, 17)):
         new_trace_df['%d'%i] = trace_df['%d'%i].astype('uint8')
     return new_trace_df
 
@@ -27,7 +30,7 @@ def optimal_BF_size_per_DS_size ():
     return BF_size_for_DS_size 
 
 
-def gen_requests (trace_file_name, numOfReq):
-    trace_df = reduce_trace_mem_print(pandas.read_csv(trace_file_name))
+def gen_requests (trace_file_name, numOfReq, num_of_DSs):
+    trace_df = reduce_trace_mem_print (pandas.read_csv(trace_file_name), num_of_DSs)
     return trace_df.head (numOfReq)
 

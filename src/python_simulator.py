@@ -34,15 +34,13 @@ class Simulator(object):
     def init_client_list(self):
         return [Client.Client(ID = i) for i in range(self.num_of_clients)]
     
-    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_dist, client_DS_BW, bw_regularization, missp, k_loc, DS_size = 1000, esimation_window = 1000, BF_size = 8000, alpha=0.5, rand_seed = 42, verbose = 0, uInterval = 1):
+    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, esimation_window = 1000, BF_size = 8000, rand_seed = 42, verbose = 0, uInterval = 1):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
             DS_insert_mode:     mode of DS insertion (1: fix, 2: distributed, 3: ego)
             req_list:           array of keys of requests. each key is a string
-            client_DS_dist:     2D array of hop-count distance to datastores. entry (i,j) is the distance from client i to DS j
-            client_DS_BW:       2D array of bottleneck bandwidth to datastores. entry (i,j) is the BW from client i to DS j
-            bw_regularization:  bandwidth regularization factor
+            client_DS_cost:     2D array of costs. entry (i,j) is the cost from client i to DS j
             missp:               miss penalty
             k_loc:              number of DSs a missed key is inserted to
             DS_size:            size of DS (default 1000)
@@ -55,23 +53,20 @@ class Simulator(object):
         self.always_updated_indicator = True if (self.uInterval == 1) else False
         self.alg_mode = alg_mode
         self.DS_insert_mode = DS_insert_mode
-        self.client_DS_dist = client_DS_dist
-        self.client_DS_BW = client_DS_BW
-        self.bw_reg = bw_regularization
         self.missp = missp
         self.k_loc = k_loc
         self.DS_size = DS_size
         self.esimation_window = esimation_window
         self.BF_size = BF_size
-        self.alpha = alpha
         self.rand_seed = rand_seed
 
-        self.num_of_clients = client_DS_dist.shape[0]
-        self.num_of_DSs = client_DS_dist.shape[1]
 
-        # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-        self.client_DS_cost = 1 + self.alpha * self.client_DS_dist + (1 - self.alpha) * (self.bw_reg / self.client_DS_BW)
-
+        self.num_of_clients = client_DS_cost.shape[0]
+        self.num_of_DSs     = client_DS_cost.shape[1]
+        self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
+        self.lg_client_DS_cost  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
+        for i in range (self.num_of_clients):
+            self.num_of_leaves[i] = np.max (np.take(self.lg_client_DS_cost [i], range (self.num_of_DSs))) + 1 #num_of_leaves[i] will hold the # of leaves in PGM alg' when the client is i
 
         self.DS_list = self.init_DS_list() #DS_list is the list of DSs
         self.mr_of_DS = np.zeros(self.num_of_DSs)
@@ -202,6 +197,7 @@ class Simulator(object):
     def handle_request(self, req):
         self.cur_req = req
         self.cur_req_cnt += 1
+        #print ('req_cnt = %d' %(self.cur_req_cnt))
         self.get_indications() # self.cur_pos_DS_list <- list of DSs with positive indications
         self.update_mr_of_DS()                               # Update the miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
 
@@ -252,17 +248,15 @@ class Simulator(object):
 
         # Partition stage
         ###############################################################################################################
-        # leaf_of_DS (i,j) will hold the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
-        self.leaf_of_DS = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8')
-
-        cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[client_id], self.cur_pos_DS_list)) + 1
+        # lg_client_DS_cost (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
+        cur_num_of_leaves = self.num_of_leaves[client_id] 
 
         # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
         DSs_in_leaf = [[]]
         for leaf_num in range (cur_num_of_leaves):
             DSs_in_leaf.append ([])
         for ds in (self.cur_pos_DS_list):
-            DSs_in_leaf[self.leaf_of_DS[client_id][ds]].append(ds)
+            DSs_in_leaf[self.lg_client_DS_cost[client_id][ds]].append(ds)
 
         # Generate stage
         ###############################################################################################################
@@ -351,17 +345,15 @@ class Simulator(object):
 
         # Partition stage
         ###############################################################################################################
-        # leaf_of_DS (i,j) will hold the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
-        self.leaf_of_DS = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8')
-
-        cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[client_id], self.cur_pos_DS_list)) + 1
+        # lg_client_DS_cost (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
+        cur_num_of_leaves = np.max (np.take(self.lg_client_DS_cost [client_id], range (self.num_of_DSs))) + 1
 
         # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
         DSs_in_leaf = [[]]
         for leaf_num in range (cur_num_of_leaves):
             DSs_in_leaf.append ([])
         for ds in (self.cur_pos_DS_list):
-            DSs_in_leaf[self.leaf_of_DS[client_id][ds]].append(ds)
+            DSs_in_leaf[self.lg_client_DS_cost[client_id][ds]].append(ds)
 
         # Generate stage
         ###############################################################################################################
