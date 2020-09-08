@@ -4,7 +4,7 @@ import mmh3
 
 class SimpleBloomFilter(object):
     
-    def __init__(self, size = 8000, hash_count = 5):
+    def __init__(self, size, hash_count):
         """
         Returns a SimpleBloomFilter object with the requested size and number of hash funcs
         """

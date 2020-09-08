@@ -29,12 +29,12 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        return [DataStore.DataStore(ID = i, size = self.DS_size, estimation_window = self.esimation_window, bf_size = self.BF_size) for i in range(self.num_of_DSs)]
+        return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
-        return [Client.Client(ID = i) for i in range(self.num_of_clients)]
+        return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs) for i in range(self.num_of_clients)]
     
-    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, esimation_window = 1000, BF_size = 8000, rand_seed = 42, verbose = 0, uInterval = 1):
+    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, estimation_window = 1000, rand_seed = 42, verbose = 0, uInterval = 1):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -44,71 +44,69 @@ class Simulator(object):
             missp:               miss penalty
             k_loc:              number of DSs a missed key is inserted to
             DS_size:            size of DS (default 1000)
-            esimation_window:   window for parameters' estimation 
-            BF_size:            size of Bloom filter to use in each DS (default 8000, compatible with default DS size of 1000, and FP ratio of 0.02)
+            estimation_window:  window for parameters' estimation 
+            bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
             alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
             uInterval:          Update interval - number of requests to each DS between updates it sends. Updates are assumed to arrive immediately.  
         """
-        self.uInterval = uInterval # update interval
-        self.always_updated_indicator = True if (self.uInterval == 1) else False
-        self.alg_mode = alg_mode
+        self.uInterval      = uInterval # update interval
+        self.alg_mode       = alg_mode
+        self.missp          = missp
+        self.k_loc          = k_loc
+        self.DS_size        = DS_size
+        self.bpe            = bpe
+        self.rand_seed      = rand_seed
         self.DS_insert_mode = DS_insert_mode
-        self.missp = missp
-        self.k_loc = k_loc
-        self.DS_size = DS_size
-        self.esimation_window = esimation_window
-        self.BF_size = BF_size
-        self.rand_seed = rand_seed
+        # self.always_updated_indicator = True if (self.uInterval == 1) else False
 
 
-        self.num_of_clients = client_DS_cost.shape[0]
-        self.num_of_DSs     = client_DS_cost.shape[1]
+        self.num_of_clients     = client_DS_cost.shape[0]
+        self.num_of_DSs         = client_DS_cost.shape[1]
         self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
+        self.estimation_window  = estimation_window
+        self.DS_list            = self.init_DS_list() #DS_list is the list of DSs
+        self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
+        self.req_df             = req_df        
+        self.pos_DS_list        = {} # List of DSs with positive indication (to be updated for every request)
+        self.client_list        = self.init_client_list ()
+        self.cur_req_cnt        = float(-1)
+        self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.lg_client_DS_cost  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
-        for i in range (self.num_of_clients):
-            self.num_of_leaves[i] = np.max (np.take(self.lg_client_DS_cost [i], range (self.num_of_DSs))) + 1 #num_of_leaves[i] will hold the # of leaves in PGM alg' when the client is i
+        self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
+        self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
+        self.window_alhpa       = 0.1 # window's alpha parameter 
 
-        self.DS_list = self.init_DS_list() #DS_list is the list of DSs
-        self.mr_of_DS = np.zeros(self.num_of_DSs)
-        
-        self.req_df = req_df
-        
-        self.pos_DS_list = {} # List of DSs with positive indication (to be updated for every request)
-        
-        self.client_list = self.init_client_list()
-        
-        self.cur_req_cnt = float(-1)
-        self.cur_pos_DS_list = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
+        # Statistical parameters (for evaluating perf')
+        self.total_cost         = float(0)
+        self.access_cnt         = float(0)
+        self.hit_cnt            = float(0)
+        self.comp_miss_cnt      = float(0)
+        self.avg_DS_hit_ratio   = float(0)
+        self.total_access_cost  = float(0)
+        self.high_cost_mp_cnt   = float(0) # counts the misses for cases where accessing DSs was too costly, so the alg' decided to access directly the mem
+        self.non_comp_miss_cnt  = float(0)
 
-        self.total_cost = float(0)
-        self.total_access_cost = float(0)
-        self.access_cnt = float(0)
-        self.hit_cnt = float(0)
-        self.high_cost_mp_cnt = float(0) # counts the misses for cases where accessing DSs was too costly, so the alg' decided to access directly the mem
-        self.non_comp_miss_cnt = float(0)
-        self.comp_miss_cnt = float(0)
-        self.num_DS_accessed = float(0)
+        # Debug / verbose variables
+        self.verbose = verbose
+        self.num_DS_accessed = float(0) #Currently unused
         self.avg_DS_accessed_per_req = float(0)
-        self.avg_DS_hit_ratio = float(0)
-        self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
-        self.q_estimation = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
-        self.estimation_window = 1000
-        self.q_window = self.num_of_DSs * self.estimation_window  
-        self.window_alhpa = 0.1 # window's alpha parameter 
 
     # Returns an np.array of the DSs with positive ind'
     def get_indications(self):
-        for i in range (self.num_of_DSs):
-            if self.DS_list[i].get_indication(self.cur_req.key):
-                self.cur_pos_DS_list = np.append (self.cur_pos_DS_list, i)
-                self.pos_ind_cnt[i] += 1 
+        self.cur_pos_DS_list = np.array([DS.ID for DS in self.DS_list if (DS.get_indication(self.cur_req.key))])
 
 
-    def update_q_estimation (self):
-        for i in range (self.num_of_DSs):
-            new_q_estimation = self.pos_ind_cnt[i] / self.q_window
-            self.q_estimation[i] = self.window_alhpa * new_q_estimation + (1 - self.window_alhpa) * self.q_estimation[i];
-        self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint') #reset the cntrs
+        # for i in range (self.num_of_DSs):
+        #     if self.DS_list[i].get_indication(self.cur_req.key):
+        #         self.cur_pos_DS_list = np.append (self.cur_pos_DS_list, i)
+        # if (self.alg_mode == ALG_PGM_FNA):
+        #     self.client_list[self.client_id].update_ind_cnt (self.cur_pos_DS_list)
+
+    # def update_q_estimation (self):
+    #     for i in range (self.num_of_DSs):
+    #         new_q_estimation = self.pos_ind_cnt[i] / self.q_window
+    #         self.q_estimation[i] = self.window_alhpa * new_q_estimation + (1 - self.window_alhpa) * self.q_estimation[i];
+    #     self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint') #reset the cntrs
 
 
     # Returns true iff key is found in at least of one of DSs specified by DS_index_list
@@ -117,6 +115,20 @@ class Simulator(object):
             if (key in self.DS_list[i]):
                 return True
         return False
+
+    def PGM_FNA_partition (self):
+        self.DSs_in_leaf = [] # DSs_in_leaf[i] will hold the 2D list of DSs of client i, as described below
+        self.num_of_leaves = np.zeros (self.num_of_clients, dtype = 'uint8')
+        for client_id in range (self.num_of_clients):
+            self.num_of_leaves[client_id] = np.max (np.take(self.lg_client_DS_cost [client_id], range (self.num_of_DSs))) + 1 #num_of_leaves[i] will hold the # of leaves in PGM alg' when the client is i
+            DSs_in_leaf = [[]] # For the current client_id, DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
+            for leaf_num in range (self.num_of_leaves[client_id]):
+                DSs_in_leaf.append ([])
+            for ds_id in (range(self.num_of_DSs)):
+                DSs_in_leaf[self.lg_client_DS_cost[client_id][ds_id]].append(ds_id)
+            self.DSs_in_leaf.append(DSs_in_leaf)
+
+
 
     def gather_statistics(self):
         self.total_access_cost  = np.sum( [client.total_access_cost for client in self.client_list ] ) 
@@ -128,16 +140,21 @@ class Simulator(object):
             self.avg_DS_accessed_per_req = 0
         else:
             self.hit_ratio               = float(self.hit_cnt) / self.access_cnt
-            self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
+            if (self.verbose > 0):
+                self.num_DS_accessed    = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
+                self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
         self.non_comp_miss_cnt  = np.sum( [client.non_comp_miss_cnt for client in self.client_list ] )
         self.comp_miss_cnt      = np.sum( [client.comp_miss_cnt for client in self.client_list ] )
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
-        self.num_DS_accessed    = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
     
     def start_simulator(self):
         # print ('alg_mode=%d, kloc = %d, missp = %d, insertion_mode=%d' % (self.alg_mode, self.k_loc, self.missp, self.DS_insert_mode))
+
+        if (self.alg_mode == ALG_PGM_FNA):
+            self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known
+
         np.random.seed(self.rand_seed)
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             if self.DS_insert_mode == 3: # ego mode: n/(n+1) of the requests enter to a random DS. 1/(n+1) of the requests belong to a single "ego" client.
@@ -151,8 +168,6 @@ class Simulator(object):
                 self.handle_request(self.req_df.iloc[req_id]) #fix mode (the one that is currently used): assign each request to a single DS, which is picked uar from all DSs  
                 if self.DS_insert_mode == 2: # distributed mode
                     self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
-            if (req_id % self.estimation_window):
-                self.update_q_estimation ()
         self.gather_statistics()
         print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
         
@@ -160,11 +175,11 @@ class Simulator(object):
         self.mr_of_DS = np.array([DS.mr_cur[-1] for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
 
     def handle_compulsory_miss (self):
-        self.client_list[self.cur_req.client_id].comp_miss_cnt += 1
+        self.client_list[self.client_id].comp_miss_cnt += 1
         self.insert_key_to_DSs ()
 
     def handle_non_compulsory_miss (self):
-        self.client_list[self.cur_req.client_id].non_comp_miss_cnt += 1
+        self.client_list[self.client_id].non_comp_miss_cnt += 1
         self.insert_key_to_DSs ()
 
     def handle_miss (self):
@@ -176,7 +191,7 @@ class Simulator(object):
     def insert_key_to_closest_DS(self, req):
         # check to see if one needs to insert key to closest cache too
         if self.DS_insert_mode == 2:
-            self.DS_list[req.client_id].insert(req.key)
+            self.DS_list[self.client_id].insert(req.key)
 
     def insert_key_to_random_DSs(self, req):
         # use the first location as the random DS to insert to.
@@ -197,14 +212,15 @@ class Simulator(object):
     def handle_request(self, req):
         self.cur_req = req
         self.cur_req_cnt += 1
+        self.client_id = self.cur_req.client_id
         #print ('req_cnt = %d' %(self.cur_req_cnt))
         self.get_indications() # self.cur_pos_DS_list <- list of DSs with positive indications
-        self.update_mr_of_DS()                               # Update the miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
 
         if self.alg_mode == ALG_OPT:
             self.access_opt ()
             return
         if self.alg_mode == ALG_PGM_FNO:
+            self.update_mr_of_DS() # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
             self.access_pgm_fno ()
         elif self.alg_mode == ALG_PGM_FNA:
             self.access_pgm_fna ()
@@ -212,25 +228,25 @@ class Simulator(object):
             print ('Wrong alg_code')
 
     def access_opt (self):
-        client_id = self.cur_req.client_id
         # get the list of datastores holding the request
         true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
         if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
            self.handle_compulsory_miss ()
-            # self.client_list[client_id].action[self.cur_req.req_id] = 2
+            # self.client_list[self.client_id].action[self.cur_req.req_id] = 2
         else: 
             # find the cheapest DS holding th request
-            access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[client_id] , true_answer_DS_list ) )]
+            access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[self.client_id] , true_answer_DS_list ) )]
 
             # We assume here that the cost of every DS < missp
             # update variables
-            self.client_list[client_id].total_access_cost += self.client_DS_cost[client_id][access_DS_id]
-            self.client_list[client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
-            self.client_list[client_id].access_cnt += 1
+            self.client_list[self.client_id].total_access_cost += self.client_DS_cost[self.client_id][access_DS_id]
+            if (self.verbose > 0):
+                self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
+            self.client_list[self.client_id].access_cnt += 1
             # perform access. we know it will be successful
             self.DS_list[access_DS_id].access(self.cur_req.key)
-            self.client_list[client_id].hit_cnt += 1
+            self.client_list[self.client_id].hit_cnt += 1
 
         # return
                 
@@ -243,20 +259,23 @@ class Simulator(object):
             self.handle_miss ()
             return
         req = self.cur_req
-        client_id = req.client_id
         self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
         # Partition stage
         ###############################################################################################################
-        # lg_client_DS_cost (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
-        cur_num_of_leaves = self.num_of_leaves[client_id] 
+        # leaf_of_DS (i,j) will hold the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
+        self.leaf_of_DS = np.array(np.floor(np.log2(self.client_DS_cost)))
+        self.leaf_of_DS = self.leaf_of_DS.astype('uint8')
+
+        # leaves_of_DSs_w_pos_ind will hold the leaves of the DSs with pos' ind'
+        cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[self.client_id], self.cur_pos_DS_list)) + 1
 
         # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
         DSs_in_leaf = [[]]
         for leaf_num in range (cur_num_of_leaves):
             DSs_in_leaf.append ([])
         for ds in (self.cur_pos_DS_list):
-            DSs_in_leaf[self.lg_client_DS_cost[client_id][ds]].append(ds)
+            DSs_in_leaf[self.lg_client_DS_cost[self.client_id][ds]].append(ds)
 
         # Generate stage
         ###############################################################################################################
@@ -272,7 +291,7 @@ class Simulator(object):
             df_of_DSs_in_cur_leaf = pd.DataFrame({
                 'DS ID': DSs_in_leaf[leaf_num],
                 'mr': np.take(self.mr_of_DS, DSs_in_leaf[leaf_num]), #miss rate
-                'ac': np.take(self.client_DS_cost[client_id], DSs_in_leaf[leaf_num]) #access cost
+                'ac': np.take(self.client_DS_cost[self.client_id], DSs_in_leaf[leaf_num]) #access cost
             })
 
 
@@ -325,38 +344,37 @@ class Simulator(object):
 
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
-        self.client_list[client_id].total_access_cost += final_sol.ac
-        self.client_list[client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
-        self.client_list[client_id].access_cnt += 1
+        self.client_list[self.client_id].total_access_cost += final_sol.ac
+        if (self.verbose > 0):
+            self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
+        self.client_list[self.client_id].access_cnt += 1
 
         # perform access. the function access() returns True if successful, and False otherwise
         accesses = np.array([self.DS_list[DS_id].access(req.key) for DS_id in final_sol.DSs_IDs])
         if any(accesses):   #hit
-            self.client_list[client_id].hit_cnt += 1
+            self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
             self.handle_miss ()
         return
 
+    # def get_mr0_mrq_estimations ():
+    #     for DS_id in self.cur_pos_DS_list:
+    #         self.client_list [self.client_id].
+
     def access_pgm_fna (self):
 
-        req = self.cur_req
-        client_id = req.client_id
-        self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
+        req                     = self.cur_req
+        self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.cur_pos_DS_list) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
+        self.cur_pos_DS_list    = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
-        # Partition stage
+        # Partition stage is done once, statically, based on the DSs' costs
         ###############################################################################################################
-        # lg_client_DS_cost (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
-        cur_num_of_leaves = np.max (np.take(self.lg_client_DS_cost [client_id], range (self.num_of_DSs))) + 1
-
-        # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
-        DSs_in_leaf = [[]]
-        for leaf_num in range (cur_num_of_leaves):
-            DSs_in_leaf.append ([])
-        for ds in (self.cur_pos_DS_list):
-            DSs_in_leaf[self.lg_client_DS_cost[client_id][ds]].append(ds)
 
         # Generate stage
         ###############################################################################################################
+        cur_num_of_leaves = self.num_of_leaves[self.client_id] 
+        DSs_in_leaf = self.DSs_in_leaf[self.client_id]
+
         # leaf[j] will hold the list of candidate DSs of V^0_j in the binary tree
         leaf = [[]]
         for leaf_num in range (cur_num_of_leaves-1): # Append additional cur_num_of_leaves-1 leaves
@@ -369,7 +387,7 @@ class Simulator(object):
             df_of_DSs_in_cur_leaf = pd.DataFrame({
                 'DS ID': DSs_in_leaf[leaf_num],
                 'mr': np.take(self.mr_of_DS, DSs_in_leaf[leaf_num]), #miss rate
-                'ac': np.take(self.client_DS_cost[client_id], DSs_in_leaf[leaf_num]) #access cost
+                'ac': np.take(self.client_DS_cost[self.client_id], DSs_in_leaf[leaf_num]) #access cost
             })
 
 
@@ -422,14 +440,15 @@ class Simulator(object):
 
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
-        self.client_list[client_id].total_access_cost += final_sol.ac
-        self.client_list[client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
-        self.client_list[client_id].access_cnt += 1
+        self.client_list[self.client_id].total_access_cost += final_sol.ac
+        if (self.verbose > 0):
+            self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
+        self.client_list[self.client_id].access_cnt += 1
 
         # perform access. the function access() returns True if successful, and False otherwise
         accesses = np.array([self.DS_list[DS_id].access(req.key) for DS_id in final_sol.DSs_IDs])
         if any(accesses):   #hit
-            self.client_list[client_id].hit_cnt += 1
+            self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
             self.handle_miss ()
         return

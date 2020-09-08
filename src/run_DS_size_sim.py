@@ -45,7 +45,6 @@ def run_sim_collection(DS_size_vals, FP_rate, missp, k_loc, requests, client_DS_
 
     main_sim_dict = {}
     for DS_size in DS_size_vals:
-        BF_size = BF_size_for_DS_size[FP_rate][DS_size]
         uInterval = DS_size / 2;
         print ('DS_size = %d' %(DS_size))
         #print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
@@ -53,7 +52,7 @@ def run_sim_collection(DS_size_vals, FP_rate, missp, k_loc, requests, client_DS_
         for alg_mode in [sim.ALG_PGM_FNA]: #, sim.ALG_ALL, sim.ALG_CHEAP, sim.ALG_POT, sim.ALG_PGM]: # in the homogeneous setting, no need to run Knap since it is equivalent to 6 (Pot)
             tic()
             print (datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
-            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, BF_size = BF_size, uInterval = uInterval)
+            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5)
             sm.start_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
