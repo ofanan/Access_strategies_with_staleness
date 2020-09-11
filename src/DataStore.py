@@ -7,7 +7,7 @@ from MyConfig import get_optimal_hash_count
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, miss_rate_alpha = 0.1, estimation_window = 1000, miss_rate_init = 0.5, max_fnr = 0.05, max_fpr = 0.05):
+    def __init__(self, ID, size = 1000, bpe = 5, miss_rate_alpha = 0.1, estimation_window = 1000, miss_rate_init = 0.5, max_fnr = 0, max_fpr = 0):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
@@ -82,7 +82,9 @@ class DataStore (object):
 
     def insert(self, key):
         """
-        inserts a key to the cache
+        - Inserts a key to the cache
+        - Update the indicator
+        - Check if it's time to send an update
         if key is already in the cache: return False
         otherwise: return True
         """
@@ -96,6 +98,7 @@ class DataStore (object):
                 self.updated_indicator.remove(self.cache.get_tail())
             self.cache[key] = key
             self.updated_indicator.add(key)
+            self.estimate_fnr_fpr () #Check if it's time to send an update
             return True
             
 

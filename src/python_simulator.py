@@ -35,7 +35,7 @@ class Simulator(object):
     def init_client_list(self):
         return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, verbose = self.verbose) for i in range(self.num_of_clients)]
     
-    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, estimation_window = 1000, rand_seed = 42, verbose = 0, uInterval = 1):
+    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, verbose = 0, uInterval = 1):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -45,7 +45,6 @@ class Simulator(object):
             missp:               miss penalty
             k_loc:              number of DSs a missed key is inserted to
             DS_size:            size of DS (default 1000)
-            estimation_window:  window for parameters' estimation 
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
             alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
             uInterval:          Update interval - number of requests to each DS between updates it sends. Updates are assumed to arrive immediately.  
@@ -64,7 +63,7 @@ class Simulator(object):
         self.num_of_clients     = client_DS_cost.shape[0]
         self.num_of_DSs         = client_DS_cost.shape[1]
         self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-        self.estimation_window  = estimation_window
+        self.estimation_window  = self.DS_size # window for parameters' estimation 
         self.verbose            = verbose # Used for debug / analysis: a higher level verbose prints more msgs to the Screen / output file.
         self.DS_list            = self.init_DS_list() #DS_list is the list of DSs
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
@@ -137,7 +136,7 @@ class Simulator(object):
         else:
             self.hit_ratio               = float(self.hit_cnt) / self.access_cnt
             if (self.verbose > 0):
-                self.num_DS_accessed    = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
+                self.num_DS_accessed     = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
                 self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
         self.non_comp_miss_cnt  = np.sum( [client.non_comp_miss_cnt for client in self.client_list ] )
         self.comp_miss_cnt      = np.sum( [client.comp_miss_cnt for client in self.client_list ] )
@@ -166,7 +165,8 @@ class Simulator(object):
                 if self.DS_insert_mode == 2: # distributed mode
                     self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
         self.gather_statistics()
-        print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
+        print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
+                 (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
         
     def update_mr_of_DS (self):
         """
