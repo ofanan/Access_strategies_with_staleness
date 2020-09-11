@@ -24,12 +24,13 @@ class SimpleBloomFilter(object):
         updates all the hashes corresponding to the new key: increases each by 1 (no more than allowed maximum)
         """
         for seed in range(self.hash_count):
-            entry = mmh3.hash(key, seed) % self.size
-            self.array[entry] = True
+            self.array[mmh3.hash(key, seed) % self.size] = True
 
     def __contains__(self, key):
         """
         checks if all hash functions corresponding to key are strictly positive
+        enables using the syntax:
+            key in SimpleBloomFilter
         """
         for seed in range(self.hash_count):
             entry = mmh3.hash(key, seed) % self.size
@@ -42,8 +43,13 @@ class SimpleBloomFilter(object):
         checks if all hash functions corresponding to key are strictly positive
         """
         for seed in range(self.hash_count):
-            entry = mmh3.hash(key, seed) % self.size
-            if ( not (self.array[entry]) ):
+            if ( not (self.array[mmh3.hash(key, seed) % self.size]) ):
                 return False
         return True
         
+
+    def get_designed_fpr (self):
+        """
+        return the estimated designed false-positive ratio for the current load on the BF
+        """
+        return (sum(self.array) / self.size) ** self.hash_count

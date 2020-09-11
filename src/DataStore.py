@@ -7,14 +7,14 @@ from MyConfig import get_optimal_hash_count
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, miss_rate_alpha = 0.1, estimation_window = 1000, miss_rate_init = 0.5):
+    def __init__(self, ID, size = 1000, bpe = 5, miss_rate_alpha = 0.1, estimation_window = 1000, miss_rate_init = 0.5, max_fnr = 0.05, max_fpr = 0.05):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
             size:               number of elements that can be stored in the datastore (default 1000)
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
-            miss_rate_alpha:    sliding window parameter for miss-rate estimation (default 0.1)
             estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000, same as size)
+            miss_rate_alpha:    sliding window parameter for miss-rate estimation (default 0.1)
             miss_rate_init:     initial miss-rate estimation (default 0.5)
         """
         self.ID                     = ID
@@ -25,13 +25,15 @@ class DataStore (object):
         self.mr_alpha               = miss_rate_alpha
         self.estimation_window      = estimation_window
         self.mr_cur                 = [miss_rate_init]
-        self.FN_mr_cur              = [miss_rate_init]
         self.mr_win_estimate        = []
-        self.FN_mr_win_estimate     = []
         self.mr_win_miss_cnt        = [0]
+        self.FN_mr_win_estimate     = []
         self.FN_mr_win_miss_cnt     = [0]
+        self.FN_mr_cur              = [miss_rate_init]
         self.access_cnt             = 0
         self.hit_cnt                = 0
+        self.max_fnr                = max_fnr
+        self.max_fpr                = max_fpr
         self.P1n                    = 1 - np.exp (-self.hash_count / self.bpe)
         self.P1nk                   = pow (self.P1n, self.hash_count)
 
@@ -63,11 +65,11 @@ class DataStore (object):
         """
         self.access_cnt += 1
         
-        # check to see if an update to the miss-rate is required
+        # check to see if an update to the estimated miss-rate is required
         if (self.access_cnt % self.estimation_window == 0):
             self.update_mr()
-            self.update_FN_mr()
-        if key in self.cache:
+            # self.update_FN_mr()
+        if key in self.cache: # hit
             self.cache[key] #Touch the element, so as to update the LRU mechanism
             self.hit_cnt += 1
             return True
@@ -94,9 +96,6 @@ class DataStore (object):
                 self.updated_indicator.remove(self.cache.get_tail())
             self.cache[key] = key
             self.updated_indicator.add(key)
-            self.estimate_fpr_fnr ()
-            # if (self.updated_indicator.consider_send_update () ):
-            #     self.send_update ()
             return True
             
 
@@ -107,7 +106,7 @@ class DataStore (object):
         return (key in self.stale_indicator)
 
     def send_update (self):
-        self.updated_indicator.reset_delta_cntrs ()
+        # self.updated_indicator.reset_delta_cntrs ()
         self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
 
     def update_FN_mr(self):
@@ -122,7 +121,8 @@ class DataStore (object):
     def update_mr(self):
         """
         update the miss-rate estimate
-        done using an exponential moving average
+        done using an exponential moving average.
+        Used by False-Negative-Oblivious strategeis, such as the algorithms in the paper "Access Strategies for Network Caching."
         """
         self.mr_win_estimate.append(float(self.mr_win_miss_cnt[-1]) / self.estimation_window)
         self.mr_cur.append (self.mr_alpha * (self.mr_win_estimate[-1]) + (1 - self.mr_alpha) * self.mr_cur[-1] )
@@ -144,7 +144,7 @@ class DataStore (object):
 
     def get_FN_mr(self):
         """
-        get the current miss-rate estimate of speculative accesses
+        get the current miss-rate estimate of speculative accesses (accesses to this DS despite a negative ind')
         """
         return self.FN_mr_cur[-1]
 
@@ -156,20 +156,17 @@ class DataStore (object):
             print (i.key)
     
 
-    # def calc_deltas (self, stale_sbf):
-    #     """
-    #     returns an array, delta, where
-    #     delta[0] represents the number of cntr that are reset in self (the updated BF), but set   in the input sbf (Simple BF - the stale BF)
-    #     delta[1] represents the number of cntr that are set   in self (the updated BF), but reset in the input sbf (Simple BF - the stale BF)
-    #     """
-    #     updated_sbf = self.gen_SimpleBloomFilter ()
-    #     return [sum (np.bitwise_and (~updated_sbf.array, stale_sbf.array)), sum (np.bitwise_and (updated_sbf.array, ~stale_sbf.array)) ] 
-
-    def estimate_fpr_fnr (self):
+    def estimate_fnr_fpr (self):
         """
-        returns:
+        returns an array ar, where:
+        ar[0] (ar[1]) is the expected false negative rate (false negative rate).
+        The calculation is based on Theorems 3 and 4 in the paper: "False Rate Analysis of Bloom Filter Replicas in Distributed Systems".
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
         # delta[0] (delta[1]) will hold the prob' that a concrete bit was reset (set) since the last update
         delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size] 
-        exit ()   
+        fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
+        if (fnr_fpr[0] > self.max_fnr or fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
+            self.send_update ()
+            return [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
+        return fnr_fpr  

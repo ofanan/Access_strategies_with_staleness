@@ -10,7 +10,12 @@ def exponential_window (old_estimate, new_val, alpha):
 
 def get_optimal_hash_count (bpe):
     """
-	Rturns the optimal number of hash functions for a given number of Bits Per Element (actually, cntrs per element) in a Bloom filter
+	Returns the optimal number of hash functions for a given number of Bits Per Element (actually, cntrs per element) in a Bloom filter
     """
     return int (bpe * np.log (2))
      
+# def get_designed_fpr (hash_cnt):
+# 	"""
+# 	Returns the designed (inherent) fpr of a simple BF with the given number of Bits Per Element 
+# 	"""
+# 	return pow (0.5, hash_cnt)

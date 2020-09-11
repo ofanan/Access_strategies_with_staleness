@@ -49,7 +49,7 @@ def run_sim_collection(DS_size_vals, FP_rate, missp, k_loc, requests, client_DS_
         print ('DS_size = %d' %(DS_size))
         #print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
         DS_size_sim_dict = {}
-        for alg_mode in [sim.ALG_PGM_FNA]: #, sim.ALG_ALL, sim.ALG_CHEAP, sim.ALG_POT, sim.ALG_PGM]: # in the homogeneous setting, no need to run Knap since it is equivalent to 6 (Pot)
+        for alg_mode in [sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]: #, sim.ALG_ALL, sim.ALG_CHEAP, sim.ALG_POT, sim.ALG_PGM]: # in the homogeneous setting, no need to run Knap since it is equivalent to 6 (Pot)
             tic()
             print (datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5)
@@ -64,7 +64,7 @@ missp = 100
 FP_rate = 0.02
 k_loc = 1
 
-DS_size_vals = [200] #, 400, 600, 800, 1000, 1200, 1400, 1600]
+DS_size_vals = [1000] #, 400, 600, 800, 1000, 1200, 1400, 1600]
 
 # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
 alpha = 0.5
@@ -78,8 +78,8 @@ main_sim_dict = run_sim_collection(DS_size_vals, FP_rate, missp, k_loc, requests
 time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
 sys.setrecursionlimit(50000)
-#res_file = open('../res/DS_size_%d_%d_missp_%d_kloc_%d_FP_%.2f' % (DS_size_vals[0], DS_size_vals[-1], missp, k_loc, FP_rate) , 'wb')
-#pickle.dump(main_sim_dict , res_file)
-#res_file.close()
+res_file = open('../res/DS_size_%d_%d_missp_%d_kloc_%d_FP_%.2f' % (DS_size_vals[0], DS_size_vals[-1], missp, k_loc, FP_rate) , 'wb')
+pickle.dump(main_sim_dict , res_file)
+res_file.close()
 print ('Finished all sims')
 

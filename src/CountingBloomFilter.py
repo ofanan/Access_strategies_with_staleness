@@ -17,16 +17,16 @@ class CountingBloomFilter(object):
         self.hash_count         = hash_count
         self.array              = np.zeros (self.size, dtype='uint8')
         self.max_array_val      = max_array_val
-        self.num_of_cntrs_set   = 0 # number of cntrs set since last update was sent 
-        self.num_of_cntrs_reset = 0 # number of cntrs set since last update was sent
+        #self.num_of_cntrs_set   = 0 # number of cntrs set since last update was sent 
+        #self.num_of_cntrs_reset = 0 # number of cntrs set since last update was sent
         # self.num_of_sets_between_updates    = 200 
         # self.num_of_resets_between_updates  = 200
-        self.insertions_since_last_update   = 0 # number of insertions since last update was sent
+        #self.insertions_since_last_update   = 0 # number of insertions since last update was sent
 
-    def reset_delta_cntrs (self):
-        self.num_of_cntrs_set               = 0 # number of cntrs set since last update was sent 
-        self.num_of_cntrs_reset             = 0 # number of cntrs set since last update was sent        
-        self.insertions_since_last_update   = 0
+    # def reset_delta_cntrs (self):
+    #     self.num_of_cntrs_set               = 0 # number of cntrs set since last update was sent 
+    #     self.num_of_cntrs_reset             = 0 # number of cntrs set since last update was sent        
+    #     self.insertions_since_last_update   = 0
 
 
     def add(self, key):
@@ -58,10 +58,11 @@ class CountingBloomFilter(object):
     def __contains__(self, key):
         """
         checks if all hash functions corresponding to key are strictly positive
+        enables using the syntax:
+            key in CountingBloomFilter
         """
-        for seed in range(self.hash_count):
-            entry = mmh3.hash(key, seed) % self.size
-            if self.array[entry] == 0:
+        for seed in range(self.hash_count):            
+            if self.array[mmh3.hash(key, seed) % self.size] == 0:
                 return False
         return True
 
@@ -85,16 +86,9 @@ class CountingBloomFilter(object):
         checks if all hash functions corresponding to key are strictly positive
         """
         for seed in range(self.hash_count):
-            entry = mmh3.hash(key, seed) % self.size
-            if self.array[entry] == 0:
+            if self.array[mmh3.hash(key, seed) % self.size] == 0:
                 return False
         return True
         
-    def get_fpr(self):
-        """
-        return the estimated designed false-positive ratio
-        CHECK THE FORMULA!!!
-        """
-        return (sum(self.array > 0) / self.size) ** s.hash_count
 
 
