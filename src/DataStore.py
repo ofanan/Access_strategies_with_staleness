@@ -36,6 +36,8 @@ class DataStore (object):
         self.max_fpr                = max_fpr
         self.P1n                    = 1 - np.exp (-self.hash_count / self.bpe)
         self.P1nk                   = pow (self.P1n, self.hash_count)
+        self.fresh_fnr_fpr          = [0, self.stale_indicator.get_designed_fpr()] #when the indicators are fresh, fnr=0, and fpr=designed_fpr
+        self.fnr_fpr                = self.fresh_fnr_fpr
 
         # create a counting Bloom filter
         # for documentation, see:
@@ -80,7 +82,7 @@ class DataStore (object):
                 self.mr_win_miss_cnt[-1] += 1
             return False
 
-    def insert(self, key):
+    def insert(self, key, use_indicator = True):
         """
         - Inserts a key to the cache
         - Update the indicator
@@ -97,8 +99,9 @@ class DataStore (object):
             if (self.cache.currSize() == self.cache.size()):
                 self.updated_indicator.remove(self.cache.get_tail())
             self.cache[key] = key
-            self.updated_indicator.add(key)
-            self.estimate_fnr_fpr () #Check if it's time to send an update
+            if (use_indicator):
+                self.updated_indicator.add(key)
+                self.estimate_fnr_fpr () #Check if it's time to send an update
             return True
             
 
@@ -161,15 +164,14 @@ class DataStore (object):
 
     def estimate_fnr_fpr (self):
         """
-        returns an array ar, where:
-        ar[0] (ar[1]) is the expected false negative rate (false negative rate).
-        The calculation is based on Theorems 3 and 4 in the paper: "False Rate Analysis of Bloom Filter Replicas in Distributed Systems".
+        Estimates the fnr and fpr, based on Theorems 3 and 4 in the paper: "False Rate Analysis of Bloom Filter Replicas in Distributed Systems".
+        The new values are written to self.fnr_fpr, where self.fnr_fpr[0] is the fnr, and self.fnr_fpr[1] is the fpr
+
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
         # delta[0] (delta[1]) will hold the prob' that a concrete bit was reset (set) since the last update
         delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size] 
-        fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
+        self.fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
         if (fnr_fpr[0] > self.max_fnr or fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
             self.send_update ()
-            return [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
-        return fnr_fpr  
+            self.fnr_fpr = self.fresh_fnr_fpr # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr

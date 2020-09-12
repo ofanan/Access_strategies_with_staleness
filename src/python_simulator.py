@@ -134,7 +134,7 @@ class Simulator(object):
             self.hit_ratio               = 0
             self.avg_DS_accessed_per_req = 0
         else:
-            self.hit_ratio               = float(self.hit_cnt) / self.access_cnt
+            self.hit_ratio               = float(self.hit_cnt) / self.cur_req_cnt
             if (self.verbose > 0):
                 self.num_DS_accessed     = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
                 self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
@@ -211,6 +211,15 @@ class Simulator(object):
     def insert_key_to_random_DSs(self, req):
         # use the first location as the random DS to insert to.
         self.DS_list[req['0']].insert(req.key)
+
+    def insert_key_to_DSs_without_indicator (self):
+        """
+        insert key to all k_loc DSs, which are defined by the input (parsed) trace
+        Do not use indicator. Used for Opt, which doesn't need indicators.
+        """
+        for i in range(self.k_loc):
+            self.DS_list[self.cur_req['%d'%i]].insert (self.cur_req.key, False) 
+            
  
     def insert_key_to_DSs(self):
         """
@@ -244,11 +253,11 @@ class Simulator(object):
         self.cur_req_cnt += 1
         self.client_id = self.cur_req.client_id
         #print ('req_cnt = %d' %(self.cur_req_cnt))
-        self.get_indications() # self.cur_pos_DS_list <- list of DSs with positive indications
 
         if self.alg_mode == ALG_OPT:
             self.access_opt ()
             return
+        self.get_indications() # self.cur_pos_DS_list <- list of DSs with positive indications
         if self.alg_mode == ALG_PGM_FNO:
             self.update_mr_of_DS() # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
             self.access_pgm_fno ()
@@ -262,7 +271,8 @@ class Simulator(object):
         true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
         if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
-           self.handle_compulsory_miss ()
+            self.client_list[self.client_id].comp_miss_cnt += 1
+            self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
             # self.client_list[self.client_id].action[self.cur_req.req_id] = 2
         else: 
             # find the cheapest DS holding the request
@@ -478,7 +488,7 @@ class Simulator(object):
         for DS_id in final_sol.DSs_IDs:
             if (self.DS_list[DS_id].access(req.key)): # hit
                 hit = True
-                self.client_list[self.client_id].update_fnr_fpr (self.DS_list[DS_id].estimate_fnr_fpr (), DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
+                self.client_list[self.client_id].update_fnr_fpr (self.DS_list[DS_id].fnr_fpr, DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss

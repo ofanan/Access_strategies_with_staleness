@@ -21,7 +21,7 @@ ALG_PGM_FNA = 8 # PGM alg', detailed in Access Strategies journal paper; False-N
 NUM_OF_ALGS = 8 # Number of algs'
 
 # Currently need to specify the exact filename you would like to open and process
-f = open ('../res/DS_size_1000_1000_missp_100_kloc_1_FP_0.02', 'rb')
+f = open ('../res/DS_size_1000_missp_100_kloc_1', 'rb')
 full_sim_dict = pickle.load(f)
 f.close()
 
