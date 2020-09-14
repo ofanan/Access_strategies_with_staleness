@@ -13,7 +13,7 @@ class Request(object):
         
 class Client(object):
     
-    def __init__(self, ID, num_of_DSs, verbose = 0, estimation_window  = 1000):
+    def __init__(self, ID, num_of_DSs, estimation_window  = 1000, window_alpha = 0.25, verbose = 0):
         """
         Return a Client object with the following attributes:
         """
@@ -27,20 +27,23 @@ class Client(object):
         self.total_access_cost  = 0
 
         # self.cur_mr_list 		= {} # dictionary containing the mr list req_id of client
-        self.ind_cnt            = 0  # Number of indications requested by this client during this window 
-        self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
+        self.mr                 = np.zeros (self.num_of_DSs) # mr[i] will hold the estimated prob' of a miss, given the ind' of DS[i]'s indicator
+        self.ind_cnt            = np.uint16 (0)  # Number of indications requested by this client during this window 
+        self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.q_estimation       = 0.5 * np.ones (self.num_of_DSs) # q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
-        self.hit_ratio          = 0.5 * np.ones (self.num_of_DSs) # hit_ratio[i] will hold the estimation for the hit ratio of DS[i], that is, the estimated prob' that DS i stores the next requested datum, x  
-        self.estimation_window  = estimation_window # Number of requests performed by this client during each window
-        self.window_alhpa       = 0.1 # window's alpha parameter 
+        self.first_estimate     = True # indicates whether this is the first estimation window
+        self.estimation_window  = np.uint16 (estimation_window) # Number of requests performed by this client during each window
+        self.window_alpha       = window_alpha # window's alpha parameter 
         self.fpr                = np.zeros (self.num_of_DSs) # fpr[i] will hold the estimated False Positive Rate of DS i
         self.fnr                = np.zeros (self.num_of_DSs) # fnr[i] will hold the estimated False Negative Rate of DS i
+        self.zeros_ar           = np.zeros (self.num_of_DSs) 
+        self.ones_ar            = np.ones  (self.num_of_DSs) 
 
         # Debug
         # dictionary describing for every req_id of client: 0: init, 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer beta, 4: no pos ind, pay beta
         # self.action 			= {}
         self.verbose            = verbose
-        if (self.verbose > 0):
+        if (self.verbose == 1):
             self.DS_accessed 		= {} # dictionary containing DSs accessed for every req_id of client where access takes place. Currently used only in higher-verbose modes.
             self.num_DS_accessed 	= [] # Total Num of DSs accessed by this client perrequest. Currently unused
 
@@ -65,20 +68,31 @@ class Client(object):
         """
         self.ind_cnt += 1
         for i in pos_DS_list:
-            self.pos_ind_cnt[i] += 1    
-        if (self.ind_cnt % self.estimation_window == 0):
-            self.q_estimation = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alhpa)
-
-        self.hit_ratio = (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr)
-        mr0 = (1 - self.fpr) * (1 - self.hit_ratio) / (1- self.q_estimation) # mr0[i] holds the estimated prob' that a datum is not in DS i, given a neg' indication for x
-        mr1 = self.fpr * (1 - self.hit_ratio) / self.q_estimation            # mr1[i] holds the estimated prob' that a datum is not in DS i, given a neg' indication for x
-        mr = np.zeros (self.num_of_DSs)
-        for i in range (self.num_of_DSs):
-            if i in pos_DS_list:
-                mr[i] = mr1[i]
+            self.pos_ind_cnt[i] +=  1 
+        # if (self.verbose == 2):
+        #     print ('my id is ', self.ID, 'ind_cnt = ', self.ind_cnt, 'pos_ind_cnt = ', self.pos_ind_cnt)
+        if (self.ind_cnt >= self.estimation_window):
+            if (self.first_estimate):
+                self.q_estimation   = self.pos_ind_cnt/self.estimation_window
+                self.first_estimate = False
             else:
-                mr[i] = mr0[i]
-        return mr
+                self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
+            self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
+            self.ind_cnt     = 0
+
+        hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
+        for i in range (self.num_of_DSs):
+            if (i in pos_DS_list):
+                if (self.fpr[i] == 0): # No false positives at this DS
+                    self.mr[i] = 0     #
+                else:
+                    self.mr[i] = 1 if (self.q_estimation[i] == 0) else self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i] # if DS i gave pos' ind', then mr[i] will hold the estimated prob' that a datum is not in DS i, given that pos' indication for x        
+            else:
+                self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
+        self.mr = np.minimum (self.mr, self.ones_ar)
+        if (self.verbose == 2):
+            print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
+        return self.mr
 
     def update_fnr_fpr (self, fnr_fpr, DS_id):
         """

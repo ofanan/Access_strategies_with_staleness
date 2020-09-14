@@ -19,9 +19,8 @@ ALG_PGM_FNO = 7 # PGM alg', detailed in Access Strategies journal paper; False-N
 ALG_PGM_FNA = 8 # PGM alg', detailed in Access Strategies journal paper; False-Negative Aware
 NUM_OF_ALGS = 8 # Number of algs'
 
-
 # client action: updated according to what client does
-# 0: init, 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
+# 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
 """
 key is an integer
 """
@@ -33,7 +32,7 @@ class Simulator(object):
         return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
-        return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, verbose = self.verbose) for i in range(self.num_of_clients)]
+        return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose) for i in range(self.num_of_clients)]
     
     def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, verbose = 0, uInterval = 1):
         """
@@ -47,9 +46,9 @@ class Simulator(object):
             DS_size:            size of DS (default 1000)
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
             alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
-            uInterval:          Update interval - number of requests to each DS between updates it sends. Updates are assumed to arrive immediately.  
+            uInterval:          Update interval - number of requests to each DS between updates it sends. Updates are assumed to arrive immediately. Currently unused
         """
-        self.uInterval      = uInterval # update interval
+        #self.uInterval      = uInterval # update interval
         self.alg_mode       = alg_mode
         self.missp          = missp
         self.k_loc          = k_loc
@@ -59,7 +58,6 @@ class Simulator(object):
         self.DS_insert_mode = DS_insert_mode
         # self.always_updated_indicator = True if (self.uInterval == 1) else False
 
-
         self.num_of_clients     = client_DS_cost.shape[0]
         self.num_of_DSs         = client_DS_cost.shape[1]
         self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
@@ -68,14 +66,13 @@ class Simulator(object):
         self.DS_list            = self.init_DS_list() #DS_list is the list of DSs
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
-        self.pos_DS_list        = {} # List of DSs with positive indication (to be updated for every request)
         self.client_list        = self.init_client_list ()
-        self.cur_req_cnt        = float(-1)
+        self.req_cnt        = float(-1)
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.lg_client_DS_cost  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
-        self.window_alhpa       = 0.1 # window's alpha parameter 
+        self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters 
 
         # Statistical parameters (collected / estimated at run time)
         self.total_cost         = float(0)
@@ -88,8 +85,9 @@ class Simulator(object):
         self.non_comp_miss_cnt  = float(0)
 
         # Debug / verbose variables
-        self.num_DS_accessed = float(0) #Currently unused
-        self.avg_DS_accessed_per_req = float(0)
+        if (self.verbose == 1):
+            self.num_DS_accessed = float(0) #Currently unused
+            self.avg_DS_accessed_per_req = float(0)
 
     # Returns an np.array of the DSs with positive ind'
     def get_indications(self):
@@ -134,8 +132,8 @@ class Simulator(object):
             self.hit_ratio               = 0
             self.avg_DS_accessed_per_req = 0
         else:
-            self.hit_ratio               = float(self.hit_cnt) / self.cur_req_cnt
-            if (self.verbose > 0):
+            self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
+            if (self.verbose == 1):
                 self.num_DS_accessed     = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
                 self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
         self.non_comp_miss_cnt  = np.sum( [client.non_comp_miss_cnt for client in self.client_list ] )
@@ -149,7 +147,9 @@ class Simulator(object):
 
         if (self.alg_mode == ALG_PGM_FNA):
             # For the FNA, all the DSs may be accessed. Hence, the partition stage can be performed only once, for all the DSs, regardless the indications. 
-            self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known. 
+            self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known.
+            if (self.verbose == 2):
+                self.debug_file = open ("../res/fna.txt", "w")
 
         np.random.seed(self.rand_seed)
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
@@ -165,8 +165,8 @@ class Simulator(object):
                 if self.DS_insert_mode == 2: # distributed mode
                     self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
         self.gather_statistics()
-        print ('tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, high_cost_mp_cnt = %d, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
-                 (self.total_cost, self.total_access_cost, self.hit_ratio, self.high_cost_mp_cnt, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
+        print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
+                 (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
         
     def update_mr_of_DS (self):
         """
@@ -250,9 +250,8 @@ class Simulator(object):
 
         """
         self.cur_req = req
-        self.cur_req_cnt += 1
+        self.req_cnt += 1
         self.client_id = self.cur_req.client_id
-        #print ('req_cnt = %d' %(self.cur_req_cnt))
 
         if self.alg_mode == ALG_OPT:
             self.access_opt ()
@@ -273,14 +272,13 @@ class Simulator(object):
         if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
             self.client_list[self.client_id].comp_miss_cnt += 1
             self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
-            # self.client_list[self.client_id].action[self.cur_req.req_id] = 2
         else: 
             # find the cheapest DS holding the request
             access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[self.client_id] , true_answer_DS_list ) )]
             # We assume here that the cost of every DS < missp
             # update variables
             self.client_list[self.client_id].total_access_cost += self.client_DS_cost[self.client_id][access_DS_id]
-            if (self.verbose > 0):
+            if (self.verbose == 1):
                 self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
             self.client_list[self.client_id].access_cnt += 1
             # perform access. we know it will be successful
@@ -293,8 +291,9 @@ class Simulator(object):
         """
         The PGM FNO (false negative oblivious) alg' detailed in the paper: Access Strategies for Network Caching, Journal verison.
         """ 
-
         if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
+            if (self.verbose == 2):
+                print ('req cnt = ', self.req_cnt, 'pos ind = {}, mr = ', self.mr_of_DS)
             self.handle_miss ()
             return
         
@@ -366,7 +365,6 @@ class Simulator(object):
                     if (2*(j+1) > num_of_nodes_in_prev_lvl): # handle edge case, when the merge tree isn't a full binary tree
                         cur_lvl_node[j] = prev_lvl_nodes[2*j]
                     else:
-                        # print ('req_id = ', req.req_id, '\n')
                         cur_lvl_node[j] = node.merge(prev_lvl_nodes[2*j], prev_lvl_nodes[2*j+1], r, self.missp)
                 num_of_nodes_in_prev_lvl = num_of_nodes_in_cur_lvl
                 num_of_nodes_in_cur_lvl = (np.ceil(num_of_nodes_in_cur_lvl / 2)).astype('uint8')
@@ -386,11 +384,13 @@ class Simulator(object):
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
         self.client_list[self.client_id].total_access_cost += final_sol.ac
-        if (self.verbose > 0):
+        if (self.verbose == 1):
             self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
         self.client_list[self.client_id].access_cnt += 1
 
         # perform access. the function access() returns True if successful, and False otherwise
+        if (self.verbose == 2):
+            print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         accesses = np.array([self.DS_list[DS_id].access(req.key) for DS_id in final_sol.DSs_IDs])
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
@@ -424,8 +424,8 @@ class Simulator(object):
             num_of_DSs_in_cur_leaf = len(DSs_in_leaf[leaf_num])
             df_of_DSs_in_cur_leaf = pd.DataFrame({
                 'DS ID': DSs_in_leaf[leaf_num],
-                'mr': np.take(self.mr_of_DS, DSs_in_leaf[leaf_num]), #miss rate
-                'ac': np.take(self.client_DS_cost[self.client_id], DSs_in_leaf[leaf_num]) #access cost
+                'mr': np.take (self.mr_of_DS, DSs_in_leaf[leaf_num]), #miss rate
+                'ac': np.take (self.client_DS_cost[self.client_id], DSs_in_leaf[leaf_num]) #access cost
             })
 
 
@@ -459,7 +459,6 @@ class Simulator(object):
                     if (2*(j+1) > num_of_nodes_in_prev_lvl): # handle edge case, when the merge tree isn't a full binary tree
                         cur_lvl_node[j] = prev_lvl_nodes[2*j]
                     else:
-                        # print ('req_id = ', req.req_id, '\n')
                         cur_lvl_node[j] = node.merge(prev_lvl_nodes[2*j], prev_lvl_nodes[2*j+1], r, self.missp)
                 num_of_nodes_in_prev_lvl = num_of_nodes_in_cur_lvl
                 num_of_nodes_in_cur_lvl = (np.ceil(num_of_nodes_in_cur_lvl / 2)).astype('uint8')
@@ -473,13 +472,18 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
+            if (self.verbose == 2):
+                #self.debug_file.write ('req cnt = %d' .format (self.req_cnt)) #, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
+                print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
             self.handle_miss ()
             return
 
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
+        if (self.verbose == 2):
+            print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         self.client_list[self.client_id].total_access_cost += final_sol.ac
-        if (self.verbose > 0):
+        if (self.verbose == 1):
             self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
         self.client_list[self.client_id].access_cnt += 1
 
@@ -488,6 +492,7 @@ class Simulator(object):
         for DS_id in final_sol.DSs_IDs:
             if (self.DS_list[DS_id].access(req.key)): # hit
                 hit = True
+                # print ("fnr = %.2f, fpr = %.4f" %(self.DS_list[DS_id].fnr_fpr[0], self.DS_list[DS_id].fnr_fpr[1]))
                 self.client_list[self.client_id].update_fnr_fpr (self.DS_list[DS_id].fnr_fpr, DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1

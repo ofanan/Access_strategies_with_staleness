@@ -3,6 +3,11 @@ import mmh3
 import copy
 import SimpleBloomFilter
 
+# A counting Bloom filter. for documentation, see:
+# http://www.maxburstein.com/blog/creating-a-simple-bloom-filter/
+# https://hur.st/bloomfilter/
+# http://pages.cs.wisc.edu/~cao/papers/summary-cache/node8.html
+# Bloom filter survey: https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf
 class CountingBloomFilter(object):
     
     def __init__(self, size = 500, hash_count = 5, max_array_val = 7):
