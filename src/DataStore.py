@@ -91,7 +91,7 @@ class DataStore (object):
             self.cache[key] = key
             if (use_indicator):
                 self.updated_indicator.add(key)
-                self.estimate_fnr_fpr () #Check if it's time to send an update
+                self.estimate_fnr_fpr () # Update the estimates of fpr and fnr, and check if it's time to send an update
             return True
             
 
@@ -160,8 +160,12 @@ class DataStore (object):
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
         # delta[0] (delta[1]) will hold the prob' that a concrete bit was reset (set) since the last update
-        delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size] 
+        delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
+        # print ('Delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)), 'BF size = ', self.BF_size)
         self.fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
+        print ('delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
         if (self.fnr_fpr[0] > self.max_fnr or self.fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
+            print ('sending update')
+            exit ()
             self.send_update ()
             self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr

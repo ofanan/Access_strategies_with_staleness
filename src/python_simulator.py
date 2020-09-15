@@ -218,7 +218,7 @@ class Simulator(object):
         Do not use indicator. Used for Opt, which doesn't need indicators.
         """
         for i in range(self.k_loc):
-            self.DS_list[self.cur_req['%d'%i]].insert (self.cur_req.key, False) 
+            self.DS_list[self.cur_req['%d'%i]].insert (self.cur_req.key, use_indicator = False) 
             
  
     def insert_key_to_DSs(self):
@@ -251,6 +251,10 @@ class Simulator(object):
         """
         self.cur_req = req
         self.req_cnt += 1
+        # if (self.req_cnt > 100):
+            # self.verbose == 2
+            # for i in range (self.num_of_clients):
+            #     self.client_list[i].verbose = 2
         self.client_id = self.cur_req.client_id
 
         if self.alg_mode == ALG_OPT:
@@ -282,7 +286,7 @@ class Simulator(object):
                 self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
             self.client_list[self.client_id].access_cnt += 1
             # perform access. we know it will be successful
-            self.DS_list[access_DS_id].access(self.cur_req.key)
+            self.DS_list[access_DS_id].access(self.cur_req.key, use_indicator = False)
             self.client_list[self.client_id].hit_cnt += 1
 
         # return
