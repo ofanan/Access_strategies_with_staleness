@@ -148,8 +148,8 @@ class Simulator(object):
         if (self.alg_mode == ALG_PGM_FNA):
             # For the FNA, all the DSs may be accessed. Hence, the partition stage can be performed only once, for all the DSs, regardless the indications. 
             self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known.
-            if (self.verbose == 2):
-                self.debug_file = open ("../res/fna.txt", "w")
+            #if (self.verbose == 2):
+                # self.debug_file = open ("../res/fna.txt", "w")
 
         np.random.seed(self.rand_seed)
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
@@ -286,7 +286,7 @@ class Simulator(object):
                 self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
             self.client_list[self.client_id].access_cnt += 1
             # perform access. we know it will be successful
-            self.DS_list[access_DS_id].access(self.cur_req.key, use_indicator = False)
+            self.DS_list[access_DS_id].access(self.cur_req.key)
             self.client_list[self.client_id].hit_cnt += 1
 
         # return

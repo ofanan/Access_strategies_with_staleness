@@ -8,7 +8,7 @@ from MyConfig import get_optimal_hash_count, exponential_window
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.04, max_fpr = 0.04):
+    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.04, max_fpr = 0.04, verbose = 0):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
@@ -40,7 +40,8 @@ class DataStore (object):
         self.FN_mr_cur              = [1]
         self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr_fpr                = [0, 0] # Initially, there are no false indications
-        
+        self.verbose                = verbose
+
     def __contains__(self, key):
         """
         test to see if key is in the cache
@@ -159,13 +160,30 @@ class DataStore (object):
 
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
-        # delta[0] (delta[1]) will hold the prob' that a concrete bit was reset (set) since the last update
+        Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
+        B1 = sum(updated_sbf.array) # Num of bits set in the updated indicator
+        self.fnr_fpr = [1 - pow ( (B1 - Delta[1])/B1, self.hash_count), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.hash_count)]
         delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
-        # print ('Delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)), 'BF size = ', self.BF_size)
-        self.fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
-        print ('delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
+        tmp = (1 - delta[1] - delta[0]) #* P1n
+        self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
+
+        if (self.verbose  == 2):
+            print ('B1 = ', B1, 'Delta = ', Delta, 'fnr_fpr = ', self.fnr_fpr)
+        
+        
+        #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
         if (self.fnr_fpr[0] > self.max_fnr or self.fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
-            print ('sending update')
-            exit ()
+            if (self.verbose  == 2):
+                print ('sending update')
             self.send_update ()
             self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
+
+        # Old version, based on fpr_fnr_in_dist_replicas
+        # delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
+        # self.fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
+        # #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
+        # if (self.fnr_fpr[0] > self.max_fnr or self.fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
+        #     print ('sending update')
+        #     exit ()
+        #     self.send_update ()
+        #     self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr

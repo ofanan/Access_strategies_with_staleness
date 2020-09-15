@@ -23,14 +23,14 @@ num_of_clients = 4
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 200
+max_num_of_req      = 10000
 traces_path         = getTracesPath()
 input_file_name     = 'wiki/wiki1.1190448987_50K_4DSs.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
 
 missp = 100
 k_loc = 1
-DS_size_vals = [5] #, 400, 600, 800, 1000, 1200, 1400, 1600]
+DS_size_vals = [10] #, 400, 600, 800, 1000, 1200, 1400, 1600]
 
 ## Generate matrix for the fully homogeneous settings. This would evnetually result in client_DS_cost all 1
 client_DS_dist = np.zeros((num_of_clients,num_of_DSs)) # np.ones((num_of_clients,num_of_DSs)) - np.eye(17)
@@ -48,9 +48,9 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
     for DS_size in DS_size_vals:
         print ('DS_size = %d' %(DS_size))
         DS_size_sim_dict = {}
-        for alg_mode in [sim.ALG_PGM_FNA]: # sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]: #, sim.ALG_ALL, sim.ALG_CHEAP, sim.ALG_POT, sim.ALG_PGM]: # in the homogeneous setting, no need to run Knap since it is equivalent to 6 (Pot)
+        for alg_mode in [sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:# [sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]: #, sim.ALG_ALL, sim.ALG_CHEAP, sim.ALG_POT, sim.ALG_PGM]: # in the homogeneous setting, no need to run Knap since it is equivalent to 6 (Pot)
             tic()
-            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, verbose = 2)
+            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 15, verbose = 0)
             sm.start_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
