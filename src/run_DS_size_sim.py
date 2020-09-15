@@ -72,7 +72,7 @@ main_sim_dict = run_sim_collection(DS_size_vals, missp, k_loc, requests, client_
 
 # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
 time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-
+rg
 sys.setrecursionlimit(50000)
 res_file = open('../res/DS_size_%d_missp_%d_kloc_%d' % (DS_size_vals[0], missp, k_loc) , 'wb')
 pickle.dump(main_sim_dict , res_file)
