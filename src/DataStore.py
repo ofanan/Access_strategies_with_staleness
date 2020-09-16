@@ -104,8 +104,8 @@ class DataStore (object):
         return (key in self.stale_indicator)
 
     def send_update (self):
-        # self.updated_indicator.reset_delta_cntrs ()
         self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
+        # self.updated_indicator.reset_delta_cntrs ()
 
     def update_FN_mr(self):
         """
@@ -172,14 +172,14 @@ class DataStore (object):
         #self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
 
         if (self.verbose  == 2):
-            print ('B1 = ', B1, 'Delta = ', Delta, 'fnr_fpr = ', self.fnr_fpr)
+            print ('ID = ', self.ID, ' B1 = ', B1_up, 'Delta = ', Delta, 'fnr = ', self.fnr, 'fpr = ', self.fpr)
         
         
         #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
             if (self.verbose  == 2):
                 print ('sending update')
-            self.send_update ()
+            self.stale_indicator.array = updated_sbf.array
             #self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
             self.fnr = 0
             self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr

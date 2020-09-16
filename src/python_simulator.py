@@ -29,7 +29,7 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window) for i in range(self.num_of_DSs)]
+        return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, verbose = self.verbose) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
         return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose) for i in range(self.num_of_clients)]
