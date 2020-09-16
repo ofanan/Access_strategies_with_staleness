@@ -39,7 +39,8 @@ class DataStore (object):
         self.mr_cur                 = [0.5] #[self.stale_indicator.get_designed_fpr ()]
         self.FN_mr_cur              = [1]
         self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
-        self.fnr_fpr                = [0, 0] # Initially, there are no false indications
+        self.fnr                    = 0 # Initially, there are no false indications
+        self.fpr                    = 0 # Initially, there are no false indications
         self.verbose                = verbose
 
     def __contains__(self, key):
@@ -161,22 +162,27 @@ class DataStore (object):
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
         Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
-        B1 = sum(updated_sbf.array) # Num of bits set in the updated indicator
-        self.fnr_fpr = [1 - pow ( (B1 - Delta[1])/B1, self.hash_count), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.hash_count)]
-        delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
-        tmp = (1 - delta[1] - delta[0]) #* P1n
-        self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
+        B1_up = sum (updated_sbf.array) # Num of bits set in the updated indicator
+        B1_st = sum (self.stale_indicator.array)
+        #self.fnr_fpr = [1 - pow ( (B1-Delta[1]) / B1, self.hash_count), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.hash_count)]
+        self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.hash_count)
+        self.fpr = pow ( B1_st / self.BF_size, self.hash_count)
+        #delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
+        #tmp = (1 - delta[1] - delta[0]) #* P1n
+        #self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
 
         if (self.verbose  == 2):
             print ('B1 = ', B1, 'Delta = ', Delta, 'fnr_fpr = ', self.fnr_fpr)
         
         
         #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
-        if (self.fnr_fpr[0] > self.max_fnr or self.fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
+        if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
             if (self.verbose  == 2):
                 print ('sending update')
             self.send_update ()
-            self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
+            #self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
+            self.fnr = 0
+            self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
 
         # Old version, based on fpr_fnr_in_dist_replicas
         # delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]

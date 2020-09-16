@@ -497,7 +497,9 @@ class Simulator(object):
             if (self.DS_list[DS_id].access(req.key)): # hit
                 hit = True
                 # print ("fnr = %.2f, fpr = %.4f" %(self.DS_list[DS_id].fnr_fpr[0], self.DS_list[DS_id].fnr_fpr[1]))
-                self.client_list[self.client_id].update_fnr_fpr (self.DS_list[DS_id].fnr_fpr, DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
+                self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
+                self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
+                #update_fnr_fpr (self.DS_list[DS_id].fnr_fpr, DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
