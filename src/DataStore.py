@@ -42,7 +42,7 @@ class DataStore (object):
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
         self.verbose                = verbose if self.ID==0 else 0
-        if (self.verbose == 2):
+        if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
 
     def __contains__(self, key):
@@ -95,7 +95,7 @@ class DataStore (object):
             self.cache[key] = key
             if (use_indicator):
                 self.updated_indicator.add(key)
-                self.estimate_fnr_fpr () # Update the estimates of fpr and fnr, and check if it's time to send an update
+                self.estimate_fnr_fpr (key) # Update the estimates of fpr and fnr, and check if it's time to send an update
             return True
             
 
@@ -156,7 +156,7 @@ class DataStore (object):
             print (i.key)
     
 
-    def estimate_fnr_fpr (self):
+    def estimate_fnr_fpr (self, key = -1):
         """
         Estimates the fnr and fpr, based on Theorems 3 and 4 in the paper: "False Rate Analysis of Bloom Filter Replicas in Distributed Systems".
         The new values are written to self.fnr_fpr, where self.fnr_fpr[0] is the fnr, and self.fnr_fpr[1] is the fpr
@@ -173,18 +173,22 @@ class DataStore (object):
         #tmp = (1 - delta[1] - delta[0]) #* P1n
         #self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
 
-        if (self.verbose  == 2):
-            self.debug_file.write ('ID = ', self.ID, 'BF size = ', updated_sbf.array.size, ' B1 = ', B1_up, 'Delta = ', Delta, 'fnr = ', self.fnr, 'fpr = ', self.fpr)
-        
+        if (self.verbose  == 3):
+            #print ('B1 = {}, Delta = {}, fnr = {}, fpr = {}' .format (B1_up, Delta, self.fnr, self.fpr), file = self.debug_file, flush = True)
+            print ('B1 = {}, Delta = {}, fnr = {}, fpr = {}' .format (B1_up, Delta, self.fnr, self.fpr))
         
         #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
-            if (self.verbose  == 2):
-                self.debug_file.write ('sending update')
+            if (self.verbose  == 3):
+                #print ('sending update', file = self.debug_file, flush = True)
+                print ('sending update')
             self.stale_indicator.array = updated_sbf.array
             #self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
             self.fnr = 0
             self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
+        else:
+            print ('not updating key ', key)
+            exit  
 
         # Old version, based on fpr_fnr_in_dist_replicas
         # delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]

@@ -67,7 +67,7 @@ class Simulator(object):
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
         self.client_list        = self.init_client_list ()
-        self.req_cnt        = float(-1)
+        self.req_cnt            = float(-1)
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.lg_client_DS_cost  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
@@ -85,17 +85,19 @@ class Simulator(object):
         self.non_comp_miss_cnt  = float(0)
         self.speculate_accs_cnt = float(0) # num of speculative accss, that is, accesses to a DS despite a miss indication
         self.speculate_hit_cnt  = float(0) # num of hits among speculative accss
+        self.FN_miss_cnt        = float(0) # num of misses happened due to FN event
 
         # Debug / verbose variables
         if (self.verbose == 1):
             self.num_DS_accessed = float(0) #Currently unused
             self.avg_DS_accessed_per_req = float(0)
+        if (self.verbose == 3):
+            self.debug_file = open ("../res/fna.txt", "w", buffering=1)
 
     # Returns an np.array of the DSs with positive ind'
     def get_indications(self):
-        self.cur_pos_DS_list = np.array ([DS for DS in self. if self.cur_req.key in self.DS_list[DS_id].stale_indicator])
-        #self.cur_pos_DS_list = np.array ([DS.ID for DS_id in range(self.num_of_DSs) if self.cur_req.key in self.DS_list[DS_id].stale_indicator])
-
+        self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ])
+        
     def PGM_FNA_partition (self):
         """
         Performs the partition stage in the PGM-False-Negative-Aware alg'. 
@@ -144,8 +146,6 @@ class Simulator(object):
         if (self.alg_mode == ALG_PGM_FNA):
             # For the FNA, all the DSs may be accessed. Hence, the partition stage can be performed only once, for all the DSs, regardless the indications. 
             self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known.
-            #if (self.verbose == 2):
-                # self.debug_file = open ("../res/fna.txt", "w")
 
         np.random.seed(self.rand_seed)
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
@@ -163,7 +163,9 @@ class Simulator(object):
         self.gather_statistics()
         print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
-        if (self.alg_mode == ALG_PGM_FNA):
+        if (self.alg_mode == ALG_PGM_FNO):
+            print ('FN miss cnt = ', self.FN_miss_cnt)
+        elif (self.alg_mode == ALG_PGM_FNA):
             print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
         
     def update_mr_of_DS (self):
@@ -188,6 +190,8 @@ class Simulator(object):
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
         self.insert_key_to_DSs ()
+        if (self.alg_mode == ALG_PGM_FNO):
+            self.FN_miss_cnt += 1
 
     def handle_miss (self):
         """
@@ -249,10 +253,9 @@ class Simulator(object):
         """
         self.cur_req = req
         self.req_cnt += 1
-        # if (self.req_cnt > 100):
-            # self.verbose == 2
-            # for i in range (self.num_of_clients):
-            #     self.client_list[i].verbose = 2
+        if (self.verbose  == 3):
+            # print ('req cnt = {}' .format (self.req_cnt),  file = self.debug_file, flush = True)
+            print ('req cnt = {}' .format (self.req_cnt))
         self.client_id = self.cur_req.client_id
 
         if self.alg_mode == ALG_OPT:
@@ -265,7 +268,7 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNA:
             self.access_pgm_fna ()
         else: 
-            print ('Wrong alg_code')
+            print ('Wrong alg_mode')
 
     def access_opt (self):
         # get the list of datastores holding the request
@@ -294,8 +297,6 @@ class Simulator(object):
         The PGM FNO (false negative oblivious) alg' detailed in the paper: Access Strategies for Network Caching, Journal verison.
         """ 
         if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
-            if (self.verbose == 2):
-                print ('req cnt = ', self.req_cnt, 'pos ind = {}, mr = ', self.mr_of_DS)
             self.handle_miss ()
             return
         
@@ -404,8 +405,9 @@ class Simulator(object):
     def access_pgm_fna (self):
 
         req                     = self.cur_req
-        print ('self.cur_pos_DS_list  = ', self.cur_pos_DS_list)
         self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.cur_pos_DS_list) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
+        # self.cur_pos_DS_list = np.array ([DS.ID for DS    in self.DS_list if    (DS.get_indication(self.cur_req.key))])
+        # self.cur_pos_DS_list = np.array ([DS_id for DS_id in self.num_of_DSs if (self.cur_req.key in self.DS_list[DS_id].stale_indicator) ])
         self.cur_pos_DS_list    = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
         # Partition stage is done once, statically, based on the DSs' costs

@@ -23,9 +23,9 @@ num_of_clients = 4
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 2000
+max_num_of_req      = 1500
 traces_path         = getTracesPath()
-input_file_name     = 'wiki/wiki1.1190448987.csv'
+input_file_name     = 'wiki/wiki1.1190448987_50K_4DSs.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
 
 missp = 100
@@ -71,10 +71,10 @@ client_DS_cost = np.array ([ [1,2,3,4], [5,6,7,9],[8,12,15, 17], [2,2,5,8]])
 main_sim_dict = run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost)
 
 # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-sys.setrecursionlimit(50000)
-res_file = open('../res/DS_size_%d_missp_%d_kloc_%d' % (DS_size_vals[0], missp, k_loc) , 'wb')
-pickle.dump(main_sim_dict , res_file)
-res_file.close()
+# time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+# sys.setrecursionlimit(50000)
+# res_file = open('../res/DS_size_%d_missp_%d_kloc_%d' % (DS_size_vals[0], missp, k_loc) , 'wb')
+# pickle.dump(main_sim_dict , res_file)
+# res_file.close()
 print ('Finished all sims')
 
