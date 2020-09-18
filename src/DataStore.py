@@ -8,7 +8,7 @@ from MyConfig import get_optimal_hash_count, exponential_window
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.04, max_fpr = 0.04, verbose = 0):
+    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.1, max_fpr = 0.1, verbose = 0):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
@@ -41,7 +41,9 @@ class DataStore (object):
         self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
-        self.verbose                = verbose
+        self.verbose                = verbose if self.ID==0 else 0
+        if (self.verbose == 2):
+            self.debug_file = open ("../res/fna.txt", "w")
 
     def __contains__(self, key):
         """
@@ -172,13 +174,13 @@ class DataStore (object):
         #self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
 
         if (self.verbose  == 2):
-            print ('ID = ', self.ID, ' B1 = ', B1_up, 'Delta = ', Delta, 'fnr = ', self.fnr, 'fpr = ', self.fpr)
+            self.debug_file.write ('ID = ', self.ID, 'BF size = ', updated_sbf.array.size, ' B1 = ', B1_up, 'Delta = ', Delta, 'fnr = ', self.fnr, 'fpr = ', self.fpr)
         
         
         #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
             if (self.verbose  == 2):
-                print ('sending update')
+                self.debug_file.write ('sending update')
             self.stale_indicator.array = updated_sbf.array
             #self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
             self.fnr = 0

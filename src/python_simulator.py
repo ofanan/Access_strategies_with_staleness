@@ -83,6 +83,8 @@ class Simulator(object):
         self.total_access_cost  = float(0)
         self.high_cost_mp_cnt   = float(0) # counts the misses for cases where accessing DSs was too costly, so the alg' decided to access directly the mem
         self.non_comp_miss_cnt  = float(0)
+        self.speculate_accs_cnt = float(0) # num of speculative accss, that is, accesses to a DS despite a miss indication
+        self.speculate_hit_cnt  = float(0) # num of hits among speculative accss
 
         # Debug / verbose variables
         if (self.verbose == 1):
@@ -91,14 +93,8 @@ class Simulator(object):
 
     # Returns an np.array of the DSs with positive ind'
     def get_indications(self):
-        self.cur_pos_DS_list = np.array([DS.ID for DS in self.DS_list if (DS.get_indication(self.cur_req.key))])
-
-    # Returns true iff key is found in at least of one of DSs specified by DS_index_list
-    def req_in_DS_list(self, key, DS_index_list):
-        for i in DS_index_list:
-            if (key in self.DS_list[i]):
-                return True
-        return False
+        self.cur_pos_DS_list = np.array ([DS for DS in self. if self.cur_req.key in self.DS_list[DS_id].stale_indicator])
+        #self.cur_pos_DS_list = np.array ([DS.ID for DS_id in range(self.num_of_DSs) if self.cur_req.key in self.DS_list[DS_id].stale_indicator])
 
     def PGM_FNA_partition (self):
         """
@@ -167,6 +163,8 @@ class Simulator(object):
         self.gather_statistics()
         print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
+        if (self.alg_mode == ALG_PGM_FNA):
+            print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
         
     def update_mr_of_DS (self):
         """
@@ -406,6 +404,7 @@ class Simulator(object):
     def access_pgm_fna (self):
 
         req                     = self.cur_req
+        print ('self.cur_pos_DS_list  = ', self.cur_pos_DS_list)
         self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.cur_pos_DS_list) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
         self.cur_pos_DS_list    = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
@@ -494,11 +493,15 @@ class Simulator(object):
         # perform access. the function DataStore.access() returns True iff the access is a hit
         hit = False
         for DS_id in final_sol.DSs_IDs:
+            if (not (DS_id in self.cur_pos_DS_list)): #A speculative accs 
+                self.speculate_accs_cnt += 1
             if (self.DS_list[DS_id].access(req.key)): # hit
+                if (not (hit) and (not(DS_id in self.cur_pos_DS_list))): # this is the first hit; for each speculative req, we want to count at most a single hit 
+                    self.speculate_hit_cnt += 1
                 hit = True
                 # print ("fnr = %.2f, fpr = %.4f" %(self.DS_list[DS_id].fnr_fpr[0], self.DS_list[DS_id].fnr_fpr[1]))
                 self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
-                self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
+                self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
                 #update_fnr_fpr (self.DS_list[DS_id].fnr_fpr, DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1

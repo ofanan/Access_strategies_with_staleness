@@ -74,7 +74,7 @@ class Client(object):
         if (self.ind_cnt >= self.estimation_window):
             if (self.first_estimate):
                 self.q_estimation   = self.pos_ind_cnt/self.estimation_window
-                self.first_estimate = False
+                self.first_estimate = False 
             else:
                 self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
             self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
