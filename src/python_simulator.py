@@ -9,15 +9,18 @@ import pickle
 import sys
 
 # Codes for access algorithms
-ALG_OPT     = 1 # Optimal access strategy (perfect indicator)
-ALG_PGM     = 2 # PGM alg', detailed in Access Strategies journal paper
-ALG_CHEAP   = 3 # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
-ALG_ALL     = 4 # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
-ALG_KNAP    = 5 # Knapsack-based alg'. See Access Strategies papers.
-ALG_POT     = 6 # Potential-based alg'. See Access Strategies papers.
-ALG_PGM_FNO = 7 # PGM alg', detailed in Access Strategies journal paper; False-Negative Oblivious
-ALG_PGM_FNA = 8 # PGM alg', detailed in Access Strategies journal paper; False-Negative Aware
-NUM_OF_ALGS = 8 # Number of algs'
+ALG_OPT         = 1 # Optimal access strategy (perfect indicator)
+ALG_PGM         = 2 # PGM alg', detailed in Access Strategies journal paper
+ALG_CHEAP       = 3 # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
+ALG_ALL         = 4 # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
+ALG_KNAP        = 5 # Knapsack-based alg'. See Access Strategies papers.
+ALG_POT         = 6 # Potential-based alg'. See Access Strategies papers.
+ALG_PGM_FNO     = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
+ALG_PGM_FNA     = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
+NUM_OF_ALGS     = 8 # Number of algs'
+ALG_HOMO_OPT    = 107 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
+ALG_HOMO_FNO    = 107 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
+ALG_HOMO_FNA    = 108 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
 
 # client action: updated according to what client does
 # 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
@@ -49,7 +52,6 @@ class Simulator(object):
             uInterval:          Update interval - number of requests to each DS between updates it sends. Updates are assumed to arrive immediately. Currently unused
         """
         #self.uInterval      = uInterval # update interval
-        self.alg_mode       = alg_mode
         self.missp          = missp
         self.k_loc          = k_loc
         self.DS_size        = DS_size
@@ -71,10 +73,19 @@ class Simulator(object):
         self.client_list        = self.init_client_list ()
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
-        self.lg_client_DS_cost  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
+        self.leaf_of_DS  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters 
+
+        self.alg_mode           = alg_mode
+        if (self.DS_costs_are_homo()):
+            if (self.alg_mode == ALG_OPT):
+                self.alg_mode = ALG_HOMO_OPT
+            elif (self.alg_mode == ALG_PGM_FNO):
+                self.alg_mode = ALG_HOMO_FNO
+            elif (self.alg_mode == ALG_PGM_FNA):
+                self.alg_mode = ALG_HOMO_FNA
 
         # Statistical parameters (collected / estimated at run time)
         self.total_cost         = float(0)
@@ -96,25 +107,30 @@ class Simulator(object):
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w", buffering=1)
 
-    # Returns an np.array of the DSs with positive ind'
-    def get_indications(self):
-        self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ])
-        
+
+    def DS_costs_are_homo (self):
+        for i in range (self.num_of_clients):
+            for j in range (self.num_of_DSs):
+                if (self.client_DS_cost[i][j] != self.client_DS_cost[0][0]):
+                    return False 
+        return True
+
     def PGM_FNA_partition (self):
         """
-        Performs the partition stage in the PGM-False-Negative-Aware alg'. 
+        Performs the partition stage in the PGM-Staeleness-Aware alg'. 
         In a FNA (aka stale-aware) alg', the candidate DSs are all the DSs (even those with negative ind'), and
         therefore it's possible to perform the partition stage only once, instead of re-run it for each request.
         """
+
         self.DSs_in_leaf = [] # DSs_in_leaf[i] will hold the 2D list of DSs of client i, as described below
         self.num_of_leaves = np.zeros (self.num_of_clients, dtype = 'uint8') #num_of_leaves[i] will hold the # of leaves in PGM alg' when the client is i
         for client_id in range (self.num_of_clients):
-            self.num_of_leaves[client_id] = np.max (np.take(self.lg_client_DS_cost [client_id], range (self.num_of_DSs))) + 1 
+            self.num_of_leaves[client_id] = np.max (np.take(self.leaf_of_DS [client_id], range (self.num_of_DSs))) + 1 
             DSs_in_leaf = [[]] # For the current client_id, DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
             for leaf_num in range (self.num_of_leaves[client_id]):
                 DSs_in_leaf.append ([])
             for ds_id in (range(self.num_of_DSs)):
-                DSs_in_leaf[self.lg_client_DS_cost[client_id][ds_id]].append(ds_id)
+                DSs_in_leaf[self.leaf_of_DS[client_id][ds_id]].append(ds_id)
             self.DSs_in_leaf.append(DSs_in_leaf)
 
 
@@ -145,6 +161,9 @@ class Simulator(object):
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
     
     def run_trace_opt (self):
+        """
+        Run a full trace as Opt access strat'
+        """
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
@@ -152,22 +171,55 @@ class Simulator(object):
             self.access_opt ()
 
     def run_trace_pgm_fno (self):
+        """
+        Run a full trace where the access strat' is the PGM, as proposed in the journal paper "Access srategies for Network Caching".
+        """
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
-            self.update_mr_of_DS() # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
+            if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
+                self.handle_miss ()
+                continue        
+            self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
             self.access_pgm_fno ()
 
     def run_trace_pgm_fna (self):
+        """
+        Run a full trace where the access strat' is PGM, at its "Staleness-Aware" version. 
+        The simplified, False-Negative-Obvliious alg' of PGM, is detailed in the journal paper "Access srategies for Network Caching".
+        """
         self.PGM_FNA_partition ()
+        self.indications = np.array (range (self.num_of_DSs), dtype = 'bool') 
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.req_cnt += 1
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            self.client_id = self.cur_req.client_id
+            for i in range (self.num_of_DSs):
+                self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
+            self.access_pgm_fna ()
+
+
+    def run_trace_homo_fna (self):
+        return
+
+    def run_trace_homo_fno (self):
+        """
+        Run a full trace where the access strat' is the "potential" alg' from the paper "Access Strategies in Network Caching", 
+        for the special case where the access costs are homogeneous (all of them are 1). 
+        This alg' is staleness-oblivious
+        """
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
-            self.access_pgm_fna ()
+            if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
+                self.handle_miss ()
+                continue        
+            self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
+            self.access_homo_fno ()
 
 
     def start_simulator (self):
@@ -180,6 +232,8 @@ class Simulator(object):
             self.run_trace_pgm_fno ()
             self.gather_statistics ()
             print ('FN miss cnt = ', self.FN_miss_cnt)
+        elif (self.alg_mode == ALG_HOMO_FNO):
+            self.run_trace_homo_fno ()
         elif self.alg_mode == ALG_PGM_FNA:
             self.run_trace_pgm_fna ()
             self.gather_statistics()
@@ -187,35 +241,12 @@ class Simulator(object):
         else: 
             print ('Wrong alg_mode')
 
-    # def start_simulator(self):
-    #     # print ('alg_mode=%d, kloc = %d, missp = %d, insertion_mode=%d' % (self.alg_mode, self.k_loc, self.missp, self.DS_insert_mode))
-
-    #     if (self.alg_mode == ALG_PGM_FNA):
-    #         # For the FNA, all the DSs may be accessed. Hence, the partition stage can be performed only once, for all the DSs, regardless the indications. 
-    #         self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known.
-
-    #     np.random.seed(self.rand_seed)
-    #     for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-    #         if self.DS_insert_mode == 3: # ego mode: n/(n+1) of the requests enter to a random DS. 1/(n+1) of the requests belong to a single "ego" client.
-    #             # re-assign the request to client 0 w.p. 1/(self.num_of_clients+1) and handle it. otherwise, put it in a random DS
-    #             if np.random.rand() < 1/(self.num_of_clients+1):
-    #                 self.req_df.set_value(req_id, 'client_id', 0)
-    #                 self.handle_request(self.req_df.iloc[req_id])
-    #             else:
-    #                 self.insert_key_to_random_DSs(self.req_df.iloc[req_id]) # NOTE: the current imp' of insert_key_to_random_DSs() isn't really random... 
-    #         else: # fix or distributed mode
-    #             self.handle_request(self.req_df.iloc[req_id]) #fix mode (the one that is currently used): assign each request to a single DS, which is picked uar from all DSs  
-    #             if self.DS_insert_mode == 2: # distributed mode
-    #                 self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
-    #     self.gather_statistics()
-    #     print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
-    #              (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
-    #     if (self.alg_mode == ALG_PGM_FNO):
-    #         print ('FN miss cnt = ', self.FN_miss_cnt)
-    #     elif (self.alg_mode == ALG_PGM_FNA):
-    #         print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
         
-    def update_mr_of_DS (self):
+    # Updates self.cur_pos_DS_list, so that it will hold an np.array of the IDs of the DSs with positive ind'
+    def get_indications(self):
+        self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ])
+        
+    def estimate_mr_by_history (self):
         """
         Update the estimated miss rate of each DS, based on the history.
         This func is used ONLY BY FNO alg', as it assumes that a DS is accessed only upon a positive ind'. 
@@ -283,41 +314,44 @@ class Simulator(object):
         """
         return (np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])]).size == 0) # cur_req is indeed not stored in any DS 
 
-    def send_update (self):
+    def access_homo_fno (self):
         """
-        Force all the DSs to send an updated indicator, summarizing their fresh content.
+        Access when costs are homogeneous. The alg' is based on the "potential" alg' from the paper "Access Strategies in Network Caching". 
         """
-        if (DS in self.DS_list):
-            DS.send_update ()
+        #sorted_pos_DS_cost_indices = sorted(self.cur_pos_DS_list, key=self.client_DS_cost[client_id].__getitem__)
+        self.estimate_mr_by_history ()
+        sorted_pos_DS_mr_indices = sorted(self.cur_pos_DS_list, key=self.mr_of_DS.__getitem__)
 
-    def handle_request(self, req):
-        """
-        Handle a user req:
-        - Extract the req id, req cnt and client_id.
-        - Get the indications from all the indicators.
-        - Run a concrete access strategy (\cpi, \epi, PGM_FNA etc.) 
+        # Currently the proposal is to access no DS, resulting in 0 access cost, and an expected miss ratio of 1
+        cur_accs_cost           = 0 
+        cur_expected_miss_ratio = 1
+        cur_expected_total_cost = self.missp
+        cur_sol                 = []
 
-        """
-        self.cur_req = req
-        self.req_cnt += 1
-        if (self.verbose  == 3):
-            # print ('req cnt = {}' .format (self.req_cnt),  file = self.debug_file, flush = True)
-            print ('req cnt = {}' .format (self.req_cnt))
-        self.client_id = self.cur_req.client_id
+        for DS_id in sorted_pos_DS_mr_indices:
+            nxt_accs_cost           = cur_accs_cost + 1
+            nxt_expected_miss_ratio = cur_expected_miss_ratio * self.mr_of_DS[DS_id] 
+            nxt_expected_total_cost = nxt_accs_cost + nxt_expected_miss_ratio * self.missp  
+            if (nxt_expected_total_cost < cur_expected_total_cost): # Adding this DS indeed decreases the expected total cost
+                cur_accs_cost           = nxt_accs_cost
+                cur_expected_miss_ratio = nxt_expected_miss_ratio
+                cur_expected_total_cost = nxt_expected_total_cost
+                cur_sol.append (DS_id)
+            else: # Adding more DSs may only increase the total cost
+                break
 
-        if self.alg_mode == ALG_OPT:
-            self.access_opt ()
-            return
-        self.get_indications() # self.cur_pos_DS_list <- list of DSs with positive indications
-        if self.alg_mode == ALG_PGM_FNO:
-            self.update_mr_of_DS() # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
-            self.access_pgm_fno ()
-        elif self.alg_mode == ALG_PGM_FNA:
-            self.access_pgm_fna ()
-        else: 
-            print ('Wrong alg_mode')
+        # perform access. the function access() returns True if successful, and False otherwise
+        accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in cur_sol])
+        if any(accesses):   #hit
+            self.client_list[self.client_id].hit_cnt += 1
+        else:               # Miss
+            self.handle_miss ()
+        return
 
     def access_opt (self):
+        """
+        Handle a single request, using optimal alg'
+        """
         # get the list of datastores holding the request
         true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
@@ -336,25 +370,17 @@ class Simulator(object):
             # perform access. we know it will be successful
             self.DS_list[access_DS_id].access(self.cur_req.key)
             self.client_list[self.client_id].hit_cnt += 1
-
-        # return
                 
     def access_pgm_fno (self):
         """
         The PGM FNO (false negative oblivious) alg' detailed in the paper: Access Strategies for Network Caching, Journal verison.
         """ 
-        if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
-            self.handle_miss ()
-            return
-        
         # Now we know that there exists at least one positive indication
         self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
         # Partition stage
         ###############################################################################################################
-        # leaf_of_DS (i,j) will hold the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
-        self.leaf_of_DS = np.array(np.floor(np.log2(self.client_DS_cost)))
-        self.leaf_of_DS = self.leaf_of_DS.astype('uint8')
+        # leaf_of_DS (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
 
         # leaves_of_DSs_w_pos_ind will hold the leaves of the DSs with pos' ind'
         cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[self.client_id], self.cur_pos_DS_list)) + 1
@@ -364,7 +390,7 @@ class Simulator(object):
         for leaf_num in range (cur_num_of_leaves):
             DSs_in_leaf.append ([])
         for ds in (self.cur_pos_DS_list):
-            DSs_in_leaf[self.lg_client_DS_cost[self.client_id][ds]].append(ds)
+            DSs_in_leaf[self.leaf_of_DS[self.client_id][ds]].append(ds)
 
         # Generate stage
         ###############################################################################################################
@@ -451,10 +477,7 @@ class Simulator(object):
     def access_pgm_fna (self):
 
         req                     = self.cur_req
-        self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.cur_pos_DS_list) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
-        # self.cur_pos_DS_list = np.array ([DS.ID for DS    in self.DS_list if    (DS.get_indication(self.cur_req.key))])
-        # self.cur_pos_DS_list = np.array ([DS_id for DS_id in self.num_of_DSs if (self.cur_req.key in self.DS_list[DS_id].stale_indicator) ])
-        self.cur_pos_DS_list    = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
+        self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
 
         # Partition stage is done once, statically, based on the DSs' costs
         ###############################################################################################################
@@ -523,16 +546,11 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
-            # if (self.verbose == 2):
-            #     #self.debug_file.write ('req cnt = %d' .format (self.req_cnt)) #, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
-            #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
             self.handle_miss ()
             return
 
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
-        # if (self.verbose == 2):
-        #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         self.client_list[self.client_id].total_access_cost += final_sol.ac
         if (self.verbose == 1):
             self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
@@ -541,16 +559,14 @@ class Simulator(object):
         # perform access. the function DataStore.access() returns True iff the access is a hit
         hit = False
         for DS_id in final_sol.DSs_IDs:
-            if (not (DS_id in self.cur_pos_DS_list)): #A speculative accs 
+            if (not (self.indications[DS_id])): #A speculative accs 
                 self.speculate_accs_cnt += 1
             if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
-                if (not (hit) and (not(DS_id in self.cur_pos_DS_list))): # this is the first hit; for each speculative req, we want to count at most a single hit 
+                if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
                     self.speculate_hit_cnt += 1
                 hit = True
-                # print ("fnr = %.2f, fpr = %.4f" %(self.DS_list[DS_id].fnr_fpr[0], self.DS_list[DS_id].fnr_fpr[1]))
                 self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
                 self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
-                #update_fnr_fpr (self.DS_list[DS_id].fnr_fpr, DS_id) # each hit DS piggybacks to the client the updated estimated fpr, fnr; the client uses this info to update its estimation for the mr0, mr1 of this DS 
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss

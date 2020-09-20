@@ -11,11 +11,11 @@ from collections import defaultdict
 from MyConfig import getTracesPath 
 
 traces_path = getTracesPath()
-input_file_name = 'gradle/short.txt'
+input_file_name = 'gradle/gradle.build-cache_500K_3DSs.txt'
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
 
-num_of_clients = 19
-num_of_locations = 19
+num_of_clients 	 = 3
+num_of_locations = num_of_clients
 
 # generate hashes of URLs. name column 'keys'
 unique_urls = np.unique (df)

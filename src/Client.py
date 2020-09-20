@@ -55,10 +55,11 @@ class Client(object):
         self.num_DS_accessed.append(len(DS_index_list))
         
 
-    def get_mr (self, pos_DS_list):
+#    def get_mr (self, pos_DS_list):
+    def get_mr (self, indications):
         """
         Calculate and return the expected miss prob' of each DS, based on its indication.
-        Input: pos_DS_list - list of the IDs of DSs with positive indications.
+        Input: indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
         Details: The func' does the following:  
         - Increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together  
         - Increment pos_ind_cnt[j] (the cntr of queries to indicator i in the current window), for each indicator j which gave positive indication  
@@ -67,10 +68,7 @@ class Client(object):
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
         self.ind_cnt += 1
-        for i in pos_DS_list:
-            self.pos_ind_cnt[i] +=  1 
-        # if (self.verbose == 2):
-        #     print ('my id is ', self.ID, 'ind_cnt = ', self.ind_cnt, 'pos_ind_cnt = ', self.pos_ind_cnt)
+        self.pos_ind_cnt += indications
         if (self.ind_cnt >= self.estimation_window):
             if (self.first_estimate):
                 self.q_estimation   = self.pos_ind_cnt/self.estimation_window
@@ -82,7 +80,7 @@ class Client(object):
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         for i in range (self.num_of_DSs):
-            if (i in pos_DS_list):
+            if (indications[i]):
                 if (self.fpr[i] == 0): # No false positives at this DS
                     self.mr[i] = 0     #
                 else:
