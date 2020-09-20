@@ -12,8 +12,8 @@ from gen_requests import gen_requests
 from gen_requests import optimal_BF_size_per_DS_size
 # A main file for running a sim of access strategies for different DSs (Data Stores) sizes.
 
-num_of_DSs = 4
-num_of_clients = 4
+num_of_DSs = 19
+num_of_clients = 19
 
 ## This produces a random matrix with a specific value on the diagonal.
 ## Can be used to produce a random distance matrix (with 0 on diag) and a BW matrix (with infty on diag)
@@ -23,14 +23,14 @@ num_of_clients = 4
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 1500
+max_num_of_req      = 1000000
 traces_path         = getTracesPath()
-input_file_name     = 'wiki/wiki1.1190448987_50K_4DSs.csv'
+input_file_name     = 'gradle/gradle.build-cache_500K.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
 
 missp = 100
-k_loc = 1
-DS_size_vals = [1000] #, 400, 600, 800, 1000, 1200, 1400, 1600]
+k_loc = 5
+DS_size_vals = [4000] #, 400, 600, 800, 1000, 1200, 1400, 1600]
 
 ## Generate matrix for the fully homogeneous settings. This would evnetually result in client_DS_cost all 1
 client_DS_dist = np.zeros((num_of_clients,num_of_DSs)) # np.ones((num_of_clients,num_of_DSs)) - np.eye(17)
@@ -48,9 +48,10 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
     for DS_size in DS_size_vals:
         print ('DS_size = %d' %(DS_size))
         DS_size_sim_dict = {}
-        for alg_mode in [sim.ALG_PGM_FNA]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
+        for alg_mode in [sim.ALG_OPT, sim.ALG_PGM_FNO]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
+            print ('running alg mode ', alg_mode)
             tic()
-            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 15, verbose = 0)
+            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, verbose = 0)
             sm.start_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
@@ -59,15 +60,15 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
 
 ## Choose parameters for running simulator    
 # load the OVH network distances and BWs
-# full_path_to_rsrc   = os.getcwd() + "\\..\\resources\\"
-# client_DS_dist_df   = pd.read_csv (full_path_to_rsrc + 'ovh_dist.csv',index_col=0)
-# client_DS_dist      = np.array(client_DS_dist_df)
-# client_DS_BW_df     = pd.read_csv (full_path_to_rsrc + 'ovh_bw.csv',index_col=0)
-# client_DS_BW        = np.array(client_DS_BW_df)
-# bw_regularization   = np.max(np.tril(client_DS_BW,-1)) 
-# alpha = 0.5
-# client_DS_cost      = 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-client_DS_cost = np.array ([ [1,2,3,4], [5,6,7,9],[8,12,15, 17], [2,2,5,8]])
+full_path_to_rsrc   = os.getcwd() + "\\..\\resources\\"
+client_DS_dist_df   = pd.read_csv (full_path_to_rsrc + 'ovh_dist.csv',index_col=0)
+client_DS_dist      = np.array(client_DS_dist_df)
+client_DS_BW_df     = pd.read_csv (full_path_to_rsrc + 'ovh_bw.csv',index_col=0)
+client_DS_BW        = np.array(client_DS_BW_df)
+bw_regularization   = np.max(np.tril(client_DS_BW,-1)) 
+alpha = 0.5
+client_DS_cost      = 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
+# client_DS_cost = np.array ([ [1,2,3,4], [5,6,7,9],[8,12,15, 17], [2,2,5,8]])
 main_sim_dict = run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost)
 
 # client_DS_cost(i,j) will hold the access cost for client i accessing DS j

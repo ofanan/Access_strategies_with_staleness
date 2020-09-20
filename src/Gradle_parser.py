@@ -11,7 +11,7 @@ from collections import defaultdict
 from MyConfig import getTracesPath 
 
 traces_path = getTracesPath()
-input_file_name = 'gradle/gradle.build-cache.txt'
+input_file_name = 'gradle/short.txt'
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
 
 num_of_clients = 19

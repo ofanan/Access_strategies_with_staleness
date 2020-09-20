@@ -131,9 +131,9 @@ class Simulator(object):
             self.avg_DS_accessed_per_req = 0
         else:
             self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
-            if (self.verbose == 1):
-                self.num_DS_accessed     = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
-                self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
+            # if (self.verbose == 1):
+            #     self.num_DS_accessed     = np.sum( [sum(client.num_DS_accessed) for client in self.client_list ] )
+            #     self.avg_DS_accessed_per_req = float(self.num_DS_accessed) / self.access_cnt
         self.non_comp_miss_cnt  = np.sum( [client.non_comp_miss_cnt for client in self.client_list ] )
         self.comp_miss_cnt      = np.sum( [client.comp_miss_cnt for client in self.client_list ] )
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
@@ -392,8 +392,8 @@ class Simulator(object):
         self.client_list[self.client_id].access_cnt += 1
 
         # perform access. the function access() returns True if successful, and False otherwise
-        if (self.verbose == 2):
-            print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
+        # if (self.verbose == 2):
+        #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         accesses = np.array([self.DS_list[DS_id].access(req.key) for DS_id in final_sol.DSs_IDs])
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
@@ -477,16 +477,16 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
-            if (self.verbose == 2):
-                #self.debug_file.write ('req cnt = %d' .format (self.req_cnt)) #, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
-                print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
+            # if (self.verbose == 2):
+            #     #self.debug_file.write ('req cnt = %d' .format (self.req_cnt)) #, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
+            #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
             self.handle_miss ()
             return
 
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
-        if (self.verbose == 2):
-            print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
+        # if (self.verbose == 2):
+        #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         self.client_list[self.client_id].total_access_cost += final_sol.ac
         if (self.verbose == 1):
             self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
