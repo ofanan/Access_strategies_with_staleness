@@ -56,7 +56,9 @@ class Simulator(object):
         self.bpe            = bpe
         self.rand_seed      = rand_seed
         self.DS_insert_mode = DS_insert_mode
-        # self.always_updated_indicator = True if (self.uInterval == 1) else False
+        if (self.DS_insert_mode != 1):
+            print ('sorry, currently only fix insert mode (1) is supported')
+            exit ()
 
         self.num_of_clients     = client_DS_cost.shape[0]
         self.num_of_DSs         = client_DS_cost.shape[1]
@@ -67,7 +69,7 @@ class Simulator(object):
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
         self.client_list        = self.init_client_list ()
-        self.req_cnt            = float(-1)
+        self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.lg_client_DS_cost  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
@@ -139,34 +141,79 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-    
-    def start_simulator(self):
-        # print ('alg_mode=%d, kloc = %d, missp = %d, insertion_mode=%d' % (self.alg_mode, self.k_loc, self.missp, self.DS_insert_mode))
-
-        if (self.alg_mode == ALG_PGM_FNA):
-            # For the FNA, all the DSs may be accessed. Hence, the partition stage can be performed only once, for all the DSs, regardless the indications. 
-            self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known.
-
-        np.random.seed(self.rand_seed)
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            if self.DS_insert_mode == 3: # ego mode: n/(n+1) of the requests enter to a random DS. 1/(n+1) of the requests belong to a single "ego" client.
-                # re-assign the request to client 0 w.p. 1/(self.num_of_clients+1) and handle it. otherwise, put it in a random DS
-                if np.random.rand() < 1/(self.num_of_clients+1):
-                    self.req_df.set_value(req_id, 'client_id', 0)
-                    self.handle_request(self.req_df.iloc[req_id])
-                else:
-                    self.insert_key_to_random_DSs(self.req_df.iloc[req_id]) # NOTE: the current imp' of insert_key_to_random_DSs() isn't really random... 
-            else: # fix or distributed mode
-                self.handle_request(self.req_df.iloc[req_id]) #fix mode (the one that is currently used): assign each request to a single DS, which is picked uar from all DSs  
-                if self.DS_insert_mode == 2: # distributed mode
-                    self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
-        self.gather_statistics()
         print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
-        if (self.alg_mode == ALG_PGM_FNO):
+    
+    def run_trace_opt (self):
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.req_cnt += 1
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            self.client_id = self.cur_req.client_id
+            self.access_opt ()
+
+    def run_trace_pgm_fno (self):
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.req_cnt += 1
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            self.client_id = self.cur_req.client_id
+            self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
+            self.update_mr_of_DS() # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
+            self.access_pgm_fno ()
+
+    def run_trace_pgm_fna (self):
+        self.PGM_FNA_partition ()
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.req_cnt += 1
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            self.client_id = self.cur_req.client_id
+            self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
+            self.access_pgm_fna ()
+
+
+    def start_simulator (self):
+        np.random.seed(self.rand_seed)
+        num_of_req = self.req_df.shape[0]
+        if self.alg_mode == ALG_OPT:
+            self.run_trace_opt ()
+            self.gather_statistics ()
+        if self.alg_mode == ALG_PGM_FNO:
+            self.run_trace_pgm_fno ()
+            self.gather_statistics ()
             print ('FN miss cnt = ', self.FN_miss_cnt)
-        elif (self.alg_mode == ALG_PGM_FNA):
+        elif self.alg_mode == ALG_PGM_FNA:
+            self.run_trace_pgm_fna ()
+            self.gather_statistics()
             print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
+        else: 
+            print ('Wrong alg_mode')
+
+    # def start_simulator(self):
+    #     # print ('alg_mode=%d, kloc = %d, missp = %d, insertion_mode=%d' % (self.alg_mode, self.k_loc, self.missp, self.DS_insert_mode))
+
+    #     if (self.alg_mode == ALG_PGM_FNA):
+    #         # For the FNA, all the DSs may be accessed. Hence, the partition stage can be performed only once, for all the DSs, regardless the indications. 
+    #         self.PGM_FNA_partition () # perform the partition stage for all clients, based on the weights, that are already known.
+
+    #     np.random.seed(self.rand_seed)
+    #     for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+    #         if self.DS_insert_mode == 3: # ego mode: n/(n+1) of the requests enter to a random DS. 1/(n+1) of the requests belong to a single "ego" client.
+    #             # re-assign the request to client 0 w.p. 1/(self.num_of_clients+1) and handle it. otherwise, put it in a random DS
+    #             if np.random.rand() < 1/(self.num_of_clients+1):
+    #                 self.req_df.set_value(req_id, 'client_id', 0)
+    #                 self.handle_request(self.req_df.iloc[req_id])
+    #             else:
+    #                 self.insert_key_to_random_DSs(self.req_df.iloc[req_id]) # NOTE: the current imp' of insert_key_to_random_DSs() isn't really random... 
+    #         else: # fix or distributed mode
+    #             self.handle_request(self.req_df.iloc[req_id]) #fix mode (the one that is currently used): assign each request to a single DS, which is picked uar from all DSs  
+    #             if self.DS_insert_mode == 2: # distributed mode
+    #                 self.insert_key_to_closest_DS(self.req_df.iloc[req_id])
+    #     self.gather_statistics()
+    #     print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
+    #              (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
+    #     if (self.alg_mode == ALG_PGM_FNO):
+    #         print ('FN miss cnt = ', self.FN_miss_cnt)
+    #     elif (self.alg_mode == ALG_PGM_FNA):
+    #         print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
         
     def update_mr_of_DS (self):
         """
@@ -301,7 +348,6 @@ class Simulator(object):
             return
         
         # Now we know that there exists at least one positive indication
-        req = self.cur_req
         self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
         # Partition stage
@@ -388,13 +434,13 @@ class Simulator(object):
         # Add the costs and IDs of the selected DSs to the statistics
         self.client_list[self.client_id].total_access_cost += final_sol.ac
         if (self.verbose == 1):
-            self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
+            self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
         self.client_list[self.client_id].access_cnt += 1
 
         # perform access. the function access() returns True if successful, and False otherwise
         # if (self.verbose == 2):
         #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
-        accesses = np.array([self.DS_list[DS_id].access(req.key) for DS_id in final_sol.DSs_IDs])
+        accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in final_sol.DSs_IDs])
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
@@ -489,7 +535,7 @@ class Simulator(object):
         #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         self.client_list[self.client_id].total_access_cost += final_sol.ac
         if (self.verbose == 1):
-            self.client_list[self.client_id].add_DS_accessed(req.req_id, final_sol.DSs_IDs)
+            self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
         self.client_list[self.client_id].access_cnt += 1
 
         # perform access. the function DataStore.access() returns True iff the access is a hit
@@ -497,7 +543,7 @@ class Simulator(object):
         for DS_id in final_sol.DSs_IDs:
             if (not (DS_id in self.cur_pos_DS_list)): #A speculative accs 
                 self.speculate_accs_cnt += 1
-            if (self.DS_list[DS_id].access(req.key)): # hit
+            if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
                 if (not (hit) and (not(DS_id in self.cur_pos_DS_list))): # this is the first hit; for each speculative req, we want to count at most a single hit 
                     self.speculate_hit_cnt += 1
                 hit = True
