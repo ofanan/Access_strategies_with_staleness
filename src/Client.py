@@ -39,8 +39,10 @@ class Client(object):
         self.zeros_ar           = np.zeros (self.num_of_DSs) 
         self.ones_ar            = np.ones  (self.num_of_DSs) 
         self.redundan_coef      = k_loc / self.num_of_DSs # Redundancy coefficient, representing the level of redundancy of stored items
-        self.use_redundan_coef  = use_redundan_coef # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
-
+        self.use_redundan_coef  = False  
+        if (use_redundan_coef and self.redundan_coef > math.exp(1)):
+            self.use_redundan_coef  = True # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
+            self.redundan_coef      = math.log (self.redundan_coef)
         # Debug
         # dictionary describing for every req_id of client: 0: init, 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer beta, 4: no pos ind, pay beta
         # self.action 			= {}
