@@ -23,7 +23,7 @@ num_of_clients  = num_of_DSs
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 500
+max_num_of_req      = 1000
 traces_path         = getTracesPath()
 input_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
@@ -33,7 +33,7 @@ k_loc = 1
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-DS_size_vals = [4000] #, 400, 600, 800, 1000, 1200, 1400, 1600]
+DS_size_vals = [4000] 
 
 ## Generate matrix for the fully homogeneous settings. This would evnetually result in client_DS_cost all 1
 client_DS_dist = np.zeros((num_of_clients,num_of_DSs)) # np.ones((num_of_clients,num_of_DSs)) - np.eye(17)

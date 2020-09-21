@@ -82,9 +82,9 @@ class Simulator(object):
 
         self.alg_mode           = alg_mode
         if (self.DS_costs_are_homo()):
-            if (self.alg_mode == ALG_PGM_FNO):
-                self.alg_mode = ALG_HOMO_FNO
-            elif (self.alg_mode == ALG_PGM_FNA):
+            # if (self.alg_mode == ALG_PGM_FNO):
+            #     self.alg_mode = ALG_HOMO_FNO
+            if (self.alg_mode == ALG_PGM_FNA):
                 self.alg_mode = ALG_HOMO_FNA
             elif (self.alg_mode == ALG_OPT):
                 self.alg_mode = ALG_HOMO_OPT
@@ -228,6 +228,23 @@ class Simulator(object):
             self.access_pgm_fna ()
 
 
+    def run_trace_homo_fno (self):
+        """
+        Run a full trace where the access strat' is the "potential" alg' from the paper "Access Strategies in Network Caching", 
+        for the special case where the access costs are homogeneous (all of them are 1). 
+        This alg' is staleness-oblivious
+        """
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.req_cnt += 1
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            self.client_id = self.cur_req.client_id
+            self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
+            if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
+                self.handle_miss ()
+                continue        
+            self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
+            self.access_homo (sorted (self.cur_pos_DS_list, key=self.mr_of_DS.__getitem__)) #Homogeneous access, where the candidates are only DSs with positive ind'
+
     def run_trace_homo_fna (self):
         """
         Run a full trace where the access strat' is the "potential" alg' from the paper "Access Strategies in Network Caching", 
@@ -261,7 +278,6 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno ()
             self.gather_statistics ()
-            print ('FN miss cnt = ', self.FN_miss_cnt)
         elif (self.alg_mode == ALG_HOMO_FNO):
             self.run_trace_homo_fno ()
             self.gather_statistics ()
