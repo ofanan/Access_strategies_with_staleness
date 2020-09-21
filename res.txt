@@ -1,0 +1,2 @@
+alg_mode = 108, tot_cost=701641.00, tot_access_cost= 43641.00, hit_ratio = 0.87, non_comp_miss_cnt = 2045, comp_miss_cnt = 4535, acces
+s_cnt = 43641
