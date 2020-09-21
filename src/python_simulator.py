@@ -3,10 +3,11 @@ import pandas as pd
 import DataStore
 import Client
 import candidate
-import node
+import node 
 import sys
 import pickle
 import sys
+import random
 
 # Codes for access algorithms
 ALG_OPT         = 1 # Optimal access strategy (perfect indicator)
@@ -18,7 +19,7 @@ ALG_POT         = 6 # Potential-based alg'. See Access Strategies papers.
 ALG_PGM_FNO     = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
 ALG_PGM_FNA     = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
 NUM_OF_ALGS     = 8 # Number of algs'
-ALG_HOMO_OPT    = 107 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
+ALG_HOMO_OPT    = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
 ALG_HOMO_FNO    = 107 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
 ALG_HOMO_FNA    = 108 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
 
@@ -35,7 +36,7 @@ class Simulator(object):
         return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, verbose = self.verbose) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
-        return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose) for i in range(self.num_of_clients)]
+        return [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose, use_redundan_coef = False, k_loc = self.k_loc) for i in range(self.num_of_clients)]
     
     def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, verbose = 0, uInterval = 1):
         """
@@ -54,6 +55,7 @@ class Simulator(object):
         #self.uInterval      = uInterval # update interval
         self.missp          = missp
         self.k_loc          = k_loc
+        self.k_loc_min_1    = k_loc-1 # To speedup some computation, we "precompute" only once k_loc - 1
         self.DS_size        = DS_size
         self.bpe            = bpe
         self.rand_seed      = rand_seed
@@ -80,12 +82,12 @@ class Simulator(object):
 
         self.alg_mode           = alg_mode
         if (self.DS_costs_are_homo()):
-            if (self.alg_mode == ALG_OPT):
-                self.alg_mode = ALG_HOMO_OPT
-            elif (self.alg_mode == ALG_PGM_FNO):
+            if (self.alg_mode == ALG_PGM_FNO):
                 self.alg_mode = ALG_HOMO_FNO
             elif (self.alg_mode == ALG_PGM_FNA):
                 self.alg_mode = ALG_HOMO_FNA
+            elif (self.alg_mode == ALG_OPT):
+                self.alg_mode = ALG_HOMO_OPT
 
         # Statistical parameters (collected / estimated at run time)
         self.total_cost         = float(0)
@@ -109,6 +111,9 @@ class Simulator(object):
 
 
     def DS_costs_are_homo (self):
+        """
+        returns true iff all the DS costs, of all clients, are identical
+        """
         for i in range (self.num_of_clients):
             for j in range (self.num_of_DSs):
                 if (self.client_DS_cost[i][j] != self.client_DS_cost[0][0]):
@@ -160,15 +165,37 @@ class Simulator(object):
         print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d, access_cnt = %d' % 
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt, self.access_cnt)        )
     
-    def run_trace_opt (self):
+
+    def run_trace_hetro_opt (self):
         """
-        Run a full trace as Opt access strat'
+        Run a full trace as Opt access strat' when the DS costs are heterogneous
         """
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
-            self.access_opt ()
+            self.access_hetro_opt ()
+
+    def run_trace_homo_opt (self):
+        """
+        Run a full trace as Opt access strat' when all the DS costs are 1 
+        """
+        self.comp_miss_cnt  = 0
+        self.hit_cnt        = 0
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.req_cnt += 1
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            self.client_id = self.cur_req.client_id
+            self.access_homo_opt ()
+
+        if (self.hit_cnt == 0):
+            print ('warning: total number of DS accesses is 0')
+            self.hit_ratio               = 0
+        else:
+            self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
+        #self.total_cost         = self.hit_cnt + self.missp * self.non_comp_miss_cnt
+        print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
+                 (self.alg_mode, self.hit_cnt + self.missp * self.comp_miss_cnt, self.hit_cnt, self.hit_ratio, self.comp_miss_cnt)        )
 
     def run_trace_pgm_fno (self):
         """
@@ -219,14 +246,19 @@ class Simulator(object):
             self.access_homo (sorted (range (self.num_of_DSs), key=self.mr_of_DS.__getitem__)) #Homogeneous access, where the candidates are only DSs with positive ind'
 
 
-    def start_simulator (self):
+    def run_simulator (self):
+        """
+        Run a simulation, gather statistics and prints outputs
+        """
         np.random.seed(self.rand_seed)
         num_of_req = self.req_df.shape[0]
         print ('running alg mode ', self.alg_mode)
         if self.alg_mode == ALG_OPT:
-            self.run_trace_opt ()
+            self.run_trace_hetro_opt ()
             self.gather_statistics ()
-        if self.alg_mode == ALG_PGM_FNO:
+        elif self.alg_mode == ALG_HOMO_OPT:
+            self.run_trace_homo_opt ()
+        elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno ()
             self.gather_statistics ()
             print ('FN miss cnt = ', self.FN_miss_cnt)
@@ -243,7 +275,7 @@ class Simulator(object):
             self.gather_statistics()
             print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
         else: 
-            print ('Wrong alg_mode')
+            print ('Wrong alg_mode: ', self.alg_mode)
 
         
     # Updates self.cur_pos_DS_list, so that it will hold an np.array of the IDs of the DSs with positive ind'
@@ -354,48 +386,26 @@ class Simulator(object):
         else:               # Miss
             self.handle_miss ()
     
-    # def find_best_homo_sol (self, sorted_list_of_DSs):
-    #     # By default, the proposal is to access no DS, resulting in 0 access cost, and an expected miss ratio of 1
-    #     cur_accs_cost           = 0 
-    #     cur_expected_miss_ratio = 1
-    #     cur_expected_total_cost = self.missp
-    #     cur_sol                 = []
-    #     for DS_id in sorted_list_of_DSs:
-    #         nxt_accs_cost           = cur_accs_cost + 1
-    #         nxt_expected_miss_ratio = cur_expected_miss_ratio * self.mr_of_DS[DS_id] 
-    #         nxt_expected_total_cost = nxt_accs_cost + nxt_expected_miss_ratio * self.missp  
-    #         if (nxt_expected_total_cost < cur_expected_total_cost): # Adding this DS indeed decreases the expected total cost
-    #             cur_accs_cost           = nxt_accs_cost
-    #             cur_expected_miss_ratio = nxt_expected_miss_ratio
-    #             cur_expected_total_cost = nxt_expected_total_cost
-    #             cur_sol.append (DS_id)
-    #         else: # Adding more DSs may only increase the total cost
-    #             break
-    #     return cur_sol
-
-    # def access_homo (self, sol):
-    #     """
-    #     Perform access to the DSs in the suggested sol, and update the state variables accordingly
-    #     """
-    #     if (len(sol) == 0): # the alg' decided not to access any DS
-    #         self.handle_miss ()
-    #         return
-
-    #     # Now we know that the alg' decided to access at least one DS
-    #     self.client_list[self.client_id].access_cnt += 1
-    #     self.client_list[self.client_id].total_access_cost += len(sol)
-    #     # perform access. the function access() returns True if successful, and False otherwise
-    #     accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in sol])
-    #     if any(accesses):   #hit
-    #         self.client_list[self.client_id].hit_cnt += 1
-    #     else:               # Miss
-    #         self.handle_miss ()
         
-
-
-    def access_opt (self):
+    def access_homo_opt (self):
         """
-        Handle a single request, using optimal alg'
+        Handle a single request, using optimal alg', when DS costs are homogeneous (all DS costs equal 1)
+        """
+        # get the list of datastores holding the request
+        true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
+
+        if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
+            self.comp_miss_cnt += 1
+            self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
+        else: 
+            self.DS_list [self.cur_req['%d'%(random.randint (0, true_answer_DS_list.size-1))]].access(self.cur_req.key) # Access a single DS, chosen "randomly" among the 
+            self.hit_cnt += 1
+                
+
+
+    def access_hetro_opt (self):
+        """
+        Handle a single request, using optimal alg', when DS costs are hetrogeneous
         """
         # get the list of datastores holding the request
         true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])

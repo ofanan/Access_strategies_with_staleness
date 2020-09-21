@@ -13,7 +13,7 @@ class Request(object):
         
 class Client(object):
     
-    def __init__(self, ID, num_of_DSs, estimation_window  = 1000, window_alpha = 0.25, verbose = 0):
+    def __init__(self, ID, num_of_DSs, estimation_window  = 1000, window_alpha = 0.25, verbose = 0, use_redundan_coef = False, k_loc = 1):
         """
         Return a Client object with the following attributes:
         """
@@ -38,6 +38,8 @@ class Client(object):
         self.fnr                = np.zeros (self.num_of_DSs) # fnr[i] will hold the estimated False Negative Rate of DS i
         self.zeros_ar           = np.zeros (self.num_of_DSs) 
         self.ones_ar            = np.ones  (self.num_of_DSs) 
+        self.redundan_coef      = k_loc / self.num_of_DSs # Redundancy coefficient, representing the level of redundancy of stored items
+        self.use_redundan_coef  = use_redundan_coef # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
 
         # Debug
         # dictionary describing for every req_id of client: 0: init, 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer beta, 4: no pos ind, pay beta
@@ -87,6 +89,9 @@ class Client(object):
                     self.mr[i] = 1 if (self.q_estimation[i] == 0) else self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i] # if DS i gave pos' ind', then mr[i] will hold the estimated prob' that a datum is not in DS i, given that pos' indication for x        
             else:
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
+                if (self.use_redundan_coef and self.mr[i] != 1):
+                    self.mr[i] = 1 - (1 - self.mr[i]) * self.redundan_coef
+
         self.mr = np.minimum (self.mr, self.ones_ar)
         if (self.verbose == 2):
             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)

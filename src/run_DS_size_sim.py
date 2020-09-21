@@ -23,9 +23,9 @@ num_of_clients  = num_of_DSs
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 300
+max_num_of_req      = 50000
 traces_path         = getTracesPath()
-input_file_name     = 'gradle/gradle.build-cache_500K_3DSs.csv'
+input_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
 
 missp = 100
@@ -54,7 +54,7 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
         for alg_mode in [sim.ALG_PGM_FNA]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, verbose = 0)
-            sm.start_simulator()
+            sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
         main_sim_dict[DS_size] = DS_size_sim_dict
