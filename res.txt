@@ -1,2 +1,100 @@
+DS_size = 10, 4 DSs, missp = 100
+alg_mode = 1, tot_cost=924840.00, 
+alg_mode = 7, tot_cost=925055.00, 
+alg_mode = 8, tot_cost=928006.00, 
+
+DS_size = 10, 4 DSs, missp = 10000?
+alg_mode = 1, tot_cost=91985040.00, 
+alg_mode = 7, tot_cost=91985259.00,
+alg_mode = 8, tot_cost=92295018.00, 
+
+DS_size = 1000, 50K requests, 4 DSs, max_fnr = 0.04?
+alg_mode = 1, tot_cost=249714129.00, tot_access_cost= 164129.00, hit_ratio = 0.50, non_comp_miss_cnt = 0, comp_miss_cnt = 24955, access_cnt = 25036
+alg_mode = 7, tot_cost=249794982.00, tot_access_cost= 164982.00, hit_ratio = 0.50, non_comp_miss_cnt = 8, comp_miss_cnt = 24955, access_cnt = 25106
+alg_mode = 8, tot_cost=250230580.00, tot_access_cost= 670580.00, hit_ratio = 0.50, non_comp_miss_cnt = 1, comp_miss_cnt = 24955, access_cnt = 49057
+num of spec accs =  84950.0 , num of spec hits =  7.0
+Elapsed time: 5822.190688 seconds.Elapsed time: 5837.872127 seconds.
+
+DS_size = 1000
+missp = 1000
+k_loc = 1
+OVH
+alg_mode = 1, tot_cost=152525566.94, tot_access_cost= 2542566.94, hit_ratio = 0.58, non_comp_miss_cnt = 0, comp_miss_cnt = 149983, access_cnt = 207662
+Elapsed time: 159.452155 seconds.
+alg_mode = 7, tot_cost=152790546.70, tot_access_cost= 2590546.70, hit_ratio = 0.58, non_comp_miss_cnt = 214, comp_miss_cnt = 149986, access_cnt = 209455
+Elapsed time: 34030.558646 seconds.
+
+4 DSs, missp=100, 1500 requests
+alg_mode = 7, tot_cost=100503.00, tot_access_cost= 3403.00, hit_ratio = 0.35, non_comp_miss_cnt = 2, comp_miss_cnt = 969, access_cnt = 529
+FN miss cnt =  2.0
+alg_mode = 8, tot_cost=103568.00, tot_access_cost= 6468.00, hit_ratio = 0.35, non_comp_miss_cnt = 2, comp_miss_cnt = 969, access_cnt = 960
+num of spec accs =  846.0 , num of spec hits =  0.0
+
+Gradle, 19 DSs, kloc = 1
+*************************
+DS_size = 4000
+running alg mode  1
+alg_mode = 1, tot_cost=8513690.98, tot_access_cost= 5597990.98, hit_ratio = 0.94, non_comp_miss_cnt = 0, comp_miss_cnt = 29157, access_cnt = 470843
+
+running alg mode  7
+alg_mode = 7, tot_cost=18260603.41, tot_access_cost= 4457003.41, hit_ratio = 0.72, non_comp_miss_cnt = 108879, comp_miss_cnt = 29157, access_cnt = 374259
+FN miss cnt =  108879.0
+
+alg_mode = 8, tot_cost=18984048.39, tot_access_cost= 5120448.39, hit_ratio = 0.72, non_comp_miss_cnt = 109479, comp_miss_cnt = 29157, access_cnt = 386295
+num of spec accs =  370695.0 , num of spec hits =  1606.0
+Elapsed time: 17339.204213 seconds.
+
+Gradle, 19 DSs, kloc = 5
+************************
+$ py run_DS_size_sim.py 
+DS_size = 4000
+alg_mode = 1, tot_cost=5397289.61, tot_access_cost= 2481589.61, hit_ratio = 0.94, non_comp_miss_cnt = 0, comp_miss_cnt = 29157, access_cnt = 470843   
+Elapsed time: 214.091191 seconds.
+
+alg_mode = 7, tot_cost=14588203.87, tot_access_cost= 5838703.87, hit_ratio = 0.83, non_comp_miss_cnt = 58338, comp_miss_cnt = 29157, access_cnt = 458353
+FN miss cnt =  58338.0
+Elapsed time: 49752.673115 seconds.
+
+alg_mode = 8, tot_cost=13396841.22, tot_access_cost= 5748241.22, hit_ratio = 0.85, non_comp_miss_cnt = 47329, comp_miss_cnt = 29157, access_cnt = 485372
+num of spec accs =  363285.0 , num of spec hits =  18832.0
+Elapsed time: 54594.919470 seconds.
+
+
+Gradle, 3 DSs, kloc = 1, missp = 100, max.fpr = max.fnr = 0.1
+*************************************************************
+DS_size = 4000
+alg_mode = 100, tot_cost=498965.00, tot_access_cost= 45465.00, hit_ratio = 0.91, comp_miss_cnt = 4535
+
+alg_mode = 8 (FNA), tot_cost=525337.00, tot_access_cost= 57537.00, hit_ratio = 0.91, non_comp_miss_cnt = 143, comp_miss_cnt = 4535, access_cnt = 49472
+num of spec accs =  13609.0 , num of spec hits =  1748.0
+Elapsed time: 1467.975446 seconds.
+
+alg_mode = 7 (FNO), tot_cost=684284.00, tot_access_cost= 43984.00, hit_ratio = 0.87, non_comp_miss_cnt = 1868, comp_miss_cnt = 4535, access_cnt = 43641
+FN miss cnt =  1868.0
+
 alg_mode = 108, tot_cost=701641.00, tot_access_cost= 43641.00, hit_ratio = 0.87, non_comp_miss_cnt = 2045, comp_miss_cnt = 4535, acces
 s_cnt = 43641
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

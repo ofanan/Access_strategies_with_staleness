@@ -23,7 +23,7 @@ num_of_clients  = num_of_DSs
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 1000
+max_num_of_req      = 5 #0000
 traces_path         = getTracesPath()
 input_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
@@ -49,11 +49,11 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
 
     main_sim_dict = {}
     for DS_size in DS_size_vals:
-        print ('DS_size = %d' %(DS_size))
+        print ('DS_size = %d, missp = %d, ' %(DS_size, missp))
         DS_size_sim_dict = {}
         for alg_mode in [sim.ALG_PGM_FNO]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
             tic()
-            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, verbose = 0)
+            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, use_redundan_coef = True, verbose = 0)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
@@ -71,7 +71,7 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
 # alpha = 0.5
 # client_DS_cost      = 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
 #client_DS_cost = np.array ([ [1,2,3,4], [5,6,7,9],[8,12,15, 17], [2,2,5,8]])
-client_DS_cost = np.empty (shape=(num_of_DSs,num_of_DSs))
+client_DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 client_DS_cost.fill(1)
 main_sim_dict = run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost)
 
