@@ -13,8 +13,8 @@ traces_path = getTracesPath()
 input_file_name = 'wiki/wiki1.1190448987_50K.txt'
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
 
-num_of_clients = 4
-num_of_locations = 4
+num_of_clients   = 3
+num_of_locations = 3
 
 # take only "read" requests
 df = df.loc[df[3] == '-']
@@ -65,8 +65,8 @@ trace_df.columns = ['req_id', 'key', 'client_id']
 
 full_trace_df = pd.concat([ trace_df, permutations_df ], axis=1)
 
-
-full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".csv", index=False, header=True)
+full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".%dDSs.K%d.csv" %(num_of_clients, num_of_locations), index=False, header=True)
+# full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".%d" + num_of_clients + "DSs.K" + num_of_locations + ".csv", index=False, header=True)
 
 ## check memory space used by dataframe
 #trace_df.info(memory_usage='deep')

@@ -23,9 +23,9 @@ num_of_clients  = num_of_DSs
 
 
 ## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 5 #0000
+max_num_of_req      = 50000
 traces_path         = getTracesPath()
-input_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
+input_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
 
 missp = 100
@@ -35,25 +35,18 @@ if (k_loc > num_of_DSs):
     exit ()
 DS_size_vals = [4000] 
 
-## Generate matrix for the fully homogeneous settings. This would evnetually result in client_DS_cost all 1
-client_DS_dist = np.zeros((num_of_clients,num_of_DSs)) # np.ones((num_of_clients,num_of_DSs)) - np.eye(17)
-client_DS_BW = np.ones((num_of_clients,num_of_DSs)) # + np.diag(np.infty * np.ones(num_of_clients))
-bw_regularization = 0. # np.max(np.tril(client_DS_BW,-1))
-
-# Sizes of the bloom filters (number of cntrs), for chosen DS sizes, k=5 hash funcs, and designed false positive rate.
-BF_size_for_DS_size = optimal_BF_size_per_DS_size ()
-
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
-    DS_insert_mode = 1
+    DS_insert_mode = 1 # Currently we use only "fix" mode. See documentation in python_simulator.py
 
     main_sim_dict = {}
     for DS_size in DS_size_vals:
         print ('DS_size = %d, missp = %d, ' %(DS_size, missp))
         DS_size_sim_dict = {}
-        for alg_mode in [sim.ALG_PGM_FNO]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
+        for alg_mode in [sim.ALG_PGM_FNA]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
             tic()
-            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, use_redundan_coef = True, verbose = 0)
+            sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
+                                use_redundan_coef = True, verbose = 0)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm

@@ -93,7 +93,7 @@ class Client(object):
             else:
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
                 if (self.use_redundan_coef and self.mr[i] != 1):
-                    self.mr[i] = 1 - (1 - self.mr[i]) * self.redundan_coef
+                    self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
 
         self.mr = np.minimum (self.mr, self.ones_ar)
         if (self.verbose == 2):
