@@ -169,30 +169,11 @@ class DataStore (object):
         #self.fnr_fpr = [1 - pow ( (B1-Delta[1]) / B1, self.hash_count), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.hash_count)]
         self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.hash_count)
         self.fpr = pow ( B1_st / self.BF_size, self.hash_count)
-        #delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
-        #tmp = (1 - delta[1] - delta[0]) #* P1n
-        #self.fnr_fpr[0] = pow (delta[1] + tmp, self.hash_count) - pow (tmp, self.hash_count) 
-
-        # if (self.verbose  == 3):
-        #     #print ('B1 = {}, Delta = {}, fnr = {}, fpr = {}' .format (B1_up, Delta, self.fnr, self.fpr), file = self.debug_file, flush = True)
-        #     print ('B1 = {}, Delta = {}, fnr = {}, fpr = {}' .format (B1_up, Delta, self.fnr, self.fpr))
-        
-        #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
-            # if (self.verbose  == 3):
-            #     #print ('sending update', file = self.debug_file, flush = True)
-            #     print ('sending update')
-            self.stale_indicator.array = updated_sbf.array
+            if (self.verbose  == 3):
+                print ('DS %d sending update' % (self.ID), file = self.debug_file, flush = True)
+            self.stale_indicator.array = updated_sbf.array # Sending update
             #self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
             self.fnr = 0
             self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
 
-        # Old version, based on fpr_fnr_in_dist_replicas
-        # delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size]
-        # self.fnr_fpr = [self.P1nk - pow (self.P1n - delta[1], self.hash_count), pow (self.P1n + delta[0] - delta[1], self.hash_count)]
-        # #print ('delta0 = ', sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)) / self.BF_size, 'delta1 = ', sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array)) / self.BF_size, 'P1n = ', self.P1n, 'P1nk = ', self.P1nk, 'k = ', self.hash_count, 'fnr_fpr = ', self.fnr_fpr)
-        # if (self.fnr_fpr[0] > self.max_fnr or self.fnr_fpr[1] > self.max_fpr): # either the fpr or the fnr is too high - need to send update
-        #     print ('sending update')
-        #     exit ()
-        #     self.send_update ()
-        #     self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr

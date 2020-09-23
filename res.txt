@@ -60,22 +60,53 @@ num of spec accs =  363285.0 , num of spec hits =  18832.0
 Elapsed time: 54594.919470 seconds.
 
 
-Gradle, 3 DSs, kloc = 1, missp = 100, max.fpr = max.fnr = 0.1
-*************************************************************
-DS_size = 4000
-alg_mode = 100, tot_cost=498965.00, tot_access_cost= 45465.00, hit_ratio = 0.91, comp_miss_cnt = 4535
+Gradle, 3 DSs, kloc = 1, missp = 100, max.fpr = max.fnr = 0.1, DS_size = 4000
+*****************************************************************************
+alg_mode = 100 (Opt), tot_cost=498965.00, tot_access_cost= 45465.00, hit_ratio = 0.91, comp_miss_cnt = 4535
+
+alg_mode = 7 (FNO), tot_cost=684284.00, tot_access_cost= 43984.00, hit_ratio = 0.87, non_comp_miss_cnt = 1868, comp_miss_cnt = 4535, access_cnt = 43641
+FN miss cnt =  1868.0
 
 alg_mode = 8 (FNA), tot_cost=525337.00, tot_access_cost= 57537.00, hit_ratio = 0.91, non_comp_miss_cnt = 143, comp_miss_cnt = 4535, access_cnt = 49472
 num of spec accs =  13609.0 , num of spec hits =  1748.0
 Elapsed time: 1467.975446 seconds.
 
-alg_mode = 7 (FNO), tot_cost=684284.00, tot_access_cost= 43984.00, hit_ratio = 0.87, non_comp_miss_cnt = 1868, comp_miss_cnt = 4535, access_cnt = 43641
-FN miss cnt =  1868.0
 
-alg_mode = 108, tot_cost=701641.00, tot_access_cost= 43641.00, hit_ratio = 0.87, non_comp_miss_cnt = 2045, comp_miss_cnt = 4535, acces
-s_cnt = 43641
+Wiki, 3 DSs, kloc = 1, missp = 100, max.fpr = max.fnr = 0.1, DS_size = 4000, 
+****************************************************************************
+alg_mode = 100, tot_cost=2311348.00, tot_access_cost= 27148.00, hit_ratio = 0.54, comp_miss_cnt = 22842
+Elapsed time: 10.903989 seconds.
 
- 
+alg_mode = 107, tot_cost=2324661.00, tot_access_cost= 33761.00, hit_ratio = 0.54, non_comp_miss_cnt = 67, comp_miss_cnt = 22842
+FN miss cnt =  67
+Elapsed time: 6890.190645 seconds.
+
+alg_mode = 108, tot_cost=2352841.00, tot_access_cost= 61541.00, hit_ratio = 0.54, non_comp_miss_cnt = 70, comp_miss_cnt = 22843
+num of spec accs =  27820 , num of spec hits =  30
+
+132.72.47.203
+132.72.47.204
+tplam3p2D19 
+PuTTy:
+Network error: Software caused connection abort.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

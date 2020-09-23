@@ -73,7 +73,7 @@ class Simulator(object):
         self.use_redundan_coef  = use_redundan_coef
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
-        self.leaf_of_DS  = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
+        self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
@@ -145,9 +145,6 @@ class Simulator(object):
         """
         self.total_access_cost  = np.sum ( [client.total_access_cost for client in self.client_list ] ) 
         self.hit_cnt            = np.sum ( [client.hit_cnt for client in self.client_list ] )
-        # self.access_cnt         = np.sum ( [client.access_cnt for client in self.client_list ] )
-        # if (self.access_cnt == 0):
-        #     self.avg_DS_accessed_per_req = 0
         self.hit_ratio          = float(self.hit_cnt) / self.req_cnt
         self.non_comp_miss_cnt  = np.sum( [client.non_comp_miss_cnt for client in self.client_list ] )
         self.comp_miss_cnt      = np.sum( [client.comp_miss_cnt for client in self.client_list ] )
@@ -166,24 +163,24 @@ class Simulator(object):
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
-        # get the list of datastores holding the request
-        true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
+            # get the list of datastores holding the request
+            true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
-        if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
-            self.client_list[self.client_id].comp_miss_cnt += 1
-            self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
-        else: 
-            # find the cheapest DS holding the request
-            access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[self.client_id] , true_answer_DS_list ) )]
-            # We assume here that the cost of every DS < missp
-            # update variables
-            self.client_list[self.client_id].total_access_cost += self.client_DS_cost[self.client_id][access_DS_id]
-            if (self.verbose == 1):
-                self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
-            self.client_list[self.client_id].access_cnt += 1
-            # perform access. we know it will be successful
-            self.DS_list[access_DS_id].access(self.cur_req.key)
-            self.client_list[self.client_id].hit_cnt += 1
+            if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
+                self.client_list[self.client_id].comp_miss_cnt += 1
+                self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
+            else: 
+                # find the cheapest DS holding the request
+                access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[self.client_id] , true_answer_DS_list ) )]
+                # We assume here that the cost of every DS < missp
+                # update variables
+                self.client_list[self.client_id].total_access_cost += self.client_DS_cost[self.client_id][access_DS_id]
+                if (self.verbose == 1):
+                    self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
+                self.client_list[self.client_id].access_cnt += 1
+                # perform access. we know it will be successful
+                self.DS_list[access_DS_id].access(self.cur_req.key)
+                self.client_list[self.client_id].hit_cnt += 1
 
     def run_trace_opt_homo (self):
         """
@@ -204,7 +201,7 @@ class Simulator(object):
             else: 
                 self.DS_list [self.cur_req['%d'%(random.randint (0, true_answer_DS_list.size-1))]].access(self.cur_req.key) # Access a single DS, chosen "randomly" among the 
                 self.hit_cnt += 1
-            self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
+        self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
         print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
                  (self.alg_mode, self.hit_cnt + self.missp * self.comp_miss_cnt, self.hit_cnt, self.hit_ratio, self.comp_miss_cnt)        )
 
@@ -245,8 +242,8 @@ class Simulator(object):
         for the special case where the access costs are homogeneous (all of them are 1). 
         This alg' is staleness-oblivious
         """
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1
+        for req_id in range(self.req_df.shape[0]): # for each request in the trace...
+            self.req_cnt += 1 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
@@ -270,10 +267,6 @@ class Simulator(object):
                 self.client_list[self.client_id].hit_cnt += 1
             else:               # Miss
                 self.handle_miss ()
-        # self.hit_ratio  = float(self.hit_cnt) / self.req_cnt
-        # self.total_cost = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt)
-        # print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
-        #          (self.alg_mode, self.total_cost, self.hit_cnt, self.hit_ratio, self.comp_miss_cnt))
 
     def run_trace_pgm_fna_homo (self):
         """
@@ -284,7 +277,7 @@ class Simulator(object):
         self.indications = np.array (range (self.num_of_DSs), dtype = 'bool') 
         self.total_access_cost = 0
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1
+            self.req_cnt += 1 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             for i in range (self.num_of_DSs):
@@ -295,7 +288,20 @@ class Simulator(object):
                 self.handle_miss ()
                 continue
             self.client_list[self.client_id].total_access_cost += len(self.sol)
-            self.perform_fna_access ()
+            hit = False
+            for DS_id in self.sol:
+                if (not (self.indications[DS_id])): #A speculative accs 
+                    self.speculate_accs_cost += 1
+                if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
+                    if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
+                        self.speculate_hit_cnt += 1
+                    hit = True
+                    self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
+                    self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
+            if (hit):   
+                self.client_list[self.client_id].hit_cnt += 1
+            else:               # Miss
+                self.handle_miss ()
 
 
     def run_simulator (self):
@@ -612,27 +618,10 @@ class Simulator(object):
         # perform access
         self.sol = final_sol.DSs_IDs
         self.perform_fna_access ()
-        # hit = False
-        # for DS_id in final_sol.DSs_IDs:
-        #     if (not (self.indications[DS_id])): #A speculative accs 
-        #         self.speculate_accs_cnt += 1
-        #     if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
-        #         if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
-        #             self.speculate_hit_cnt += 1
-        #         hit = True
-        #         self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
-        #         self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
-        # if (hit):   
-        #     self.client_list[self.client_id].hit_cnt += 1
-        # else:               # Miss
-        #     self.handle_miss ()
-        # return
-
-    def perform_fna_access (self):
         hit = False
-        for DS_id in self.sol:
+        for DS_id in final_sol.DSs_IDs:
             if (not (self.indications[DS_id])): #A speculative accs 
-                self.speculate_accs_cnt += 1
+                self.speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id]
             if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
                 if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
                     self.speculate_hit_cnt += 1
@@ -643,4 +632,4 @@ class Simulator(object):
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
             self.handle_miss ()
-        return
+
