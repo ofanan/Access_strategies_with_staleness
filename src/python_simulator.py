@@ -36,9 +36,11 @@ class Simulator(object):
             
     def init_client_list(self):
         self.client_list = [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose, 
-        use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc) for i in range(self.num_of_clients)]
+        use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp) 
+        for i in range(self.num_of_clients)]
     
-    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, use_redundan_coef = False, verbose = 0):
+    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
+                 use_redundan_coef = False, use_adaptive_alg = True, verbose = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -53,7 +55,6 @@ class Simulator(object):
         """
         self.missp          = missp
         self.k_loc          = k_loc
-        self.k_loc_min_1    = k_loc-1 # To speedup some computation, we "precompute" only once k_loc - 1
         self.DS_size        = DS_size
         self.bpe            = bpe
         self.rand_seed      = rand_seed
@@ -71,6 +72,7 @@ class Simulator(object):
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
         self.use_redundan_coef  = use_redundan_coef
+        self.use_adaptive_alg   = use_adaptive_alg
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
@@ -82,8 +84,6 @@ class Simulator(object):
         if (self.DS_costs_are_homo()):
             if (self.alg_mode == ALG_PGM_FNO):
                 self.alg_mode = ALG_PGM_FNO_HOMO
-            if (self.alg_mode == ALG_PGM_FNA):
-                self.alg_mode = ALG_PGM_FNA_HOMO
             elif (self.alg_mode == ALG_OPT):
                 self.alg_mode = ALG_OPT_HOMO
         self.init_client_list ()
@@ -96,8 +96,6 @@ class Simulator(object):
         self.high_cost_mp_cnt   = 0 # counts the misses for cases where accessing DSs was too costly, so the alg' decided to access directly the mem
         self.comp_miss_cnt      = 0
         self.non_comp_miss_cnt  = 0
-        self.speculate_accs_cnt = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
-        self.speculate_hit_cnt  = 0 # num of hits among speculative accss
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
 
         # Debug / verbose variables
@@ -226,7 +224,7 @@ class Simulator(object):
         The simplified, False-Negative-Obvliious alg' of PGM, is detailed in the journal paper "Access srategies for Network Caching".
         """
         self.PGM_FNA_partition ()
-        self.indications = np.array (range (self.num_of_DSs), dtype = 'bool') 
+            
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
@@ -274,8 +272,6 @@ class Simulator(object):
         for the special case where the access costs are homogeneous (all of them are 1). 
         This alg' is staleness-aware
         """
-        self.indications = np.array (range (self.num_of_DSs), dtype = 'bool') 
-        self.total_access_cost = 0
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
@@ -290,11 +286,10 @@ class Simulator(object):
             self.client_list[self.client_id].total_access_cost += len(self.sol)
             hit = False
             for DS_id in self.sol:
-                if (not (self.indications[DS_id])): #A speculative accs 
-                    self.speculate_accs_cost += 1
+                self.client_list [self.client_id].speculate_accs_cost += not (self.indications[DS_id])
                 if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
                     if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
-                        self.speculate_hit_cnt += 1
+                        self.client_list [self.client_id].speculate_hit_cnt += 1
                     hit = True
                     self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
                     self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
@@ -325,11 +320,14 @@ class Simulator(object):
             self.gather_statistics ()
             print ('FN miss cnt = ', self.FN_miss_cnt)
         elif self.alg_mode == ALG_PGM_FNA:
-            self.run_trace_pgm_fna_hetro ()
-            self.gather_statistics()
-            print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
-        elif self.alg_mode == ALG_PGM_FNA_HOMO:
-            self.run_trace_pgm_fna_homo ()
+            self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
+            self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
+            self.speculate_hit_cnt      = 0 # num of hits among speculative accss
+            self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool') 
+            if (self.DS_costs_are_homo()):
+                self.run_trace_pgm_fna_homo ()
+            else:
+                self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
             print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
         else: 
@@ -400,7 +398,7 @@ class Simulator(object):
         insert key to all k_loc DSs, which are defined by the input (parsed) trace
         """
         for i in range(self.k_loc):
-            self.DS_list[self.cur_req['%d'%i]].insert (self.cur_req.key) 
+            self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, req_cnt = self.req_cnt) 
             
     def is_compulsory_miss (self):
         """

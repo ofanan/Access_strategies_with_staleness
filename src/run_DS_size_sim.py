@@ -15,15 +15,7 @@ from gen_requests import optimal_BF_size_per_DS_size
 num_of_DSs      = 3
 num_of_clients  = num_of_DSs
 
-## This produces a random matrix with a specific value on the diagonal.
-## Can be used to produce a random distance matrix (with 0 on diag) and a BW matrix (with infty on diag)
-#def gen_rand_matrix(num, diag_value = 0, max_dist = 30):
-#    a = np.tril(np.random.randint(1,max_dist,(num,num)), k=-1)
-#    return a + np.transpose(a) + np.diag(diag_value * np.ones(num))
-
-
-## Generate the requests to be fed into the simulation. For debugging / shorter runs, pick a prefix of the trace, of length max_trace_length
-max_num_of_req      = 50#0 #00
+max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
 input_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
@@ -34,6 +26,7 @@ if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
 DS_size_vals = [4000] 
+alg_modes = [sim.ALG_PGM_FNA] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]
 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
@@ -43,10 +36,10 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
     for DS_size in DS_size_vals:
         print ('DS_size = %d, missp = %d, ' %(DS_size, missp))
         DS_size_sim_dict = {}
-        for alg_mode in [sim.ALG_PGM_FNO]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]:
+        for alg_mode in alg_modes:
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
-                                use_redundan_coef = True, verbose = 3)
+                                use_redundan_coef = True, verbose = 0)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm

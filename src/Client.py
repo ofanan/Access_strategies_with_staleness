@@ -14,7 +14,8 @@ class Request(object):
         
 class Client(object):
     
-    def __init__(self, ID, num_of_DSs, estimation_window  = 1000, window_alpha = 0.25, verbose = 0, use_redundan_coef = False, k_loc = 1):
+    def __init__(self, ID, num_of_DSs, estimation_window  = 1000, window_alpha = 0.25, verbose = 0, 
+                use_redundan_coef = False, k_loc = 1, use_adaptive_alg = False, missp = 100):
         """
         Return a Client object with the following attributes:
         """
@@ -27,7 +28,6 @@ class Client(object):
         self.access_cnt         = 0
         self.total_access_cost  = 0
 
-        # self.cur_mr_list 		= {} # dictionary containing the mr list req_id of client
         self.mr                 = np.zeros (self.num_of_DSs) # mr[i] will hold the estimated prob' of a miss, given the ind' of DS[i]'s indicator
         self.ind_cnt            = np.uint16 (0)  # Number of indications requested by this client during this window 
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
@@ -41,6 +41,12 @@ class Client(object):
         self.ones_ar            = np.ones  (self.num_of_DSs) 
         self.redundan_coef      = k_loc / self.num_of_DSs # Redundancy coefficient, representing the level of redundancy of stored items
         self.use_redundan_coef  = False  
+        self.speculate_hit_cnt  = 0
+        self.speculate_accs_cost = 0
+        self.use_adaptive_alg   = use_adaptive_alg
+        self.missp              = missp
+        self.throttle           = False
+
         if (use_redundan_coef and self.redundan_coef > math.exp(1)):
             self.use_redundan_coef  = True # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
             self.redundan_coef      = math.log (self.redundan_coef)
@@ -84,6 +90,12 @@ class Client(object):
             self.ind_cnt     = 0
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
+        if (self.use_adaptive_alg):
+            if (self.speculate_accs_cost > 10 * self.missp and self.speculate_hit_cnt < 10): #Collected enough history, and realized that we only loose from speculations
+                self.throttle             = True
+                self.speculative_efficiency_factor = self.speculate_hit_cnt * self.missp / self.speculate_accs_cost  
+                self.speculate_accs_cost  = 0
+                self.speculate_hit_cnt    = 0
         for i in range (self.num_of_DSs):
             if (indications[i]):
                 if (self.fpr[i] == 0): # No false positives at this DS
@@ -94,6 +106,8 @@ class Client(object):
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
                 if (self.use_redundan_coef and self.mr[i] != 1):
                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
+                if (self.throttle):
+                    self.mr[i] = 1 - (1 - self.mr[i]) * self.speculative_efficiency_factor
 
         self.mr = np.minimum (self.mr, self.ones_ar)
         if (self.verbose == 2):

@@ -41,7 +41,7 @@ class DataStore (object):
         self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
-        self.verbose                = verbose if self.ID==0 else 0
+        self.verbose                = verbose #if self.ID==0 else 0
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
 
@@ -76,7 +76,7 @@ class DataStore (object):
                 self.fp_events_cnt[-1] += 1
             return False
 
-    def insert(self, key, use_indicator = True):
+    def insert(self, key, use_indicator = True, req_cnt = -1):
         """
         - Inserts a key to the cache
         - Update the indicator
@@ -95,7 +95,7 @@ class DataStore (object):
             self.cache[key] = key
             if (use_indicator):
                 self.updated_indicator.add(key)
-                self.estimate_fnr_fpr (key) # Update the estimates of fpr and fnr, and check if it's time to send an update
+                self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
             return True
             
 
@@ -156,10 +156,11 @@ class DataStore (object):
             print (i.key)
     
 
-    def estimate_fnr_fpr (self, key = -1):
+    def estimate_fnr_fpr (self, req_cnt = -1, key = -1):
         """
         Estimates the fnr and fpr, based on Theorems 3 and 4 in the paper: "False Rate Analysis of Bloom Filter Replicas in Distributed Systems".
         The new values are written to self.fnr_fpr, where self.fnr_fpr[0] is the fnr, and self.fnr_fpr[1] is the fpr
+        The optional inputs req_cnt and key are used only for debug 
 
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
@@ -171,9 +172,9 @@ class DataStore (object):
         self.fpr = pow ( B1_st / self.BF_size, self.hash_count)
         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
             if (self.verbose  == 3):
-                print ('DS %d sending update' % (self.ID), file = self.debug_file, flush = True)
+                #print ('req = %d. DS %d sending update' % (req_cnt, self.ID), file = self.debug_file, flush = True)
+                print ('req = %d. DS %d sending update' % (req_cnt, self.ID))
             self.stale_indicator.array = updated_sbf.array # Sending update
-            #self.fnr_fpr = [0, self.stale_indicator.get_designed_fpr()] # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
             self.fnr = 0
             self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
 
