@@ -15,7 +15,7 @@ from gen_requests import optimal_BF_size_per_DS_size
 num_of_DSs      = 3
 num_of_clients  = num_of_DSs
 
-max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 12000# 50000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
 input_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
 requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
@@ -39,7 +39,7 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
         for alg_mode in alg_modes:
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
-                                use_redundan_coef = False, use_adaptive_alg = False, verbose = 3)
+                                use_redundan_coef = False, use_adaptive_alg = False, verbose = 0)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
@@ -59,7 +59,10 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
 #client_DS_cost = np.array ([ [1,2,3,4], [5,6,7,9],[8,12,15, 17], [2,2,5,8]])
 client_DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 client_DS_cost.fill(1)
-main_sim_dict = run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost)
+#main_sim_dict = run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost)
+indications = np.array (range (2), dtype = 'bool') 
+indications = [True, False]
+print ('indications = ', indications)
 
 # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
 # time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")

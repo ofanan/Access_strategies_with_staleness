@@ -99,7 +99,7 @@ class Simulator(object):
             self.avg_DS_accessed_per_req = float(0)
         if (self.verbose == 3):
             if (self.alg_mode == ALG_PGM_FNA):
-                self.debug_file = open ("../res/fnaa.txt", "w", buffering=1)
+                self.debug_file = open ("../res/fna.txt", "w", buffering=1)
             elif (self.alg_mode == ALG_PGM_FNO):
                 self.debug_file = open ("../res/fno.txt", "w", buffering=1)
             
@@ -210,7 +210,7 @@ class Simulator(object):
             self.req_cnt += 1
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
-            self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
+            self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
             if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
                 if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
                     print ('req_cnt = %d. no pos indication miss' % (self.req_cnt), file = self.debug_file, flush = True)
@@ -232,6 +232,7 @@ class Simulator(object):
             self.client_id = self.cur_req.client_id
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
+            self.mr_of_DS  = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
             self.access_pgm_fna_hetro ()
 
 
@@ -330,10 +331,6 @@ class Simulator(object):
             print ('Wrong alg_mode: ', self.alg_mode)
 
         
-    # Updates self.cur_pos_DS_list, so that it will hold an np.array of the IDs of the DSs with positive ind'
-    def get_indications(self):
-        self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ])
-        
     def estimate_mr_by_history (self):
         """
         Update the estimated miss rate of each DS, based on the history.
@@ -431,13 +428,15 @@ class Simulator(object):
         The PGM FNO (false negative oblivious) alg' detailed in the paper: Access Strategies for Network Caching, Journal verison.
         """ 
         # Now we know that there exists at least one positive indication
-        self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
+        #self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
         # Partition stage
         ###############################################################################################################
         # leaf_of_DS (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
 
         # leaves_of_DSs_w_pos_ind will hold the leaves of the DSs with pos' ind'
+        if (self.verbose ==3 and self.req_cnt > 11807):
+            print ('cur_pos_DS_list = ', self.cur_pos_DS_list)
         cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[self.client_id], self.cur_pos_DS_list)) + 1
 
         # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
@@ -509,7 +508,7 @@ class Simulator(object):
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
             if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                print ('req_cnt = %d. 0 len miss' % (self.req_cnt), file = self.debug_file, flush = True)
+                print ('req_cnt = %d. len 0 miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
             return
 
@@ -528,7 +527,7 @@ class Simulator(object):
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
             if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                print ('req_cnt = %d. Missed accs miss' % (self.req_cnt), file = self.debug_file, flush = True)
+                print ('req_cnt = %d. Failed accs miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
         return
 
@@ -536,7 +535,8 @@ class Simulator(object):
     def access_pgm_fna_hetro (self):
 
         req                     = self.cur_req
-        self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
+        if (self.verbose ==3 and self.req_cnt > 11807):
+            print ('indications = ', self.indications)
 
         # Partition stage is done once, statically, based on the DSs' costs
         ###############################################################################################################
@@ -606,7 +606,9 @@ class Simulator(object):
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
             if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                print ('req_cnt = %d. len 0 miss' % (self.req_cnt), file = self.debug_file, flush = True)
+                print ('req_cnt = %d. len 0 miss. mr = [%.2f, %.2f, %.2f]' % 
+                        (self.req_cnt, self.client_list[self.client_id].mr[0], self.client_list[self.client_id].mr[1], self.client_list[self.client_id].mr[2]), 
+                        file = self.debug_file, flush = True)
             self.handle_miss ()
             return
 
@@ -631,8 +633,10 @@ class Simulator(object):
                 self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1
-        else:               # Miss
+        else: # Miss
             if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                print ('req_cnt = %d. Failed accs miss' % (self.req_cnt), file = self.debug_file, flush = True)
+                print ('req_cnt = %d. Failed accs miss. mr = [%.2f, %.2f, %.2f]' % 
+                        (self.req_cnt, self.client_list[self.client_id].mr[0], self.client_list[self.client_id].mr[1], self.client_list[self.client_id].mr[2]), 
+                        file = self.debug_file, flush = True)
             self.handle_miss ()
 

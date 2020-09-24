@@ -29,7 +29,7 @@ class Client(object):
         self.total_access_cost  = 0
 
         self.mr                 = np.zeros (self.num_of_DSs) # mr[i] will hold the estimated prob' of a miss, given the ind' of DS[i]'s indicator
-        self.ind_cnt            = np.uint16 (0)  # Number of indications requested by this client during this window 
+        self.ind_cnt            = 0  # Number of indications requested by this client during this window 
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.q_estimation       = 0.5 * np.ones (self.num_of_DSs) # q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.first_estimate     = True # indicates whether this is the first estimation window
@@ -78,16 +78,13 @@ class Client(object):
         - Update mr0 (the expected prob' of a miss, given a negative indication), and mr1 (the expected prob' of a miss, given a positive indication).
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
-        self.ind_cnt += 1
-        self.pos_ind_cnt += indications
-        if (self.ind_cnt >= self.estimation_window):
-            if (self.first_estimate):
-                self.q_estimation   = self.pos_ind_cnt/self.estimation_window
-                self.first_estimate = False 
-            else:
-                self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
+        self.ind_cnt += 1 # Received a new set of indications
+        self.pos_ind_cnt += indications #self.pos_ind_cnt[i]++ iff (indications[i]==True)
+        if (self.ind_cnt < self.estimation_window): # Init period - use merely the data collected so far
+            self.q_estimation   = self.pos_ind_cnt/self.estimation_window
+        elif (self.ind_cnt % self.estimation_window): # run period - update the estimation once in a self.estimation_window time
+            self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
             self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
-            self.ind_cnt     = 0
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):

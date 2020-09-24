@@ -63,8 +63,8 @@ class DataStore (object):
         
         # check to see if an update to the estimated miss-rate is required
         if (self.access_cnt % self.estimation_window == 0):
-            self.update_mr()
-            # self.update_FN_mr()
+            self.update_mr1()
+            # self.update_mr0()
         if key in self.cache: # hit
             self.cache[key] #Touch the element, so as to update the LRU mechanism
             self.hit_cnt += 1
@@ -109,7 +109,7 @@ class DataStore (object):
         self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
         # self.updated_indicator.reset_delta_cntrs ()
 
-    def update_FN_mr(self):
+    def update_mr0(self):
         """
         update the miss-rate estimate of speculative accesses
         done using an exponential moving average
@@ -118,7 +118,7 @@ class DataStore (object):
         self.FN_mr_cur.append ( exponential_window (self.FN_mr_cur[-1], self.FN_mr_estimate[-1], self.window_alpha))  
         self.fn_events_cnt.append(0)
         
-    def update_mr(self):
+    def update_mr1(self):
         """
         update the miss-rate estimate
         done using an exponential moving average.
