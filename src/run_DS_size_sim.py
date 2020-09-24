@@ -39,7 +39,7 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
         for alg_mode in alg_modes:
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
-                                use_redundan_coef = True, verbose = 0)
+                                use_redundan_coef = False, use_adaptive_alg = False, verbose = 3)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm

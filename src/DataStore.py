@@ -171,7 +171,7 @@ class DataStore (object):
         self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.hash_count)
         self.fpr = pow ( B1_st / self.BF_size, self.hash_count)
         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
-            if (self.verbose  == 3):
+            if (self.verbose  == 4):
                 #print ('req = %d. DS %d sending update' % (req_cnt, self.ID), file = self.debug_file, flush = True)
                 print ('req = %d. DS %d sending update' % (req_cnt, self.ID))
             self.stale_indicator.array = updated_sbf.array # Sending update

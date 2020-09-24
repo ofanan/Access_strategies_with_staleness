@@ -19,8 +19,8 @@ ALG_POT             = 6 # Potential-based alg'. See Access Strategies papers.
 ALG_PGM_FNO         = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
 ALG_PGM_FNA         = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
 ALG_OPT_HOMO        = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
-ALG_PGM_FNO_HOMO    = 107 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
-ALG_PGM_FNA_HOMO    = 108 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
+#ALG_PGM_FNO_HOMO    = 107 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
+#ALG_PGM_FNA_HOMO    = 108 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
 
 # client action: updated according to what client does
 # 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
@@ -40,7 +40,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, use_adaptive_alg = True, verbose = 0):
+                 use_redundan_coef = False, use_adaptive_alg = False, verbose = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -81,11 +81,6 @@ class Simulator(object):
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
         
         self.alg_mode           = alg_mode
-        if (self.DS_costs_are_homo()):
-            if (self.alg_mode == ALG_PGM_FNO):
-                self.alg_mode = ALG_PGM_FNO_HOMO
-            elif (self.alg_mode == ALG_OPT):
-                self.alg_mode = ALG_OPT_HOMO
         self.init_client_list ()
 
         # Statistical parameters (collected / estimated at run time)
@@ -103,7 +98,11 @@ class Simulator(object):
             self.num_DS_accessed = float(0) #Currently unused
             self.avg_DS_accessed_per_req = float(0)
         if (self.verbose == 3):
-            self.debug_file = open ("../res/fna.txt", "w", buffering=1)
+            if (self.alg_mode == ALG_PGM_FNA):
+                self.debug_file = open ("../res/fnaa.txt", "w", buffering=1)
+            elif (self.alg_mode == ALG_PGM_FNO):
+                self.debug_file = open ("../res/fno.txt", "w", buffering=1)
+            
 
 
     def DS_costs_are_homo (self):
@@ -213,6 +212,8 @@ class Simulator(object):
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([DS.ID for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
             if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
+                if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
+                    print ('req_cnt = %d. no pos indication miss' % (self.req_cnt), file = self.debug_file, flush = True)
                 self.handle_miss ()
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
@@ -254,7 +255,7 @@ class Simulator(object):
             
             if (len(self.sol) == 0): # the alg' decided not to access any DS
                 self.handle_miss ()
-                return
+                continue        
 
             # Now we know that the alg' decided to access at least one DS
             self.client_list[self.client_id].total_access_cost += len(self.sol)
@@ -309,14 +310,8 @@ class Simulator(object):
         if self.alg_mode == ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
-        elif self.alg_mode == ALG_OPT_HOMO:
-            self.run_trace_opt_homo ()
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
-            self.gather_statistics ()
-            print ('FN miss cnt = ', self.FN_miss_cnt)
-        elif (self.alg_mode == ALG_PGM_FNO_HOMO):
-            self.run_trace_pgm_fno_homo ()
             self.gather_statistics ()
             print ('FN miss cnt = ', self.FN_miss_cnt)
         elif self.alg_mode == ALG_PGM_FNA:
@@ -325,11 +320,12 @@ class Simulator(object):
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss
             self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool') 
             if (self.DS_costs_are_homo()):
-                self.run_trace_pgm_fna_homo ()
+                self.run_trace_pgm_fna_hetro ()
+                # self.run_trace_pgm_fna_homo ()
             else:
                 self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
-            print ('num of spec accs = ', self.speculate_accs_cnt, ', num of spec hits = ', self.speculate_hit_cnt)
+            print ('spec accs cost = ', self.speculate_accs_cost, ', num of spec hits = ', self.speculate_hit_cnt)
         else: 
             print ('Wrong alg_mode: ', self.alg_mode)
 
@@ -360,7 +356,7 @@ class Simulator(object):
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
         self.insert_key_to_DSs ()
-        if (self.alg_mode == ALG_PGM_FNO or self.alg_mode == ALG_PGM_FNO_HOMO):
+        if (self.alg_mode == ALG_PGM_FNO):
             self.FN_miss_cnt += 1
 
     def handle_miss (self):
@@ -370,6 +366,8 @@ class Simulator(object):
         if (self.is_compulsory_miss()):
             self.handle_compulsory_miss ()
         else:
+            # if (self.verbose == 3):
+            #     print ('req_cnt = %d. non-comp-miss' % (self.req_cnt), file = self.debug_file, flush = True)    
             self.handle_non_compulsory_miss ()
 
     def insert_key_to_closest_DS(self, req):
@@ -510,6 +508,8 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
+            if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
+                print ('req_cnt = %d. 0 len miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
             return
 
@@ -527,6 +527,8 @@ class Simulator(object):
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
+            if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
+                print ('req_cnt = %d. Missed accs miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
         return
 
@@ -603,6 +605,8 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
+            if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
+                print ('req_cnt = %d. len 0 miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
             return
 
@@ -615,7 +619,6 @@ class Simulator(object):
 
         # perform access
         self.sol = final_sol.DSs_IDs
-        self.perform_fna_access ()
         hit = False
         for DS_id in final_sol.DSs_IDs:
             if (not (self.indications[DS_id])): #A speculative accs 
@@ -629,5 +632,7 @@ class Simulator(object):
         if (hit):   
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
+            if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
+                print ('req_cnt = %d. Failed accs miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
 
