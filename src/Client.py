@@ -80,11 +80,11 @@ class Client(object):
         """
         self.ind_cnt += 1 # Received a new set of indications
         self.pos_ind_cnt += indications #self.pos_ind_cnt[i]++ iff (indications[i]==True)
-        if (self.ind_cnt < self.estimation_window): # Init period - use merely the data collected so far
+        if (self.ind_cnt < self.estimation_window == 0): # Init period - use merely the data collected so far
             self.q_estimation   = self.pos_ind_cnt/self.estimation_window
         elif (self.ind_cnt % self.estimation_window): # run period - update the estimation once in a self.estimation_window time
             self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
-            self.pos_ind_cnt = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
+            self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):

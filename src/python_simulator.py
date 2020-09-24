@@ -213,7 +213,7 @@ class Simulator(object):
             self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
             if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
                 if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                    print ('req_cnt = %d. no pos indication miss' % (self.req_cnt), file = self.debug_file, flush = True)
+                    print ('req_cnt = {}. no pos indication miss' .format (self.req_cnt), file = self.debug_file, flush = True)
                 self.handle_miss ()
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
@@ -536,7 +536,9 @@ class Simulator(object):
 
         req                     = self.cur_req
         if (self.verbose ==3 and self.req_cnt > 11807):
-            print ('indications = ', self.indications)
+            print ('req cnt = ', self.req_cnt, 'indications = ', self.indications)
+            if (self.verbose ==3 and self.req_cnt > 11807):
+                print ('req cnt = ', self.req_cnt, 'indications = ', self.indications)
 
         # Partition stage is done once, statically, based on the DSs' costs
         ###############################################################################################################
