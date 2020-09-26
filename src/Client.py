@@ -83,14 +83,19 @@ class Client(object):
         if (self.ind_cnt < self.estimation_window ): # Init period - use merely the data collected so far
             self.q_estimation   = self.pos_ind_cnt/self.estimation_window
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
+            if (self.ID == 0):
+                print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
             self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):
-            if (self.speculate_accs_cost > max (10, self.speculate_hit_cnt) * self.missp): #Collected enough history, and realized that we only loose from speculations
+            if (self.speculate_accs_cost > (max (10, self.speculate_hit_cnt) * self.missp))   : #Collected enough history, and realized that we only loose from speculations
                 self.throttle             = True
-                self.throttle_factor = self.speculate_accs_cost / self.speculate_hit_cnt * self.missp    
+                self.throttle_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
+                if (self.ID == 0):
+                    print ('speculate_accs_cost = {}, speculate_hit_cnt throttle_factor = {:.2}' .format(
+                           self.speculate_accs_cost, self.speculate_hit_cnt, self.throttle_factor))
                 self.speculate_accs_cost  = 0
                 self.speculate_hit_cnt    = 0
         for i in range (self.num_of_DSs):
