@@ -68,12 +68,12 @@ Elapsed time: 7120.794869 seconds.
 
 running alg mode  8
 alg_mode = 8, tot_cost=2352841.00, tot_access_cost= 61541.00, hit_ratio = 0.54, non_comp_miss_cnt = 70, comp_miss_cnt = 22843
-num of spec accs =  0 , num of spec hits =  30
+num of spec hits =  30
 Elapsed time: 7223.362950 seconds.
 
 Using throttling:
 alg_mode = 8, tot_cost=2331649.00, tot_access_cost= 37549.00, hit_ratio = 0.54, non_comp_miss_cnt = 98, comp_miss_cnt = 22843
-num of spec accs =  0 , num of spec hits =  0
+num of spec hits =  0
 Elapsed time: 9755.001435 seconds.
 
 	

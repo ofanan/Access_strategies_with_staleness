@@ -148,7 +148,7 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, non_comp_miss_cnt = %d, comp_miss_cnt = %d' % 
+        print ('alg_mode = {}, tot_cost = {}, tot_access_cost= {:0}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}' .format 
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
     
 
@@ -268,46 +268,12 @@ class Simulator(object):
             else:               # Miss
                 self.handle_miss ()
 
-    def run_trace_pgm_fna_homo (self):
-        """
-        Run a full trace where the access strat' is the "potential" alg' from the paper "Access Strategies in Network Caching", 
-        for the special case where the access costs are homogeneous (all of them are 1). 
-        This alg' is staleness-aware
-        """
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1 
-            self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.client_id = self.cur_req.client_id
-            for i in range (self.num_of_DSs):
-                self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
-            self.mr_of_DS           = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
-            self.find_homo_sol (sorted (range (self.num_of_DSs), key=self.mr_of_DS.__getitem__)) #Homogeneous access, where the candidates are only DSs with positive ind'
-            if (len(self.sol) == 0): # the alg' decided to not access any DS
-                self.handle_miss ()
-                continue
-            self.client_list[self.client_id].total_access_cost += len(self.sol)
-            hit = False
-            for DS_id in self.sol:
-                self.client_list [self.client_id].speculate_accs_cost += not (self.indications[DS_id])
-                if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
-                    if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
-                        self.client_list [self.client_id].speculate_hit_cnt += 1
-                    hit = True
-                    self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
-                    self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
-            if (hit):   
-                self.client_list[self.client_id].hit_cnt += 1
-            else:               # Miss
-                self.handle_miss ()
-
-
     def run_simulator (self):
         """
         Run a simulation, gather statistics and prints outputs
         """
         np.random.seed(self.rand_seed)
         num_of_req = self.req_df.shape[0]
-        print ('running alg mode ', self.alg_mode)
         if self.alg_mode == ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
@@ -320,11 +286,7 @@ class Simulator(object):
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss
             self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool') 
-            if (self.DS_costs_are_homo()):
-                self.run_trace_pgm_fna_hetro ()
-                # self.run_trace_pgm_fna_homo ()
-            else:
-                self.run_trace_pgm_fna_hetro ()
+            self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
             print ('spec accs cost = ', self.speculate_accs_cost, ', num of spec hits = ', self.speculate_hit_cnt)
         else: 
@@ -626,10 +588,12 @@ class Simulator(object):
         hit = False
         for DS_id in final_sol.DSs_IDs:
             if (not (self.indications[DS_id])): #A speculative accs 
-                self.speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id]
+                self.                             speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id] # Update the whole system's data (used for statistics)
+                self.client_list [self.client_id].speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id] # Update the relevant client's data (used for adaptive / learning alg') 
             if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
                 if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
-                    self.speculate_hit_cnt += 1
+                    self.                             speculate_hit_cnt += 1  # Update the whole system's speculative hit cnt (used for statistics) 
+                    self.client_list [self.client_id].speculate_hit_cnt += 1  # Update the relevant client's speculative hit cnt (used for adaptive / learning alg')
                 hit = True
                 self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
                 self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  

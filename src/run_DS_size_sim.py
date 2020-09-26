@@ -4,6 +4,7 @@ import pandas as pd
 import datetime
 import sys
 import pickle
+from printf import printf
 from   tictoc import tic, toc
 
 import python_simulator as sim
@@ -15,10 +16,11 @@ from gen_requests import optimal_BF_size_per_DS_size
 num_of_DSs      = 3
 num_of_clients  = num_of_DSs
 
-max_num_of_req      = 12000# 50000 #0 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
-input_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
-requests            = gen_requests (traces_path + input_file_name, max_num_of_req, num_of_DSs)
+#trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
+trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
+requests            = gen_requests (traces_path + trace_file_name, max_num_of_req, num_of_DSs)
 
 missp = 100
 k_loc = 1
@@ -34,12 +36,18 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
 
     main_sim_dict = {}
     for DS_size in DS_size_vals:
-        print ('DS_size = %d, missp = %d, ' %(DS_size, missp))
         DS_size_sim_dict = {}
+        printf ('trace = {} DS_size = {}, missp = {}\n' .format (trace_file_name.split("\\")[0], DS_size, missp))
         for alg_mode in alg_modes:
+            if (alg_mode == sim.ALG_OPT):
+                printf ('alg = Opt, ')
+            elif (alg_mode == sim.ALG_PGM_FNO):
+                printf ('alg = FNO, ')
+            elif (alg_mode == sim.ALG_PGM_FNA):
+                printf ('alg = FNA, ')
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
-                                use_redundan_coef = False, use_adaptive_alg = False, verbose = 3)
+                                use_redundan_coef = False, use_adaptive_alg = True, verbose = 0)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm

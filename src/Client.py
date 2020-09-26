@@ -40,13 +40,13 @@ class Client(object):
         self.zeros_ar           = np.zeros (self.num_of_DSs) 
         self.ones_ar            = np.ones  (self.num_of_DSs) 
         self.redundan_coef      = k_loc / self.num_of_DSs # Redundancy coefficient, representing the level of redundancy of stored items
-        self.use_redundan_coef  = False  
         self.speculate_hit_cnt  = 0
         self.speculate_accs_cost = 0
         self.use_adaptive_alg   = use_adaptive_alg
         self.missp              = missp
         self.throttle           = False
 
+        self.use_redundan_coef  = False  
         if (use_redundan_coef and self.redundan_coef > math.exp(1)):
             self.use_redundan_coef  = True # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
             self.redundan_coef      = math.log (self.redundan_coef)
@@ -80,17 +80,17 @@ class Client(object):
         """
         self.ind_cnt += 1 # Received a new set of indications
         self.pos_ind_cnt += indications #self.pos_ind_cnt[i]++ iff (indications[i]==True)
-        if (self.ind_cnt < self.estimation_window == 0): # Init period - use merely the data collected so far
+        if (self.ind_cnt < self.estimation_window ): # Init period - use merely the data collected so far
             self.q_estimation   = self.pos_ind_cnt/self.estimation_window
-        elif (self.ind_cnt % self.estimation_window): # run period - update the estimation once in a self.estimation_window time
+        elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
             self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):
-            if (self.speculate_accs_cost > 10 * self.missp and self.speculate_hit_cnt < 10): #Collected enough history, and realized that we only loose from speculations
+            if (self.speculate_accs_cost > max (10, self.speculate_hit_cnt) * self.missp): #Collected enough history, and realized that we only loose from speculations
                 self.throttle             = True
-                self.speculative_efficiency_factor = self.speculate_hit_cnt * self.missp / self.speculate_accs_cost  
+                self.throttle_factor = self.speculate_accs_cost / self.speculate_hit_cnt * self.missp    
                 self.speculate_accs_cost  = 0
                 self.speculate_hit_cnt    = 0
         for i in range (self.num_of_DSs):
@@ -104,7 +104,7 @@ class Client(object):
                 if (self.use_redundan_coef and self.mr[i] != 1):
                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
                 if (self.throttle):
-                    self.mr[i] = 1 - (1 - self.mr[i]) * self.speculative_efficiency_factor
+                    self.mr[i] = 1 - (1 - self.mr[i]) / self.throttle_factor
 
         self.mr = np.minimum (self.mr, self.ones_ar)
         if (self.verbose == 2):
