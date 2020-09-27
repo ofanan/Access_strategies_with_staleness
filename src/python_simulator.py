@@ -73,6 +73,8 @@ class Simulator(object):
         self.req_df             = req_df        
         self.use_redundan_coef  = use_redundan_coef
         self.use_adaptive_alg   = use_adaptive_alg
+        if (self.use_adaptive_alg):
+            print ('using adaptive alg (throttling)')
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
@@ -148,7 +150,7 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        print ('alg_mode = {}, tot_cost = {}, tot_access_cost= {:0}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}' .format 
+        print ('alg_mode = {}, tot_cost = {:.0}, tot_access_cost= {:.0}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}' .format 
                  (self.alg_mode, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
     
 

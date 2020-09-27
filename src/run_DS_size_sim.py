@@ -18,16 +18,16 @@ num_of_clients  = num_of_DSs
 
 max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
-# trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
-trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
+trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
+# trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
 requests            = gen_requests (traces_path + trace_file_name, max_num_of_req, num_of_DSs)
 
-missp = 100
+missp = 1000
 k_loc = 1
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-DS_size_vals = [4000] 
+DS_size_vals = [100] 
 alg_modes = [sim.ALG_PGM_FNA] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]
 
 # Loop over all data store sizes, and all algorithms, and collect the data
@@ -47,7 +47,7 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
                 printf ('alg = FNA, ')
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
-                                use_redundan_coef = False, use_adaptive_alg = True, verbose = 0)
+                                use_redundan_coef = False, use_adaptive_alg = False, verbose = 0)
             sm.run_simulator()
             toc()
             DS_size_sim_dict[alg_mode] = sm
