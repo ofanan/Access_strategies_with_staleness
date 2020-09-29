@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
+import sys
+import pickle
+import random
+
 import DataStore
 import Client
 import candidate
 import node 
-import sys
-import pickle
-import sys
-import random
 
 # Codes for access algorithms
 ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
@@ -32,7 +32,7 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, verbose = self.verbose) for i in range(self.num_of_DSs)]
+        return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
         self.client_list = [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose, 
@@ -40,7 +40,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, use_adaptive_alg = False, verbose = 0):
+                 use_redundan_coef = False, use_adaptive_alg = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -67,6 +67,8 @@ class Simulator(object):
         self.num_of_DSs         = client_DS_cost.shape[1]
         self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
         self.estimation_window  = self.DS_size # window for parameters' estimation 
+        self.max_fnr            = max_fnr
+        self.max_fpr            = max_fpr
         self.verbose            = verbose # Used for debug / analysis: a higher level verbose prints more msgs to the Screen / output file.
         self.DS_list            = self.init_DS_list() #DS_list is the list of DSs
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
