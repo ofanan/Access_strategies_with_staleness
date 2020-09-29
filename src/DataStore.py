@@ -8,7 +8,7 @@ from MyConfig import get_optimal_hash_count, exponential_window
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.1, max_fpr = 0.1, verbose = 0):
+    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.03, max_fpr = 0.03, verbose = 0):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 

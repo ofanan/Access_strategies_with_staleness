@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import hashlib
-import matplotlib as plt
 import datetime
 import mmh3
 import sys
@@ -10,8 +9,13 @@ from collections import defaultdict
 
 from MyConfig import getTracesPath 
 
+# Parses a Gradle trace, or any other trace whose format is merely a list of keys (each key in a different line). 
+# Output: a csv file, where:
+#         - the first col. is the keys,
+#         - the 2nd col. is the id of the clients of this req,
+#         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss.traces_path = getTracesPath()
+input_file_name = 'corda/corda.trace_vaultservice_50K.txt'
 traces_path = getTracesPath()
-input_file_name = 'gradle/gradle.build-cache_500K_3DSs.txt'
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
 
 num_of_clients 	 = 3

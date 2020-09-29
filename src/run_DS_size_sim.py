@@ -18,17 +18,17 @@ num_of_clients  = num_of_DSs
 
 max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
-trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
+trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
 requests            = gen_requests (traces_path + trace_file_name, max_num_of_req, num_of_DSs)
 
-missp = 1000
+missp = 100
 k_loc = 1
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-DS_size_vals = [100] 
-alg_modes = [sim.ALG_PGM_FNA] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]
+DS_size_vals = [4000] 
+alg_modes = [sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]
 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):

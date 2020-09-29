@@ -9,6 +9,12 @@ import sys
 
 from MyConfig import getTracesPath 
 
+
+# Parses a Wiki trace, 
+# Output: a csv file, where:
+#         - the first col. is the keys,
+#         - the 2nd col. is the id of the clients of this req,
+#         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss. 
 traces_path = getTracesPath()
 input_file_name = 'wiki/wiki1.1190448987_50K.txt'
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
@@ -52,7 +58,7 @@ permutations_df = pd.DataFrame(permutations_array)
 trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment]))
 trace_df.columns = ['req_id', 'key', 'client_id']
 
-# # For Calculating all the hashes for each unique key in advance, then during sim-time, uncomment the lines below
+# # For pre=computation of all the hashes for each unique key in advance, instead of calculating them during sim-time, uncomment the lines below
 # hash_count = 5 # Assuming 5 hash functions
 # key_hash = []
 # seed = 0
