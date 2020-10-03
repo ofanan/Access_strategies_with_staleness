@@ -1,3 +1,17 @@
+trace = gradle, DS_size = 4000, missp = 100, max fpr = 0.03, max fnr = 0.03
+******************************************************************************
+alg = Opt, alg_mode = 1, tot_cost = 498965.0, tot_access_cost= 45465.0, hit_ratio = 0.91, non_comp_miss_cnt = 0, comp_miss_cnt = 4535
+Elapsed time: 10.056753 seconds.
+
+alg = FNO, alg_mode = 7, tot_cost = 550547.0, tot_access_cost= 45347.0, hit_ratio = 0.9, non_comp_miss_cnt = 517, comp_miss_cnt = 4535
+FN miss cnt =  517
+Elapsed time: 1437.428709 seconds.
+
+alg = FNA, alg_mode = 8, tot_cost = 542632.0, tot_access_cost= 47032.0, hit_ratio = 0.9, non_comp_miss_cnt = 421, comp_miss_cnt = 4535
+spec accs cost =  1749.0 , num of spec hits =  112
+Elapsed time: 1494.454362 seconds.
+
+Finished all sims
 Wiki, DS_size = 1000, 50K requests, 4 DSs, max_fnr = 0.04?
 *************************
 alg_mode = 1, tot_cost=249714129.00, tot_access_cost= 164129.00, hit_ratio = 0.50, non_comp_miss_cnt = 0, comp_miss_cnt = 24955, access_cnt = 25036

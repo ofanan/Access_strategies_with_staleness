@@ -90,10 +90,10 @@ class DataStore (object):
             # check to see if the insertion will cause the LRU key to be removed
             # if so, remove it from the updated indicator
 			# Removal from the cache is implemented automatically by the cache object
-            if (self.cache.currSize() == self.cache.size()):
-                self.updated_indicator.remove(self.cache.get_tail())
             self.cache[key] = key
             if (use_indicator):
+                if (self.cache.currSize() == self.cache.size()):
+                    self.updated_indicator.remove(self.cache.get_tail())
                 self.updated_indicator.add(key)
                 self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
             return True
