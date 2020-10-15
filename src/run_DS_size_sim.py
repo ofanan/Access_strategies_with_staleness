@@ -19,19 +19,19 @@ num_of_clients  = num_of_DSs
 max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
 # trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
-#trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
-trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
+trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
+#trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
 requests            = gen_requests (traces_path + trace_file_name, max_num_of_req, num_of_DSs)
 
-missp = 100
-max_fnr = 0.1
+missp = 1000
+max_fnr = 0.03
 max_fpr = max_fnr
 k_loc = 1
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-DS_size_vals = [20000] 
-alg_modes = [sim.ALG_OPT] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA]
+DS_size_vals = [400] 
+alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, ALG_PGM_FNA_MR1_BY_HIST]
 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
@@ -50,6 +50,8 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
                 printf ('alg = FNO, ')
             elif (alg_mode == sim.ALG_PGM_FNA):
                 printf ('alg = FNA, ')
+            elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
+                printf ('alg = FNA_mr1_by_hist, ')
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
                                 max_fpr = max_fpr, max_fnr = max_fnr, use_redundan_coef = False, use_adaptive_alg = False, verbose = 0)
