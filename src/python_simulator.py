@@ -19,6 +19,7 @@ ALG_POT             = 6 # Potential-based alg'. See Access Strategies papers.
 ALG_PGM_FNO         = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
 ALG_PGM_FNA         = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
 ALG_PGM_FNA_MR1_BY_HIST = 10 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
+ALG_PGM_FNA_MR1_BY_HIST_ADAPT = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
 ALG_OPT_HOMO        = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
 #ALG_PGM_FNO_HOMO    = 107 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
 #ALG_PGM_FNA_HOMO    = 108 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
@@ -41,7 +42,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, use_adaptive_alg = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0):
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -75,9 +76,7 @@ class Simulator(object):
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
         self.use_redundan_coef  = use_redundan_coef
-        self.use_adaptive_alg   = use_adaptive_alg
-        if (self.use_adaptive_alg):
-            print ('using adaptive alg (throttling)')
+        self.use_adaptive_alg   = True if alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
@@ -237,7 +236,7 @@ class Simulator(object):
             self.client_id = self.cur_req.client_id
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
-            if (self.use_adaptive_alg == ALG_PGM_FNA): 
+            if (self.alg_mode == ALG_PGM_FNA): 
                 self.mr_of_DS  = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
             else: #alg_mode = ALG_PGM_FNA_MR1_BY_HIST
                 self.mr_of_DS  = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr_cur[-1] for DS in self.DS_list])) 
@@ -547,10 +546,6 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
-            if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                print ('req_cnt = %d. len 0 miss. mr = [%.2f, %.2f, %.2f]' % 
-                        (self.req_cnt, self.client_list[self.client_id].mr[0], self.client_list[self.client_id].mr[1], self.client_list[self.client_id].mr[2]), 
-                        file = self.debug_file, flush = True)
             self.handle_miss ()
             return
 

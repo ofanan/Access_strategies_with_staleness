@@ -44,7 +44,7 @@ class Client(object):
         self.speculate_accs_cost = 0
         self.use_adaptive_alg   = use_adaptive_alg
         self.missp              = missp
-        self.throttle           = False
+        self.use_spec_factor    = False
 
         self.use_redundan_coef  = False  
         if (use_redundan_coef and self.redundan_coef > math.exp(1)):
@@ -90,11 +90,11 @@ class Client(object):
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):
             if (self.speculate_accs_cost > (max (10, self.speculate_hit_cnt) * self.missp))   : #Collected enough history, and realized that we only loose from speculations
-                self.throttle             = True
-                self.throttle_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
+                self.use_spec_factor             = True
+                self.spec_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
                 if (self.ID == 0):
-                    print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, throttle_factor = {:.2}' .format(
-                           self.speculate_accs_cost, self.speculate_hit_cnt, self.throttle_factor))
+                    print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, spec_factor = {:.2}' .format(
+                           self.speculate_accs_cost, self.speculate_hit_cnt, self.spec_factor))
                 self.speculate_accs_cost  = 0
                 self.speculate_hit_cnt    = 0
         for i in range (self.num_of_DSs):
@@ -107,8 +107,8 @@ class Client(object):
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
                 if (self.use_redundan_coef and self.mr[i] != 1):
                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
-                if (self.throttle):
-                    self.mr[i] = 1 - (1 - self.mr[i]) / self.throttle_factor
+                if (self.use_spec_factor):
+                    self.mr[i] = 1 - (1 - self.mr[i]) / self.spec_factor
 
         self.mr = np.minimum (self.mr, self.ones_ar)
         if (self.verbose == 2):
@@ -123,7 +123,9 @@ class Client(object):
         - Increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together  
         - Increment pos_ind_cnt[j] (the cntr of queries to indicator i in the current window), for each indicator j which gave positive indication  
         - Update the estimation of q. q[i] holds the prob' that indicator i gives positive indication
-        - Update mr0 (the expected prob' of a miss, given a negative indication), and mr1 (the expected prob' of a miss, given a positive indication).
+        - For each DS:
+        - - If indication[i] == True, then assign mr[i] = mr1[i], according to the given history vector. 
+        - - Else, assign mr[i] = mr0[i], as estimated by our anlysis.
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
         self.ind_cnt += 1 # Received a new set of indications
@@ -138,12 +140,12 @@ class Client(object):
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):
-            if (self.speculate_accs_cost > (max (10, self.speculate_hit_cnt) * self.missp))   : #Collected enough history, and realized that we only loose from speculations
-                self.throttle             = True
-                self.throttle_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
+            if (self.speculate_accs_cost > 10 * self.missp)   : #Collected enough history, and realized that we only loose from speculations
+                self.use_spec_factor             = True
+                self.spec_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
                 if (self.ID == 0):
-                    print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, throttle_factor = {:.2}' .format(
-                           self.speculate_accs_cost, self.speculate_hit_cnt, self.throttle_factor))
+                    print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, spec_factor = {:.2}' .format(
+                           self.speculate_accs_cost, self.speculate_hit_cnt, self.spec_factor))
                 self.speculate_accs_cost  = 0
                 self.speculate_hit_cnt    = 0
         for i in range (self.num_of_DSs):
@@ -153,11 +155,11 @@ class Client(object):
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
                 if (self.use_redundan_coef and self.mr[i] != 1):
                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
-                if (self.throttle):
-                    self.mr[i] = 1 - (1 - self.mr[i]) / self.throttle_factor
+                if (self.use_spec_factor):
+                    self.mr[i] = max (1 - (1 - self.mr[i]) / self.spec_factor, mr1[i])
 
         self.mr = np.minimum (self.mr, self.ones_ar)
-        if (self.verbose == 2):
+        if (self.verbose == 3):
             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
         return self.mr
 

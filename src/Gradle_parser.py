@@ -14,11 +14,14 @@ from MyConfig import getTracesPath
 #         - the first col. is the keys,
 #         - the 2nd col. is the id of the clients of this req,
 #         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss.traces_path = getTracesPath()
-input_file_name = 'corda/corda.trace_vaultservice_50K.txt'
-traces_path = getTracesPath()
-df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None)
+# input_file_name = 'corda/corda.trace_vaultservice_50K.txt'
+input_file_name = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req.txt'
+num_of_clients      = 3
+num_of_req = 400000
 
-num_of_clients 	 = 3
+traces_path = getTracesPath()
+df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
+
 num_of_locations = num_of_clients
 
 # generate hashes of URLs. name column 'keys'
@@ -60,7 +63,9 @@ trace_df.columns = ['req_id', 'key', 'client_id']
 # trace_df.columns = ['req_id', 'key', 'client_id', 'hash0', 'hash1', 'hash2', 'hash3', 'hash4']
 
 full_trace_df = pd.concat([ trace_df, permutations_df ], axis=1)
-full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".csv", index=False, header=True)
+
+output_file_name = input_file_name.split (".txt")[0] + '_{:.0f}K_{:.0f}DSs.csv' .format (num_of_req/1000, num_of_clients)
+full_trace_df.to_csv (traces_path + output_file_name, index=False, header=True)
 
 ## check memory space used by dataframe
 #trace_df.info(memory_usage='deep')
