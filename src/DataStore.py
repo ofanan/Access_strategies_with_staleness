@@ -20,7 +20,8 @@ class DataStore (object):
         self.ID                     = ID
         self.size                   = size
         self.bpe                    = bpe
-        self.BF_size                = self.bpe * self.size 
+        self.BF_size                = self.bpe * self.size
+        self.lg_BF_size             = np.log2 (self.BF_size) 
         self.hash_count             = get_optimal_hash_count (self.bpe)
         self.window_alpha           = window_alpha
         self.estimation_window      = estimation_window
@@ -41,6 +42,9 @@ class DataStore (object):
         self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
+        self.delta_th               = self.BF_size / self.lg_BF_size # threshold for number of flipped bits in the BF; below this th, it's cheaper to send only the "delta" (indices of flipped bits), rather than the full ind'
+        self.update_bw              = 0
+        self.num_of_updates         = 0
         self.verbose                = verbose #if self.ID==0 else 0
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
@@ -107,6 +111,7 @@ class DataStore (object):
 
     def send_update (self):
         self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
+        self.num_of_updates += 1
         # self.updated_indicator.reset_delta_cntrs ()
 
     def update_mr0(self):
@@ -164,9 +169,11 @@ class DataStore (object):
 
         """
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
+        # Delta[0] will hold the # of bits that are reset in the updated array, and set in the stale array.
+        # Delta[1] will hold the # of bits that are set in the updated array, and reset in the stale array.
         Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
-        B1_up = sum (updated_sbf.array) # Num of bits set in the updated indicator
-        B1_st = sum (self.stale_indicator.array)
+        B1_up = sum (updated_sbf.array)             # Num of bits set in the updated indicator
+        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
         #self.fnr_fpr = [1 - pow ( (B1-Delta[1]) / B1, self.hash_count), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.hash_count)]
         self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.hash_count)
         self.fpr = pow ( B1_st / self.BF_size, self.hash_count)
@@ -174,7 +181,10 @@ class DataStore (object):
             if (self.verbose  == 4):
                 #print ('req = %d. DS %d sending update' % (req_cnt, self.ID), file = self.debug_file, flush = True)
                 print ('req = %d. DS %d sending update' % (req_cnt, self.ID))
-            self.stale_indicator.array = updated_sbf.array # Sending update
+            size_of_delta_update = sum (Delta)     
+            self.update_bw += (size_of_delta_update * self.lg_BF_size) if (size_of_delta_update < self.delta_th) else self.BF_size     
+            self.stale_indicator.array = updated_sbf.array # Send update
+            self.num_of_updates += 1
             self.fnr = 0
             self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
 

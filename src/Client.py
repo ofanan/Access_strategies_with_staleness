@@ -140,9 +140,9 @@ class Client(object):
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):
-            if (self.speculate_accs_cost > 10 * self.missp)   : #Collected enough history, and realized that we only loose from speculations
-                self.use_spec_factor             = True
-                self.spec_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
+            if (self.speculate_accs_cost > 10 * self.missp or self.speculate_hit_cnt >= 100)   : #Collected enough history, and realized that we only loose from speculations
+                self.use_spec_factor      = True
+                self.spec_factor          = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
                 if (self.ID == 0):
                     print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, spec_factor = {:.2}' .format(
                            self.speculate_accs_cost, self.speculate_hit_cnt, self.spec_factor))

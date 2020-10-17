@@ -32,7 +32,7 @@ k_loc = 1
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-alg_modes = [sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
@@ -41,7 +41,6 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
     main_sim_dict = {}
     for DS_size in DS_size_vals:
         DS_size_sim_dict = {}
-        use_adaptive_alg = True
         printf ('trace = {}, DS_size = {}, missp = {}, max fpr = {}, max fnr = {}\n' .format 
                 (trace_file_name.split("/")[0], DS_size, missp, max_fpr, max_fnr))
         print ("******************************************************************************")
@@ -50,13 +49,9 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
                 printf ('alg = Opt, ')
             elif (alg_mode == sim.ALG_PGM_FNO):
                 printf ('alg = FNO, ')
-            elif (alg_mode == sim.ALG_PGM_FNA):
+            elif (alg_mode == sim.ALG_PGM_FNA or alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST or alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
                 printf ('alg = FNA, ')
-                if (use_adaptive_alg):
-                    printf ('using adaptive alg. ')
-            elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
-                printf ('alg = FNA_mr1_by_hist, ')
-                if (use_adaptive_alg):
+                if (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST or alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
                     printf ('using adaptive alg. ')
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 

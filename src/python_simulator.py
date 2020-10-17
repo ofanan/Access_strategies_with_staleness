@@ -34,7 +34,7 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        return [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose) for i in range(self.num_of_DSs)]
+        self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose) for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
         self.client_list = [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose, 
@@ -72,7 +72,7 @@ class Simulator(object):
         self.max_fnr            = max_fnr
         self.max_fpr            = max_fpr
         self.verbose            = verbose # Used for debug / analysis: a higher level verbose prints more msgs to the Screen / output file.
-        self.DS_list            = self.init_DS_list() #DS_list is the list of DSs
+        self.init_DS_list() #DS_list is the list of DSs
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
         self.use_redundan_coef  = use_redundan_coef
@@ -258,7 +258,8 @@ class Simulator(object):
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
             print ('FN miss cnt = ', self.FN_miss_cnt)
-        elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+            print ('total bw = ', sum (DS.update_bw for DS in self.DS_list))
+        elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss
@@ -266,6 +267,7 @@ class Simulator(object):
             self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
             print ('spec accs cost = ', self.speculate_accs_cost, ', num of spec hits = ', self.speculate_hit_cnt)
+            print ('total bw = ', sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list))
         else: 
             print ('Wrong alg_mode: ', self.alg_mode)
 
