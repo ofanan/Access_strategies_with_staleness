@@ -13,16 +13,16 @@ from gen_requests import gen_requests
 from gen_requests import optimal_BF_size_per_DS_size
 # A main file for running a sim of access strategies for different DSs (Data Stores) sizes.
 
-num_of_DSs      = 3
+num_of_DSs      = 19
 num_of_clients  = num_of_DSs
 
-max_num_of_req      = 400000 #0 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 800000 #0 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
-trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
+trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 #trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
-trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
-requests            = gen_requests (traces_path + trace_file_name, max_num_of_req, num_of_DSs)
+#trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
+requests            = pd.read_csv (traces_path + trace_file_name).head(max_num_of_req)
 
 missp = 100
 max_fnr = 0.03
@@ -32,7 +32,7 @@ k_loc = 1
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+alg_modes = [sim.ALG_PGM_FNO] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
@@ -49,10 +49,12 @@ def run_sim_collection(DS_size_vals, missp, k_loc, requests, client_DS_cost):
                 printf ('alg = Opt, ')
             elif (alg_mode == sim.ALG_PGM_FNO):
                 printf ('alg = FNO, ')
-            elif (alg_mode == sim.ALG_PGM_FNA or alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST or alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+            elif (alg_mode == sim.ALG_PGM_FNA):
                 printf ('alg = FNA, ')
-                if (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST or alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
-                    printf ('using adaptive alg. ')
+            elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
+                printf ('alg = FNA mr1 by hist, ')
+            elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+                printf ('alg = FNA mr1 by hist. using adaptive alg. ')
             tic()
             sm = sim.Simulator(alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc, DS_size = DS_size, bpe = 5, 
                                 max_fpr = max_fpr, max_fnr = max_fnr, use_redundan_coef = False, verbose = 0)
