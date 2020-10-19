@@ -1,4 +1,6 @@
 from __future__ import print_function
 
-def printf(str, *args):
-    print(str % args, end='')
+def printf(output_file, str, *args):
+    print(str % args, end='', file = output_file, flush = True)
+    
+    

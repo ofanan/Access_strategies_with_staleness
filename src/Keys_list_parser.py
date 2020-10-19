@@ -15,9 +15,9 @@ from MyConfig import getTracesPath
 #         - the 2nd col. is the id of the clients of this req,
 #         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss.
 input_file_name = 'wiki/wiki.1190448987.txt'
-num_of_clients      = 19
-kloc = 5
-num_of_req = 800000
+num_of_clients      = 3
+kloc = 1
+num_of_req = 50000
 
 traces_path = getTracesPath()
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)

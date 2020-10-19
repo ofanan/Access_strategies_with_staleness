@@ -85,6 +85,13 @@ spec accs cost =  1216.0 , num of spec hits =  236
 total bw =  2495363.455978041
 Elapsed time: 17504.544351 seconds.
 
+trace = wiki, DS_size = 4000, missp = 100, max fpr = 0.03, max fnr = 0.03
+******************************************************************************
+alg = FNO, tot_cost = 14779408.0, tot_access_cost= 1263608.0, hit_ratio = 0.83, non_comp_miss_cnt = 40571, comp_miss_cnt = 94587
+FN miss cnt =  40571
+total bw =  3320678.6726929364
+Elapsed time: 30095.708440 seconds.
+
 
 
 132.72.47.203

@@ -8,6 +8,7 @@ import DataStore
 import Client
 import candidate
 import node 
+from printf import printf
 
 # Codes for access algorithms
 ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
@@ -42,7 +43,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0):
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, output_file = 5):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -83,7 +84,7 @@ class Simulator(object):
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
-        
+        self.output_file        = output_file
         self.alg_mode           = alg_mode
         self.init_client_list ()
 
@@ -152,7 +153,17 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        print ('tot_cost = {}, tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}' .format 
+        if (self.alg_mode == ALG_OPT):
+            printf (self.output_file, 'alg = Opt, ')
+        elif (self.alg_mode == ALG_PGM_FNO):
+            printf (self.output_file, 'alg = FNO, ')
+        elif (self.alg_mode == ALG_PGM_FNA):
+            printf (self.output_file, 'alg = FNA, ')
+        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+            printf (self.output_file, 'alg = FNA mr1 by hist, ')
+        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+            printf (self.output_file, 'alg = FNA mr1 by hist. using adaptive alg. ')        
+        printf (self.output_file, 'tot_cost = {}, tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
                (self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
     
 
@@ -203,7 +214,7 @@ class Simulator(object):
                 self.DS_list [self.cur_req['%d'%(random.randint (0, true_answer_DS_list.size-1))]].access(self.cur_req.key) # Access a single DS, chosen "randomly" among the 
                 self.hit_cnt += 1
         self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
-        print ('alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
+        print (self.output_file, 'alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
                  (self.alg_mode, self.hit_cnt + self.missp * self.comp_miss_cnt, self.hit_cnt, self.hit_ratio, self.comp_miss_cnt)        )
 
     def run_trace_pgm_fno_hetro (self):
@@ -239,7 +250,7 @@ class Simulator(object):
             if (self.alg_mode == ALG_PGM_FNA): 
                 self.mr_of_DS  = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
             else: #alg_mode = ALG_PGM_FNA_MR1_BY_HIST
-                self.mr_of_DS  = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr_cur[-1] for DS in self.DS_list])) 
+                self.mr_of_DS  = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr_cur for DS in self.DS_list])) 
             self.access_pgm_fna_hetro ()
 
         
@@ -257,8 +268,8 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-            print ('FN miss cnt = ', self.FN_miss_cnt)
-            print ('total bw = ', sum (DS.update_bw for DS in self.DS_list))
+            printf (self.output_file, 'FN miss cnt = {}' .format (self.FN_miss_cnt))
+            printf (self.output_file, 'total bw = {}' .format (sum (DS.update_bw for DS in self.DS_list)))
         elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
@@ -266,8 +277,8 @@ class Simulator(object):
             self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool')
             self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
-            print ('spec accs cost = ', self.speculate_accs_cost, ', num of spec hits = ', self.speculate_hit_cnt)
-            print ('total bw = ', sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list))
+            printf (self.output_file, 'spec accs cost = {}, num of spec hits = {}, ' .format(self.speculate_accs_cost, self.speculate_hit_cnt))
+            printf (self.output_file, 'total bw = {}' .format (sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list)))
         else: 
             print ('Wrong alg_mode: ', self.alg_mode)
 
@@ -277,7 +288,7 @@ class Simulator(object):
         Update the estimated miss rate of each DS, based on the history.
         This estimation is good only for non-speculative accesses, i.e. accesses after a positive ind' (mr[1]) 
         """
-        self.mr_of_DS = np.array([DS.mr_cur[-1] for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
+        self.mr_of_DS = np.array([DS.mr_cur for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
 
     def handle_compulsory_miss (self):
         """
