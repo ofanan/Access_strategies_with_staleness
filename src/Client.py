@@ -172,3 +172,4 @@ class Client(object):
         """
         self.fnr[DS_id] = fnr_fpr[0]
         self.fpr[DS_id] = fnr_fpr[1]
+

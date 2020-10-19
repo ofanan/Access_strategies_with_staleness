@@ -163,7 +163,7 @@ class Simulator(object):
             printf (self.output_file, 'alg = FNA mr1 by hist, ')
         elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             printf (self.output_file, 'alg = FNA mr1 by hist. using adaptive alg. ')        
-        printf (self.output_file, 'tot_cost = {}, tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
+        printf (self.output_file, 'total cost = {}, total access cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
                (self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
     
 
@@ -268,8 +268,8 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-            printf (self.output_file, 'FN miss cnt = {}' .format (self.FN_miss_cnt))
-            printf (self.output_file, 'total bw = {}' .format (sum (DS.update_bw for DS in self.DS_list)))
+            printf (self.output_file, 'FN miss cnt = {}, ' .format (self.FN_miss_cnt))
+            printf (self.output_file, 'total bw = {}\n' .format (sum (DS.update_bw for DS in self.DS_list)))
         elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
@@ -278,7 +278,7 @@ class Simulator(object):
             self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
             printf (self.output_file, 'spec accs cost = {}, num of spec hits = {}, ' .format(self.speculate_accs_cost, self.speculate_hit_cnt))
-            printf (self.output_file, 'total bw = {}' .format (sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list)))
+            printf (self.output_file, 'total bw = {}\n' .format (sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list)))
         else: 
             print ('Wrong alg_mode: ', self.alg_mode)
 
