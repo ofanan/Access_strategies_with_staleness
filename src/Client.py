@@ -1,8 +1,6 @@
 import numpy as np
 import math
 
-from MyConfig import exponential_window
-
 class Request(object):
     """
     """
@@ -35,8 +33,8 @@ class Client(object):
         self.first_estimate     = True # indicates whether this is the first estimation window
         self.estimation_window  = np.uint16 (estimation_window) # Number of requests performed by this client during each window
         self.window_alpha       = window_alpha # window's alpha parameter 
-        self.one_min_alpha      = 1 - self.window_alpha  
-        self.alpha_over_window  = self.window_alpha / self.estimation_window       
+        self.one_min_alpha      = 1 - self.window_alpha
+        self.alpha_over_window  = float (self.window_alpha) / float (self.estimation_window)
         self.fpr                = np.zeros (self.num_of_DSs) # fpr[i] will hold the estimated False Positive Rate of DS i
         self.fnr                = np.zeros (self.num_of_DSs) # fnr[i] will hold the estimated False Negative Rate of DS i
         self.zeros_ar           = np.zeros (self.num_of_DSs) 
@@ -49,9 +47,9 @@ class Client(object):
         self.use_spec_factor    = False
 
         self.use_redundan_coef  = False  
-        if (use_redundan_coef and self.redundan_coef > math.exp(1)):
-            self.use_redundan_coef  = True # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
-            self.redundan_coef      = math.log (self.redundan_coef)
+#         if (use_redundan_coef and self.redundan_coef > math.exp(1)):
+#             self.use_redundan_coef  = True # A boolean variable, determining whether to consider the redundan' coef' while calculating mr_0
+#             self.redundan_coef      = math.log (self.redundan_coef)
         # Debug
         # dictionary describing for every req_id of client: 0: init, 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer beta, 4: no pos ind, pay beta
         # self.action 			= {}
@@ -86,9 +84,9 @@ class Client(object):
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
             if (self.verbose == 3 and self.ID == 0):
                 print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
-            self.q_estimation   = exponential_window (self.q_estimation, self.pos_ind_cnt/self.estimation_window, self.window_alpha)
+            self.q_estimation   = self.alpha_over_window * float(self.pos_ind_cnt) + self.one_min_alpha * self.q_estimation
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
- 
+
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
         if (self.use_adaptive_alg):
             if (self.speculate_accs_cost > (max (10, self.speculate_hit_cnt) * self.missp))   : #Collected enough history, and realized that we only loose from speculations
@@ -107,11 +105,11 @@ class Client(object):
                     self.mr[i] = 1 if (self.q_estimation[i] == 0) else self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i] # if DS i gave pos' ind', then mr[i] will hold the estimated prob' that a datum is not in DS i, given that pos' indication for x        
             else:
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
-                if (self.use_redundan_coef and self.mr[i] != 1):
-                    self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
+#                 if (self.use_redundan_coef and self.mr[i] != 1):
+#                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
                 if (self.use_spec_factor):
                     self.mr[i] = 1 - (1 - self.mr[i]) / self.spec_factor
- 
+
         self.mr = np.minimum (self.mr, self.ones_ar)
         if (self.verbose == 2):
             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
@@ -137,7 +135,7 @@ class Client(object):
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
             if (self.verbose == 3 and self.ID == 0):
                 print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
-            self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation 
+            self.q_estimation   = self.alpha_over_window * float(self.pos_ind_cnt) + self.one_min_alpha * self.q_estimation
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
@@ -157,7 +155,7 @@ class Client(object):
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
 #                 if (self.use_redundan_coef and self.mr[i] != 1):
 #                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
-                if (self.use_spec_factor and self.mr[i] != 1):
+                if (self.use_spec_factor):
                     self.mr[i] = max (1 - (1 - self.mr[i]) / self.spec_factor, mr1[i])
 
         self.mr = np.minimum (self.mr, self.ones_ar)
@@ -172,4 +170,3 @@ class Client(object):
         """
         self.fnr[DS_id] = fnr_fpr[0]
         self.fpr[DS_id] = fnr_fpr[1]
-

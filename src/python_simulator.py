@@ -8,7 +8,7 @@ import DataStore
 import Client
 import candidate
 import node 
-from printf import printf
+from   printf import printf
 
 # Codes for access algorithms
 ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
@@ -42,8 +42,8 @@ class Simulator(object):
         use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, output_file = 5):
+    def __init__(self, output_file, settings_str, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -56,6 +56,8 @@ class Simulator(object):
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
             alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
         """
+        self.output_file    = output_file
+        self.settings_str   = settings_str
         self.missp          = missp
         self.k_loc          = k_loc
         self.DS_size        = DS_size
@@ -84,7 +86,7 @@ class Simulator(object):
         self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
-        self.output_file        = output_file
+        
         self.alg_mode           = alg_mode
         self.init_client_list ()
 
@@ -153,18 +155,8 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        if (self.alg_mode == ALG_OPT):
-            printf (self.output_file, 'alg = Opt, ')
-        elif (self.alg_mode == ALG_PGM_FNO):
-            printf (self.output_file, 'alg = FNO, ')
-        elif (self.alg_mode == ALG_PGM_FNA):
-            printf (self.output_file, 'alg = FNA, ')
-        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
-            printf (self.output_file, 'alg = FNA mr1 by hist, ')
-        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
-            printf (self.output_file, 'alg = FNA mr1 by hist. using adaptive alg. ')        
-        printf (self.output_file, 'total cost = {}, total access cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
-               (self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
+        printf (self.output_file, '\nsettings: {}\ntot_cost = {}, tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
+               (self.settings_str, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
     
 
     def run_trace_opt_hetro (self):
@@ -194,28 +186,28 @@ class Simulator(object):
                 self.DS_list[access_DS_id].access(self.cur_req.key)
                 self.client_list[self.client_id].hit_cnt += 1
 
-    def run_trace_opt_homo (self):
-        """
-        Run a full trace as Opt access strat' when all the DS costs are 1 
-        """
-        self.comp_miss_cnt  = 0
-        self.hit_cnt        = 0
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1
-            self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.client_id = self.cur_req.client_id
-            # get the list of datastores holding the request
-            true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
-
-            if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
-                self.comp_miss_cnt += 1
-                self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
-            else: 
-                self.DS_list [self.cur_req['%d'%(random.randint (0, true_answer_DS_list.size-1))]].access(self.cur_req.key) # Access a single DS, chosen "randomly" among the 
-                self.hit_cnt += 1
-        self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
-        print (self.output_file, 'alg_mode = %d, tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
-                 (self.alg_mode, self.hit_cnt + self.missp * self.comp_miss_cnt, self.hit_cnt, self.hit_ratio, self.comp_miss_cnt)        )
+#     def run_trace_opt_homo (self):
+#         """
+#         Run a full trace as Opt access strat' when all the DS costs are 1 
+#         """
+#         self.comp_miss_cnt  = 0
+#         self.hit_cnt        = 0
+#         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
+#             self.req_cnt += 1
+#             self.cur_req = self.req_df.iloc[self.req_cnt]  
+#             self.client_id = self.cur_req.client_id
+#             # get the list of datastores holding the request
+#             true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
+# 
+#             if true_answer_DS_list.size == 0: # Request is indeed not found in any DS
+#                 self.comp_miss_cnt += 1
+#                 self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
+#             else: 
+#                 self.DS_list [self.cur_req['%d'%(random.randint (0, true_answer_DS_list.size-1))]].access(self.cur_req.key) # Access a single DS, chosen "randomly" among the 
+#                 self.hit_cnt += 1
+#         self.hit_ratio               = float(self.hit_cnt) / self.req_cnt
+#         printf (self.output_file, 'tot_cost=%.2f, tot_access_cost= %.2f, hit_ratio = %.2f, comp_miss_cnt = %d' % 
+#                  (self.hit_cnt + self.missp * self.comp_miss_cnt, self.hit_cnt, self.hit_ratio, self.comp_miss_cnt)        )
 
     def run_trace_pgm_fno_hetro (self):
         """
@@ -268,8 +260,8 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-            printf (self.output_file, 'FN miss cnt = {}, ' .format (self.FN_miss_cnt))
-            printf (self.output_file, 'total bw = {}\n' .format (sum (DS.update_bw for DS in self.DS_list)))
+            printf (self.output_file, 'FN miss cnt = {:.0f}, total bw = {:.2f}\n' .format \
+                   ( self.FN_miss_cnt, sum (DS.update_bw for DS in self.DS_list)))
         elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
@@ -277,10 +269,11 @@ class Simulator(object):
             self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool')
             self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
-            printf (self.output_file, 'spec accs cost = {}, num of spec hits = {}, ' .format(self.speculate_accs_cost, self.speculate_hit_cnt))
-            printf (self.output_file, 'total bw = {}\n' .format (sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list)))
+            printf (self.output_file, ', spec accs cost = {:.0f}, num of spec hits = {:.0f}, total bw = {:.0f}\n' .format \
+                    (self.speculate_accs_cost, self.speculate_hit_cnt, 
+                     sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list)))            
         else: 
-            print ('Wrong alg_mode: ', self.alg_mode)
+            printf (self.output_file, 'Wrong alg_mode: {:.0f}\n' .format (self.alg_mode))
 
         
     def estimate_mr_by_history (self):
@@ -573,10 +566,11 @@ class Simulator(object):
         self.sol = final_sol.DSs_IDs
         hit = False
         for DS_id in final_sol.DSs_IDs:
-            if (not (self.indications[DS_id])): #A speculative accs 
+            is_speculative_accs = not (self.indications[DS_id])
+            if (is_speculative_accs): #A speculative accs 
                 self.                             speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id] # Update the whole system's data (used for statistics)
                 self.client_list [self.client_id].speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id] # Update the relevant client's data (used for adaptive / learning alg') 
-            if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
+            if (self.DS_list[DS_id].access(self.cur_req.key, is_speculative_accs)): # hit
                 if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
                     self.                             speculate_hit_cnt += 1  # Update the whole system's speculative hit cnt (used for statistics) 
                     self.client_list [self.client_id].speculate_hit_cnt += 1  # Update the relevant client's speculative hit cnt (used for adaptive / learning alg')

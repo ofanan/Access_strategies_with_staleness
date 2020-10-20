@@ -24,13 +24,10 @@ class DataStore (object):
         self.lg_BF_size             = np.log2 (self.BF_size) 
         self.hash_count             = get_optimal_hash_count (self.bpe)
         self.window_alpha           = window_alpha
-        self.window_one_min_alpha   = 1 - self.window_alpha
         self.estimation_window      = estimation_window
-        self.alpha_over_window      = self.window_alpha / self.estimation_window
-        self.mr_estimate            = float(0)
-        self.fp_events_cnt          = int (0)
-        self.FN_mr_estimate         = float(0)
-#         self.fn_events_cnt          = int (0)
+        self.one_min_alpha          = 1 - self.window_alpha
+        self.alpha_over_window      = float (self.window_alpha) / float (self.estimation_window)
+        self.fp_events_cnt          = int(0)
         self.access_cnt             = 0
         self.hit_cnt                = 0
         self.max_fnr                = max_fnr
@@ -39,9 +36,7 @@ class DataStore (object):
         self.P1nk                   = pow (self.P1n, self.hash_count)
         self.updated_indicator      = CBF.CountingBloomFilter (size = self.BF_size, hash_count = self.hash_count)
         self.stale_indicator        = self.updated_indicator.gen_SimpleBloomFilter ()         
-        self.mr_cur                 = 0.5 #[self.stale_indicator.get_designed_fpr ()]
-        self.FP_mr_cur              = 0.0
-#         self.FN_mr_cur              = 1.0
+        self.mr_cur                 = 0.5 
         self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
@@ -75,11 +70,10 @@ class DataStore (object):
         if key in self.cache: # hit
             self.cache[key] #Touch the element, so as to update the LRU mechanism
             self.hit_cnt += 1
-#             if (is_speculative_accs):
-#                 self.fn_events_cnt += 1
             return True
-        else: #Miss
-            self.fp_events_cnt += 1
+        else: 
+            if (not(is_speculative_accs)):
+                self.fp_events_cnt += 1
             return False
 
     def insert(self, key, use_indicator = True, req_cnt = -1):
@@ -122,7 +116,8 @@ class DataStore (object):
         done using an exponential moving average.
         Used by False-Negative-Oblivious strategeis, such as the algorithms in the paper "Access Strategies for Network Caching."
         """
-        self.FP_mr_cur = self.alpha_over_window * self.fp_events_cnt + self.window_one_min_alpha * self.FP_mr_cur
+#         self.mr_estimate = (float(self.fp_events_cnt) / self.estimation_window)
+        self.mr_cur = self.alpha_over_window * float(self.fp_events_cnt) + self.one_min_alpha * self.mr_cur 
         self.fp_events_cnt = int(0)
         
     def get_hr(self):
@@ -133,7 +128,7 @@ class DataStore (object):
             return 0
         return self.hit_cnt / self.access_cnt
 
-    def get_mr(self):
+    def get_mr(self): 
         """
         get the current miss-rate estimate
         """
