@@ -14,8 +14,11 @@ class DataStore (object):
             ID:                 datastore ID 
             size:               number of elements that can be stored in the datastore (default 1000)
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
-            estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000, same as size)
-            miss_rate_alpha:    sliding window parameter for miss-rate estimation (default 0.1)
+            window_alpha:    sliding window parameter for miss-rate estimation 
+            estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000)
+            max_fnr, max_fpr : maximum allowed (estimated) fpr, fnr. When the estimated fnr is above max_fnr, or the estimated fpr is above mx_fpr, the DS sends an update.
+                               (FPR: False Positive Ratio, FNR: False Negative Ratio).
+            verbose:           how much details are written to the output
         """
         self.ID                     = ID
         self.size                   = size
@@ -44,6 +47,8 @@ class DataStore (object):
         self.update_bw              = 0
         self.num_of_updates         = 0
         self.verbose                = verbose #if self.ID==0 else 0
+        self.ins_cnt                = np.uint8 (0)
+        self.num_of_insertions_between_estimations = np.uint8(self.size / 1000)
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
 
@@ -95,7 +100,10 @@ class DataStore (object):
                 if (self.cache.currSize() == self.cache.size()):
                     self.updated_indicator.remove(self.cache.get_tail())
                 self.updated_indicator.add(key)
-                self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
+                self.ins_cnt += 1
+                if (self.ins_cnt > self.num_of_insertions_between_estimations): 
+                    self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
+                    self.ins_cnt = np.uint8(0)
             return True
             
 

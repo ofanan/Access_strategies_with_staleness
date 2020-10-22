@@ -269,9 +269,11 @@ class Simulator(object):
             self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool')
             self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
-            printf (self.output_file, ', spec accs cost = {:.0f}, num of spec hits = {:.0f}, total bw = {:.0f}\n' .format \
-                    (self.speculate_accs_cost, self.speculate_hit_cnt, 
-                     sum (DS.update_bw for DS in self.DS_list) + 2 * sum (DS.num_of_updates for DS in self.DS_list)))            
+            printf (self.output_file, ', spec accs cost = {:.0f}, num of spec hits = {:.0f}, avg update bw per req = {:.0f}, avg update interval = {:.0f}\n' .format \
+                    (self.speculate_accs_cost, 
+                     self.speculate_hit_cnt, 
+                     sum (DS.update_bw for DS in self.DS_list) / (self.num_of_DSs * self.req_cnt), 
+                     sum (DS.num_of_updates for DS in self.DS_list) / (self.num_of_DSs * self.req_cnt)))            
         else: 
             printf (self.output_file, 'Wrong alg_mode: {:.0f}\n' .format (self.alg_mode))
 

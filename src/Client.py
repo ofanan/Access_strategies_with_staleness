@@ -84,7 +84,7 @@ class Client(object):
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
             if (self.verbose == 3 and self.ID == 0):
                 print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
-            self.q_estimation   = self.alpha_over_window * float(self.pos_ind_cnt) + self.one_min_alpha * self.q_estimation
+            self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
@@ -135,7 +135,7 @@ class Client(object):
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
             if (self.verbose == 3 and self.ID == 0):
                 print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
-            self.q_estimation   = self.alpha_over_window * float(self.pos_ind_cnt) + self.one_min_alpha * self.q_estimation
+            self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))

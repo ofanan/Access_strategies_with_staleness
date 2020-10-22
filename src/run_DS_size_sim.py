@@ -16,25 +16,28 @@ from gen_requests import optimal_BF_size_per_DS_size
 num_of_DSs      = 3
 num_of_clients  = num_of_DSs
 
-max_num_of_req      = 50000 #0 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 50000 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
-trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
+# trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 #trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
-#trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
+# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
+trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_50K_3DSs.csv'
 requests            = pd.read_csv (traces_path + trace_file_name).head(max_num_of_req)
 
-missp   = 100
+missp   = 1000
 DS_size = 4000 
 max_fnr = 0.1
 max_fpr = max_fnr
 k_loc   = 1
 bpe     = 5
+alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+
+
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-alg_modes = [sim.ALG_PGM_FNO] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 output_file = open ("../res/res.txt", "a")
 settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.fpr{:.2f}.' .format \
@@ -68,8 +71,8 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
         main_sim_dict[DS_size] = DS_size_sim_dict
     return main_sim_dict
 
-## Choose parameters for running simulator    
-# load the OVH network distances and BWs
+# Choose parameters for running simulator    
+#  load the OVH network distances and BWs
 # full_path_to_rsrc   = os.getcwd() + "\\..\\resources\\"
 # client_DS_dist_df   = pd.read_csv (full_path_to_rsrc + 'ovh_dist.csv',index_col=0)
 # client_DS_dist      = np.array(client_DS_dist_df)
@@ -78,7 +81,7 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
 # bw_regularization   = np.max(np.tril(client_DS_BW,-1)) 
 # alpha = 0.5
 # client_DS_cost      = 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-#client_DS_cost = np.array ([ [1,2,3,4], [5,6,7,9],[8,12,15, 17], [2,2,5,8]])
+
 client_DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 client_DS_cost.fill(1)
 main_sim_dict = run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str)
