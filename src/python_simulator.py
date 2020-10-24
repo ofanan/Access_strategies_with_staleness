@@ -104,10 +104,9 @@ class Simulator(object):
         self.init_DS_list() #DS_list is the list of DSs
 
         # Debug / verbose variables
-        if (self.verbose == 1):
+        if (self.verbose == 3):
             self.num_DS_accessed = float(0) #Currently unused
             self.avg_DS_accessed_per_req = float(0)
-        if (self.verbose == 3):
             if (self.alg_mode == ALG_PGM_FNA):
                 self.debug_file = open ("../res/fna.txt", "w", buffering=1)
             elif (self.alg_mode == ALG_PGM_FNO):
@@ -157,8 +156,14 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        printf (self.output_file, '\nsettings: {}\ntot_cost = {}, tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
-               (self.settings_str, self.total_cost, self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt)        )
+        avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
+        avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
+        self.settings_str += '.Bw{:.0f}' .format ((avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) / 8) #Each update is a full indicator, sent to n-1 DSs)
+        printf (self.output_file, '\n{} | tot_cost = {}\n'  .format (self.settings_str, self.total_cost))
+                 
+        if (self.verbose == 1):
+            printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
+               (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
     
 
     def run_trace_opt_hetro (self):
@@ -181,7 +186,7 @@ class Simulator(object):
                 # We assume here that the cost of every DS < missp
                 # update variables
                 self.client_list[self.client_id].total_access_cost += self.client_DS_cost[self.client_id][access_DS_id]
-                if (self.verbose == 1):
+                if (self.verbose == 3):
                     self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
                 # perform access. we know it will be successful
                 self.DS_list[access_DS_id].access(self.cur_req.key)
@@ -190,7 +195,7 @@ class Simulator(object):
 
     def run_trace_pgm_fno_hetro (self):
         """
-        Run a full trace where the access strat' is the PGM, as proposed in the journal paper "Access srategies for Network Caching".
+        Run a full trace where the access strat' is the PGM, as proposed in the journal paper "Access Srategies for Network Caching".
         """
         for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
             self.req_cnt += 1
@@ -239,7 +244,8 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-            printf (self.output_file, 'FN miss cnt = {:.0f}\n' .format ( self.FN_miss_cnt))
+            if (self.verbose == 1):
+                printf (self.output_file, '// FN miss cnt = {:.0f}\n' .format ( self.FN_miss_cnt))
         elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
@@ -249,11 +255,8 @@ class Simulator(object):
             self.gather_statistics()
             avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
             avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
-            printf (self.output_file, 
-                    'spec accs cost = {:.0f}, num of spec hits = {:.0f}, avg update bw per req = {:.0f}' .format \
-                    (self.speculate_accs_cost, 
-                     self.speculate_hit_cnt, 
-                     (avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) / 8)) #Each update is a full indicator, sent to n-1 DSs)            
+            if (self.verbose == 1):
+                printf (self.output_file, '// spec accs cost = {:.0f}, num of spec hits = {:.0f}' .format (self.speculate_accs_cost, self.speculate_hit_cnt))             
         else: 
             printf (self.output_file, 'Wrong alg_mode: {:.0f}\n' .format (self.alg_mode))
 
@@ -442,7 +445,7 @@ class Simulator(object):
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
         self.client_list[self.client_id].total_access_cost += final_sol.ac
-        if (self.verbose == 1):
+        if (self.verbose == 3):
             self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
 
         # perform access. the function access() returns True if successful, and False otherwise
@@ -548,7 +551,7 @@ class Simulator(object):
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
         self.client_list[self.client_id].total_access_cost += final_sol.ac
-        if (self.verbose == 1):
+        if (self.verbose == 3):
             self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
 
         # perform access
