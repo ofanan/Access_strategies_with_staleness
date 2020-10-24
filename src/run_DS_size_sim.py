@@ -16,32 +16,35 @@ from gen_requests import optimal_BF_size_per_DS_size
 num_of_DSs      = 3
 num_of_clients  = num_of_DSs
 
-max_num_of_req      = 50000 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 10000 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
-# trace_file_name     = 'wiki/wiki1.1190448987_50K.3DSs.K3.csv'
+# trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
-# trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
+trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 #trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
-trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_50K_3DSs.csv'
+# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_50K_3DSs.csv'
 requests            = pd.read_csv (traces_path + trace_file_name).head(max_num_of_req)
 
-missp   = 1000
-DS_size = 4000 
-max_fnr = 0.1
+missp   = 100
+DS_size = 100
+max_fnr = 0.03
 max_fpr = max_fnr
 k_loc   = 1
-bpe     = 5
+bpe     = 14
 alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
-
-
+num_of_events_between_updates = 20
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
 
 output_file = open ("../res/res.txt", "a")
-settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.fpr{:.2f}.' .format \
-                (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp, max_fpr)
+settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.U{:.0f}.' .format \
+                (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp, num_of_events_between_updates)
+                
+def bool_func ():
+    return False
+
 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str):
@@ -64,7 +67,7 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
         tic()
         sm = sim.Simulator(output_file, settings_str, alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc,  
                            DS_size = DS_size, bpe = bpe, max_fpr = max_fpr, max_fnr = max_fnr, use_redundan_coef = False,  
-                           verbose = 0)
+                           verbose = 0, num_of_events_between_updates = num_of_events_between_updates)
         sm.run_simulator()
         toc()
         DS_size_sim_dict[alg_mode] = sm
@@ -81,6 +84,11 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
 # bw_regularization   = np.max(np.tril(client_DS_BW,-1)) 
 # alpha = 0.5
 # client_DS_cost      = 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
+
+if (bool_func()):
+    print ('gamad')
+    exit ()
+                
 
 client_DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 client_DS_cost.fill(1)

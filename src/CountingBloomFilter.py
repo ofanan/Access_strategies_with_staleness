@@ -10,16 +10,16 @@ import SimpleBloomFilter
 # Bloom filter survey: https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf
 class CountingBloomFilter(object):
     
-    def __init__(self, size = 500, hash_count = 5, max_array_val = 7):
+    def __init__(self, size = 500, num_of_hashes = 5, max_array_val = 7):
         """
         Returns a CountingBloomFilter object with the following attributes:
             DS_size:        the maximal number of elements in the datastore (commonly referred to as $n$)
             bpe:            Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
-            hash_count:     The CBF calculates the optimal number of hash funcs (commonly referred to as k) based on n and m
+            num_of_hashes:     The CBF calculates the optimal number of hash funcs (commonly referred to as k) based on n and m
             max_array_val:  maximum value each counter can hold (default 7)
         """
         self.size               = size
-        self.hash_count         = hash_count
+        self.num_of_hashes         = num_of_hashes
         self.array              = np.zeros (self.size, dtype='uint8')
         self.max_array_val      = max_array_val
         #self.num_of_cntrs_set   = 0 # number of cntrs set since last update was sent 
@@ -39,7 +39,7 @@ class CountingBloomFilter(object):
         adds a key to the Bloom filter
         updates all the hashes corresponding to the new key: increases each by 1 (no more than allowed maximum)
         """
-        for seed in range(self.hash_count):
+        for seed in range(self.num_of_hashes):
             entry = mmh3.hash(key, seed) % self.size
             if self.array[entry] < self.max_array_val:
                 self.array[entry] += 1
@@ -53,7 +53,7 @@ class CountingBloomFilter(object):
         removes a key from the Bloom filter
         updates all the hashes corresponding to the key: decreases each by 1 (no less than 0)
         """
-        for seed in range(self.hash_count):
+        for seed in range(self.num_of_hashes):
             entry = mmh3.hash(key, seed) % self.size
             if self.array[entry] > 0:
                 self.array[entry] -= 1
@@ -66,7 +66,7 @@ class CountingBloomFilter(object):
         enables using the syntax:
             key in CountingBloomFilter
         """
-        for seed in range(self.hash_count):            
+        for seed in range(self.num_of_hashes):            
             if self.array[mmh3.hash(key, seed) % self.size] == 0:
                 return False
         return True
@@ -80,7 +80,7 @@ class CountingBloomFilter(object):
         """
         Returns a simple BF, which is the compression of this counting BF: each entry is True iff the respective entry in the CBF is > 0
         """
-        sbf = SimpleBloomFilter.SimpleBloomFilter (size=self.size, hash_count = self.hash_count)
+        sbf = SimpleBloomFilter.SimpleBloomFilter (size=self.size, num_of_hashes = self.num_of_hashes)
         for i in range (self.size):
             if (self.array[i] > 0):
                 sbf.array[i] = True
@@ -90,7 +90,7 @@ class CountingBloomFilter(object):
         """
         checks if all hash functions corresponding to key are strictly positive
         """
-        for seed in range(self.hash_count):
+        for seed in range(self.num_of_hashes):
             if self.array[mmh3.hash(key, seed) % self.size] == 0:
                 return False
         return True

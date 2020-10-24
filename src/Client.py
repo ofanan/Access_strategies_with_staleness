@@ -163,10 +163,3 @@ class Client(object):
             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
         return self.mr
 
-    def update_fnr_fpr (self, fnr_fpr, DS_id):
-        """
-        Returns fnr_fpr - a vector, where fnr_fpr[0] is the expected fnr, and fnr_fpr[1] is the expected fpr
-        DS_id - id of DS for which these are the estiamted fnr and fpr
-        """
-        self.fnr[DS_id] = fnr_fpr[0]
-        self.fpr[DS_id] = fnr_fpr[1]
