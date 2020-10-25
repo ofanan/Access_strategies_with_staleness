@@ -105,7 +105,6 @@ class Simulator(object):
 
         # Debug / verbose variables
         if (self.verbose == 3):
-            self.num_DS_accessed = float(0) #Currently unused
             self.avg_DS_accessed_per_req = float(0)
             if (self.alg_mode == ALG_PGM_FNA):
                 self.debug_file = open ("../res/fna.txt", "w", buffering=1)
@@ -159,7 +158,7 @@ class Simulator(object):
         avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
         avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
         self.settings_str += '.Bw{:.0f}' .format ((avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) / 8) #Each update is a full indicator, sent to n-1 DSs)
-        printf (self.output_file, '\n{} | tot_cost = {}\n'  .format (self.settings_str, self.total_cost))
+        printf (self.output_file, '\n\n{} | tot_cost = {}\n'  .format (self.settings_str, self.total_cost))
                  
         if (self.verbose == 1):
             printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
@@ -203,8 +202,6 @@ class Simulator(object):
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
             if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
-                if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                    print ('req_cnt = {}. no pos indication miss' .format (self.req_cnt), file = self.debug_file, flush = True)
                 self.handle_miss ()
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
@@ -233,7 +230,7 @@ class Simulator(object):
 
 
     def run_simulator (self):
-        """
+        """6
         Run a simulation, gather statistics and prints outputs
         """
         np.random.seed(self.rand_seed)
@@ -282,6 +279,8 @@ class Simulator(object):
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
+#         if (self.verbose == 1):
+#             print ('req cnt = ', self.req_cnt)
         self.insert_key_to_DSs ()
         if (self.alg_mode == ALG_PGM_FNO):
             self.FN_miss_cnt += 1
@@ -293,8 +292,6 @@ class Simulator(object):
         if (self.is_compulsory_miss()):
             self.handle_compulsory_miss ()
         else:
-            # if (self.verbose == 3):
-            #     print ('req_cnt = %d. non-comp-miss' % (self.req_cnt), file = self.debug_file, flush = True)    
             self.handle_non_compulsory_miss ()
 
     def insert_key_to_closest_DS(self, req):
@@ -307,7 +304,7 @@ class Simulator(object):
 
     def insert_key_to_random_DSs(self, req):
         # use the first location as the random DS to insert to.
-        self.DS_list[req['0']].insert(req.key)
+        self.DS_list[req['0']].insert(req.key, req_cnt = self.req_cnt)
 
     def insert_key_to_DSs_without_indicator (self):
         """
@@ -365,8 +362,6 @@ class Simulator(object):
         # leaf_of_DS (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
 
         # leaves_of_DSs_w_pos_ind will hold the leaves of the DSs with pos' ind'
-        if (self.verbose ==3 and self.req_cnt > 11807):
-            print ('cur_pos_DS_list = ', self.cur_pos_DS_list)
         cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[self.client_id], self.cur_pos_DS_list)) + 1
 
         # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
@@ -447,8 +442,6 @@ class Simulator(object):
             self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
 
         # perform access. the function access() returns True if successful, and False otherwise
-        # if (self.verbose == 2):
-        #     print ('req cnt = ', self.req_cnt, 'pos ind = ', self.cur_pos_DS_list, 'mr = ', self.mr_of_DS, 'accss = ', final_sol.DSs_IDs)
         accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in final_sol.DSs_IDs])
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
@@ -471,10 +464,6 @@ class Simulator(object):
     def access_pgm_fna_hetro (self):
 
         req                     = self.cur_req
-        if (self.verbose ==3 and self.req_cnt > 11807):
-            print ('req cnt = ', self.req_cnt, 'indications = ', self.indications)
-            if (self.verbose ==3 and self.req_cnt > 11807):
-                print ('req cnt = ', self.req_cnt, 'indications = ', self.indications)
 
         # Partition stage is done once, statically, based on the DSs' costs
         ###############################################################################################################

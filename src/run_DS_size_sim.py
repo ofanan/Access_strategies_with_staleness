@@ -20,19 +20,19 @@ max_num_of_req      = 50000 # Shorten the num of requests for debugging / shorte
 traces_path         = getTracesPath()
 # trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
+# trace_file_name     = 'gradle/short.csv'
 trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
-#trace_file_name     = 'corda/corda.trace_vaultservice_50K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_50K_3DSs.csv'
 requests            = pd.read_csv (traces_path + trace_file_name).head(max_num_of_req)
 
 missp   = 100
 DS_size = 4000
-max_fnr = 0.03
-max_fpr = max_fnr
 k_loc   = 1
 bpe     = 14
-alg_modes = [sim.ALG_PGM_FNO] 
+max_fpr = 0.03
+max_fnr = max_fpr
+# alg_modes = [sim.ALG_PGM_FNO] 
 alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 num_of_events_between_updates = 300
 if (k_loc > num_of_DSs):
@@ -40,8 +40,8 @@ if (k_loc > num_of_DSs):
     exit ()
 
 output_file = open ("../res/res.txt", "a")
-basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.' .format \
-                      (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp)
+basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.U{:.0f}.' .format \
+                      (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp, num_of_events_between_updates)
                 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str):
@@ -63,12 +63,10 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
         print ('running', settings_str)
         tic()
         sm = sim.Simulator(output_file, settings_str, alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc,  
-                           DS_size = DS_size, bpe = bpe, max_fpr = max_fpr, max_fnr = max_fnr, use_redundan_coef = False,  
+                           DS_size = DS_size, bpe = bpe, use_redundan_coef = False, max_fpr = max_fpr, max_fnr = max_fnr, 
                            verbose = 1, num_of_events_between_updates = num_of_events_between_updates)
         sm.run_simulator()
         toc()
-        DS_size_sim_dict[alg_mode] = sm
-        main_sim_dict[DS_size] = DS_size_sim_dict
     return main_sim_dict
 
 # Choose parameters for running simulator    

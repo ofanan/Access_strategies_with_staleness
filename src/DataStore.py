@@ -21,7 +21,7 @@ class DataStore (object):
             verbose:           how much details are written to the output
         """
         self.ID                     = ID
-        self.cache_size                   = size
+        self.cache_size             = size
         self.bpe                    = bpe
         self.BF_size                = self.bpe * self.cache_size
         self.lg_BF_size             = np.log2 (self.BF_size) 
@@ -36,8 +36,6 @@ class DataStore (object):
         self.hit_cnt                = 0
         self.max_fnr                = max_fnr
         self.max_fpr                = max_fpr
-        self.P1n                    = 1 - np.exp (-self.num_of_hashes / self.bpe)
-        self.P1nk                   = pow (self.P1n, self.num_of_hashes)
         self.updated_indicator      = CBF.CountingBloomFilter (size = self.BF_size, num_of_hashes = self.num_of_hashes)
         self.stale_indicator        = self.updated_indicator.gen_SimpleBloomFilter ()         
         self.mr_cur                 = 0.5 
@@ -98,7 +96,8 @@ class DataStore (object):
                 self.updated_indicator.remove(self.cache.get_tail())
             self.updated_indicator.add(key)
             self.ins_cnt += 1
-            if (self.ins_cnt % self.num_of_insertions_between_estimations == 0): 
+            if ( (req_cnt > -1 and req_cnt < 3 * self.cache_size) or self.ins_cnt % 
+                 self.num_of_insertions_between_estimations == 0): 
                 self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
             if (self.should_send_update() ):
                 self.send_update ()
