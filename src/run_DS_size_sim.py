@@ -32,16 +32,16 @@ max_fnr = 0.03
 max_fpr = max_fnr
 k_loc   = 1
 bpe     = 14
-# alg_modes = [sim.ALG_PGM_FNO] 
-alg_modes = [sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
-num_of_events_between_updates = 100
+alg_modes = [sim.ALG_PGM_FNO] 
+alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+num_of_events_between_updates = 300
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
 
 output_file = open ("../res/res.txt", "a")
-settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.' .format \
-                (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp)
+basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.' .format \
+                      (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp)
                 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str):
@@ -51,15 +51,15 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
     DS_size_sim_dict = {}
     for alg_mode in alg_modes:
         if (alg_mode == sim.ALG_OPT):
-            settings_str += 'Opt'
+            settings_str = basic_settings_str + 'Opt'
         elif (alg_mode == sim.ALG_PGM_FNO):
-            settings_str += 'FNO'
+            settings_str = basic_settings_str + 'FNO'
         elif (alg_mode == sim.ALG_PGM_FNA):
-            settings_str += 'FNA'
+            settings_str = basic_settings_str + 'FNA'
         elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
-            settings_str += 'FNA_by_hist'
+            settings_str = basic_settings_str + 'FNA_by_hist'
         elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
-            settings_str += 'FNA_by_hist_adapt'
+            settings_str = basic_settings_str + 'FNA_by_hist_adapt'
         print ('running', settings_str)
         tic()
         sm = sim.Simulator(output_file, settings_str, alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc,  
@@ -84,7 +84,7 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
 
 client_DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 client_DS_cost.fill(1)
-main_sim_dict = run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str)
+main_sim_dict = run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, basic_settings_str)
 
 # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
 # time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")

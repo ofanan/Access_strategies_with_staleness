@@ -112,8 +112,13 @@ class DataStore (object):
     def send_update (self):
         self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
         self.num_of_updates += 1
-        self.fnr = 0 # Immediately after sending an update, the expected fnr is 0, 
-        self.fpr = self.designed_fpr # Immediately after sending an update, the expected fpr is the inherent fpr
+        self.fnr = 0 # Immediately after sending an update, the expected fnr is 0
+        updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
+        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
+        self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
+#         print ('d.fpr = {:.4f}, B1_st = {:.0f}, calc.fpr = {:.4f}' .format (self.designed_fpr, B1_st, pow ( B1_st / self.BF_size, self.num_of_hashes)))
+#         self.fpr = self.designed_fpr # Immediately after sending an update, the expected fpr is the inherent fpr
+        
 
         # self.updated_indicator.reset_delta_cntrs ()
 
@@ -169,7 +174,6 @@ class DataStore (object):
         Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
         B1_up = sum (updated_sbf.array)             # Num of bits set in the updated indicator
         B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
-        #self.fnr_fpr = [1 - pow ( (B1-Delta[1]) / B1, self.num_of_hashes), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.num_of_hashes)]
         self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.num_of_hashes)
         self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
 #         if (self.should_send_update()==True): # either the fpr or the fnr is too high - need to send update

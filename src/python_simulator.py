@@ -437,8 +437,6 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
-            if (self.verbose == 3 and (not (self.is_compulsory_miss() ))):
-                print ('req_cnt = %d. len 0 miss' % (self.req_cnt), file = self.debug_file, flush = True)
             self.handle_miss ()
             return
 
@@ -551,8 +549,6 @@ class Simulator(object):
         # Now we know that the alg' decided to access at least one DS
         # Add the costs and IDs of the selected DSs to the statistics
         self.client_list[self.client_id].total_access_cost += final_sol.ac
-        if (self.verbose == 3):
-            self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
 
         # perform access
         self.sol = final_sol.DSs_IDs
