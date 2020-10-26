@@ -38,9 +38,6 @@ num_of_events_between_updates = 300
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
-<<<<<<< HEAD
-alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
-=======
 
 output_file = open ("../res/res.txt", "a")
 basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.U{:.0f}.' .format \
@@ -62,12 +59,11 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
             settings_str = basic_settings_str + 'FNA_by_hist_adapt'
         print ('running', settings_str)
         tic()
-        sm = sim.Simulator(output_file, settings_str, alg_mode, DS_insert_mode, requests, client_DS_cost, missp, k_loc,  
+        sm = sim.Simulator(output_file, settings_str, alg_mode, requests, client_DS_cost, missp, k_loc,  
                            DS_size = DS_size, bpe = bpe, use_redundan_coef = False, max_fpr = max_fpr, max_fnr = max_fnr, 
                            verbose = 1, num_of_events_between_updates = num_of_events_between_updates)
         sm.run_simulator()
         toc()
-    return main_sim_dict
 
 # Choose parameters for running simulator    
 #  load the OVH network distances and BWs

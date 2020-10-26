@@ -65,8 +65,6 @@ class Client(object):
         self.DS_accessed[req_id] = DS_index_list
         self.num_DS_accessed.append(len(DS_index_list))
         
-
-<<<<<<< HEAD
     def get_mr (self, indications):
         """
         Calculate and return the expected miss prob' of each DS, based on its indication.
@@ -115,7 +113,7 @@ class Client(object):
         if (self.verbose == 2):
             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
         return self.mr
-=======
+
 #     def get_mr (self, indications):
 #         """
 #         Calculate and return the expected miss prob' of each DS, based on its indication.
@@ -164,7 +162,6 @@ class Client(object):
 #         if (self.verbose == 2):
 #             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
 #         return self.mr
->>>>>>> a79202582395b3a1d3159e9fac46bf4cbb9cc58f
 
     def get_mr_given_mr1 (self, indications, mr1):
         """
@@ -189,7 +186,7 @@ class Client(object):
             self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
-        hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
+        hit_ratio = np.minimum (self.ones_ar, np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr)))
 #         if (self.use_adaptive_alg):
 #             if (self.speculate_accs_cost > 10 * self.missp or self.speculate_hit_cnt >= 20)   : #Collected enough history, and realized that we only loose from speculations
 #                 self.use_spec_factor      = True
@@ -203,7 +200,8 @@ class Client(object):
             if (indications[i]): #positive ind'
                 self.mr[i] = mr1[i]     #
             else:
-                self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
+                self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1 or hit_ratio[i]==1) \
+                else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
 #                 if (self.use_redundan_coef and self.mr[i] != 1):
 #                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
 #                 if (self.use_spec_factor):

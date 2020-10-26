@@ -45,12 +45,10 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, output_file, settings_str, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 DS_insert_mode = 1, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, num_of_events_between_updates = 0):
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, num_of_events_between_updates = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
-            DS_insert_mode:     mode of DS insertion (1: fix, 2: distributed, 3: ego)
-            req_df:             array of keys of requests. each key is a string
             client_DS_cost:     2D array of costs. entry (i,j) is the cost from client i to DS j
             missp:               miss penalty
             k_loc:              number of DSs a missed key is inserted to
@@ -65,7 +63,8 @@ class Simulator(object):
         self.DS_size        = DS_size
         self.bpe            = bpe
         self.rand_seed      = rand_seed
-        self.DS_insert_mode = DS_insert_mode
+        self.DS_insert_mode = 1  #DS_insert_mode: mode of DS insertion (1: fix, 2: distributed, 3: ego). Currently only insert mode 1 is used
+
         if (self.DS_insert_mode != 1):
             print ('sorry, currently only fix insert mode (1) is supported')
             exit ()
@@ -169,8 +168,7 @@ class Simulator(object):
         """
         Run a full trace as Opt access strat' when the DS costs are heterogneous
         """
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1
+        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             # get the list of datastores holding the request
@@ -186,7 +184,7 @@ class Simulator(object):
                 # update variables
                 self.client_list[self.client_id].total_access_cost += self.client_DS_cost[self.client_id][access_DS_id]
                 if (self.verbose == 3):
-                    self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, [access_DS_id])
+                    self.client_list[self.client_id].add_DS_accessed(self.req_cnt, [access_DS_id])
                 # perform access. we know it will be successful
                 self.DS_list[access_DS_id].access(self.cur_req.key)
                 self.client_list[self.client_id].hit_cnt += 1
@@ -196,8 +194,7 @@ class Simulator(object):
         """
         Run a full trace where the access strat' is the PGM, as proposed in the journal paper "Access Srategies for Network Caching".
         """
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1
+        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
@@ -214,8 +211,7 @@ class Simulator(object):
         """
         self.PGM_FNA_partition ()
             
-        for req_id in range(self.req_df.shape[0]): # for each request in the trace... 
-            self.req_cnt += 1
+        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             for i in range (self.num_of_DSs):
@@ -230,7 +226,7 @@ class Simulator(object):
 
 
     def run_simulator (self):
-        """6
+        """
         Run a simulation, gather statistics and prints outputs
         """
         np.random.seed(self.rand_seed)
@@ -279,8 +275,6 @@ class Simulator(object):
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
-#         if (self.verbose == 1):
-#             print ('req cnt = ', self.req_cnt)
         self.insert_key_to_DSs ()
         if (self.alg_mode == ALG_PGM_FNO):
             self.FN_miss_cnt += 1
