@@ -15,7 +15,7 @@ from gen_requests import optimal_BF_size_per_DS_size
 
 num_of_DSs      = 4
 num_of_clients  = num_of_DSs
-DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
+DS_cost_type = 'homo' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
 max_num_of_req      = 50000 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
 # trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
@@ -32,8 +32,8 @@ k_loc   = 1
 bpe     = 14
 max_fpr = 0.03
 max_fnr = max_fpr
-# alg_modes = [sim.ALG_PGM_FNO] 
-alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+alg_modes = [sim.ALG_PGM_FNO] 
+# alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 num_of_events_between_updates = 300
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
@@ -56,7 +56,7 @@ elif (DS_cost_type == 'ovh'):
         exit ()
     DS_cost = calcOvhDsCost ()
 else: 
-    print ('The DS_cost type you chose is not supprorted')
+    print ('The DS_cost type you chose is not supported')
                 
 def run_sim_collection(DS_size, missp, k_loc, requests, DS_cost, settings_str):
     

@@ -199,7 +199,7 @@ class Simulator(object):
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
             if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
-                self.handle_miss ()
+                self.handle_miss (consider_fpr_fnr_update = False)
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
             self.access_pgm_fno_hetro ()
@@ -261,32 +261,32 @@ class Simulator(object):
         """
         self.mr_of_DS = np.array([DS.mr_cur for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
 
-    def handle_compulsory_miss (self):
+    def handle_compulsory_miss (self, consider_fpr_fnr_update = True):
         """
         Called upon a compulsory miss, namely, a fail to retreive a request from any DS, while the request is indeed not stored in any of the DSs.
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].comp_miss_cnt += 1
-        self.insert_key_to_DSs ()
+        self.insert_key_to_DSs (consider_fpr_fnr_update = consider_fpr_fnr_update)
 
-    def handle_non_compulsory_miss (self):
+    def handle_non_compulsory_miss (self, consider_fpr_fnr_update = True):
         """
         Called upon a non-compulsory miss, namely, a fail to retreive a request from any DS, while the request is actually stored in at least one DS.
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
-        self.insert_key_to_DSs ()
+        self.insert_key_to_DSs (consider_fpr_fnr_update = consider_fpr_fnr_update)
         if (self.alg_mode == ALG_PGM_FNO):
             self.FN_miss_cnt += 1
 
-    def handle_miss (self):
+    def handle_miss (self, consider_fpr_fnr_update = True):
         """
         Called upon a miss. Check whether the miss is compulsory or not. Increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         if (self.is_compulsory_miss()):
-            self.handle_compulsory_miss ()
+            self.handle_compulsory_miss (consider_fpr_fnr_update = consider_fpr_fnr_update)
         else:
-            self.handle_non_compulsory_miss ()
+            self.handle_non_compulsory_miss (consider_fpr_fnr_update = consider_fpr_fnr_update)
 
     def insert_key_to_closest_DS(self, req):
         """
@@ -308,13 +308,12 @@ class Simulator(object):
         for i in range(self.k_loc):
             self.DS_list[self.cur_req['%d'%i]].insert (self.cur_req.key, use_indicator = False) 
             
- 
-    def insert_key_to_DSs(self):
+    def insert_key_to_DSs(self, consider_fpr_fnr_update = True):
         """
         insert key to all k_loc DSs, which are defined by the input (parsed) trace
         """
         for i in range(self.k_loc):
-            self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, req_cnt = self.req_cnt) 
+            self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
             
     def is_compulsory_miss (self):
         """
@@ -426,7 +425,7 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
-            self.handle_miss ()
+            self.handle_miss (consider_fpr_fnr_update = False)
             return
 
         # Now we know that the alg' decided to access at least one DS
@@ -440,7 +439,7 @@ class Simulator(object):
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
-            self.handle_miss ()
+            self.handle_miss (consider_fpr_fnr_update = False)
 
 
 #     def inc_accs_cnt_n_send_update_if_needed (self, sol):
