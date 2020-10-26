@@ -96,8 +96,8 @@ class DataStore (object):
                 self.updated_indicator.remove(self.cache.get_tail())
             self.updated_indicator.add(key)
             self.ins_cnt += 1
-            if ( (req_cnt > -1 and req_cnt < 3 * self.cache_size) or self.ins_cnt % 
-                 self.num_of_insertions_between_estimations == 0): 
+            if ( #(req_cnt > -1 and req_cnt < 3 * self.cache_size) or 
+                 self.ins_cnt % self.num_of_insertions_between_estimations == 0): 
                 self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
             if (self.should_send_update() ):
                 self.send_update ()
