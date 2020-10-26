@@ -5,6 +5,21 @@ def getTracesPath():
 	trace_path_splitted = os.getcwd().split ("\\")
 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
 
+
+def calcOvhDsCost ():
+	"""
+	Returns the loads of the 19-nodes OVH network, based on the distances and BWs	
+	"""
+	full_path_to_rsrc   = os.getcwd() + "\\..\\resources\\"
+	client_DS_dist_df   = pd.read_csv (full_path_to_rsrc + 'ovh_dist.csv',index_col=0)
+	client_DS_dist      = np.array(client_DS_dist_df)
+	client_DS_BW_df     = pd.read_csv (full_path_to_rsrc + 'ovh_bw.csv',index_col=0)
+	client_DS_BW        = np.array(client_DS_BW_df)
+	bw_regularization   = np.max(np.tril(client_DS_BW,-1)) 
+	alpha = 0.5
+	return 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
+
+
 def exponential_window (old_estimate, new_val, alpha):
 	return alpha * new_val + (1 - alpha) * old_estimate 
 

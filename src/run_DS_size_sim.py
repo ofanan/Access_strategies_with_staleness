@@ -13,9 +13,9 @@ from gen_requests import gen_requests
 from gen_requests import optimal_BF_size_per_DS_size
 # A main file for running a sim of access strategies for different DSs (Data Stores) sizes.
 
-num_of_DSs      = 3
+num_of_DSs      = 4
 num_of_clients  = num_of_DSs
-
+DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
 max_num_of_req      = 50000 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
 # trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
@@ -42,9 +42,23 @@ if (k_loc > num_of_DSs):
 output_file = open ("../res/res.txt", "a")
 basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.U{:.0f}.' .format \
                       (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp, num_of_events_between_updates)
+
+DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
+if (DS_cost_type == 'homo'):
+    DS_cost.fill(1)
+elif (DS_cost_type == 'hetro'):
+    for i in range (num_of_DSs):
+        for j in range (i, i + num_of_DSs):
+            DS_cost[i][j % num_of_DSs] = pow (2, j-i)
+elif (DS_cost_type == 'ovh'):
+    if (num_of_DSs != 19):
+        print ('error: you asked to run OVH costs, but num of DSs is not 19')
+        exit ()
+    DS_cost = calcOvhDsCost ()
+else: 
+    print ('The DS_cost type you chose is not supprorted')
                 
-# Loop over all data store sizes, and all algorithms, and collect the data
-def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str):
+def run_sim_collection(DS_size, missp, k_loc, requests, DS_cost, settings_str):
     
     for alg_mode in alg_modes:
         if (alg_mode == sim.ALG_OPT):
@@ -59,32 +73,13 @@ def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings
             settings_str = basic_settings_str + 'FNA_by_hist_adapt'
         print ('running', settings_str)
         tic()
-        sm = sim.Simulator(output_file, settings_str, alg_mode, requests, client_DS_cost, missp, k_loc,  
+        sm = sim.Simulator(output_file, settings_str, alg_mode, requests, DS_cost, missp, k_loc,  
                            DS_size = DS_size, bpe = bpe, use_redundan_coef = False, max_fpr = max_fpr, max_fnr = max_fnr, 
                            verbose = 1, num_of_events_between_updates = num_of_events_between_updates)
         sm.run_simulator()
         toc()
 
-# Choose parameters for running simulator    
-#  load the OVH network distances and BWs
-# full_path_to_rsrc   = os.getcwd() + "\\..\\resources\\"
-# client_DS_dist_df   = pd.read_csv (full_path_to_rsrc + 'ovh_dist.csv',index_col=0)
-# client_DS_dist      = np.array(client_DS_dist_df)
-# client_DS_BW_df     = pd.read_csv (full_path_to_rsrc + 'ovh_bw.csv',index_col=0)
-# client_DS_BW        = np.array(client_DS_BW_df)
-# bw_regularization   = np.max(np.tril(client_DS_BW,-1)) 
-# alpha = 0.5
-# client_DS_cost      = 1 + alpha * client_DS_dist + (1 - alpha) * (bw_regularization / client_DS_BW) # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
+run_sim_collection(DS_size, missp, k_loc, requests, DS_cost, basic_settings_str)
 
-client_DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
-client_DS_cost.fill(1)
-main_sim_dict = run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, basic_settings_str)
-
-# client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-# time_str = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-# sys.setrecursionlimit(50000)
-# res_file = open('../res/DS_size_%d_missp_%d_kloc_%d' % (DS_size_vals[0], missp, k_loc) , 'wb')
-# pickle.dump(main_sim_dict , res_file)
-# res_file.close()
 print ('Finished all sims')
 
