@@ -44,8 +44,8 @@ class Simulator(object):
         use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, output_file, settings_str, alg_mode, DS_insert_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, num_of_events_between_updates = 0):
+    def __init__(self, output_file, settings_str, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
+                 DS_insert_mode = 1, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, num_of_events_between_updates = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above

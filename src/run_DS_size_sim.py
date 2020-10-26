@@ -48,10 +48,7 @@ basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0
                 
 # Loop over all data store sizes, and all algorithms, and collect the data
 def run_sim_collection(DS_size, missp, k_loc, requests, client_DS_cost, settings_str):
-    DS_insert_mode = 1 # Currently we use only "fix" mode. See documentation in python_simulator.py
-
-    main_sim_dict = {}
-    DS_size_sim_dict = {}
+    
     for alg_mode in alg_modes:
         if (alg_mode == sim.ALG_OPT):
             settings_str = basic_settings_str + 'Opt'
