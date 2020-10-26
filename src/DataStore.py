@@ -3,26 +3,30 @@ import mod_pylru
 import itertools
 import CountingBloomFilter as CBF
 import copy
-from MyConfig import get_optimal_hash_count, exponential_window
+from MyConfig import get_optimal_num_of_hashes, calc_designed_fpr
 
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.03, max_fpr = 0.03, verbose = 0):
+    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.03, max_fpr = 0.03, verbose = 0, num_of_events_between_updates = 1):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
             size:               number of elements that can be stored in the datastore (default 1000)
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
-            estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000, same as size)
-            miss_rate_alpha:    sliding window parameter for miss-rate estimation (default 0.1)
+            window_alpha:    sliding window parameter for miss-rate estimation 
+            estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000)
+            max_fnr, max_fpr : maximum allowed (estimated) fpr, fnr. When the estimated fnr is above max_fnr, or the estimated fpr is above mx_fpr, the DS sends an update.
+                               (FPR: False Positive Ratio, FNR: False Negative Ratio).
+            verbose:           how much details are written to the output
         """
         self.ID                     = ID
-        self.size                   = size
+        self.cache_size             = size
         self.bpe                    = bpe
-        self.BF_size                = self.bpe * self.size
+        self.BF_size                = self.bpe * self.cache_size
         self.lg_BF_size             = np.log2 (self.BF_size) 
-        self.hash_count             = get_optimal_hash_count (self.bpe)
+        self.num_of_hashes          = get_optimal_num_of_hashes (self.bpe)
+        self.designed_fpr           = calc_designed_fpr (self.cache_size, self.BF_size, self.num_of_hashes)
         self.window_alpha           = window_alpha
         self.estimation_window      = estimation_window
         self.one_min_alpha          = 1 - self.window_alpha
@@ -32,18 +36,19 @@ class DataStore (object):
         self.hit_cnt                = 0
         self.max_fnr                = max_fnr
         self.max_fpr                = max_fpr
-        self.P1n                    = 1 - np.exp (-self.hash_count / self.bpe)
-        self.P1nk                   = pow (self.P1n, self.hash_count)
-        self.updated_indicator      = CBF.CountingBloomFilter (size = self.BF_size, hash_count = self.hash_count)
+        self.updated_indicator      = CBF.CountingBloomFilter (size = self.BF_size, num_of_hashes = self.num_of_hashes)
         self.stale_indicator        = self.updated_indicator.gen_SimpleBloomFilter ()         
         self.mr_cur                 = 0.5 
-        self.cache                  = mod_pylru.lrucache(self.size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
+        self.cache                  = mod_pylru.lrucache(self.cache_size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
         self.delta_th               = self.BF_size / self.lg_BF_size # threshold for number of flipped bits in the BF; below this th, it's cheaper to send only the "delta" (indices of flipped bits), rather than the full ind'
-        self.update_bw              = 0
+#         self.update_bw              = 0
         self.num_of_updates         = 0
         self.verbose                = verbose #if self.ID==0 else 0
+        self.ins_cnt                = np.uint32 (0)
+        self.num_of_insertions_between_estimations = np.uint8 (max (self.cache_size / 1000, 1))
+        self.num_of_events_between_updates = num_of_events_between_updates
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
 
@@ -57,9 +62,7 @@ class DataStore (object):
             
     def access(self, key, is_speculative_accs = False):
         """
-        accesses a key in the cache
-        if access is successful (i.e., key is in cache): return True
-        otherwise: return False
+        accesses a key in the cache, and inc the ins cntr.
         """
         self.access_cnt += 1
         
@@ -84,21 +87,21 @@ class DataStore (object):
         if key is already in the cache: return False
         otherwise: return True
         """
-        if (key in self.cache):
-            return False
-        else:
             # check to see if the insertion will cause the LRU key to be removed
             # if so, remove it from the updated indicator
 			# Removal from the cache is implemented automatically by the cache object
-            self.cache[key] = key
-            if (use_indicator):
-                if (self.cache.currSize() == self.cache.size()):
-                    self.updated_indicator.remove(self.cache.get_tail())
-                self.updated_indicator.add(key)
+        self.cache[key] = key
+        if (use_indicator):
+            if (self.cache.currSize() == self.cache.size()):
+                self.updated_indicator.remove(self.cache.get_tail())
+            self.updated_indicator.add(key)
+            self.ins_cnt += 1
+            if ( #(req_cnt > -1 and req_cnt < 3 * self.cache_size) or 
+                 self.ins_cnt % self.num_of_insertions_between_estimations == 0): 
                 self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
-            return True
-            
-
+            if (self.should_send_update() ):
+                self.send_update ()
+                
     def get_indication (self, key):
         """
         Query the (stale) indicator of this DS
@@ -108,6 +111,14 @@ class DataStore (object):
     def send_update (self):
         self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
         self.num_of_updates += 1
+        self.fnr = 0 # Immediately after sending an update, the expected fnr is 0
+        updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
+        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
+        self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
+#         print ('d.fpr = {:.4f}, B1_st = {:.0f}, calc.fpr = {:.4f}' .format (self.designed_fpr, B1_st, pow ( B1_st / self.BF_size, self.num_of_hashes)))
+#         self.fpr = self.designed_fpr # Immediately after sending an update, the expected fpr is the inherent fpr
+        
+
         # self.updated_indicator.reset_delta_cntrs ()
 
     def update_mr1(self):
@@ -141,6 +152,13 @@ class DataStore (object):
         for i in itertools.islice(self.cache.dli(),head):
             print (i.key)
     
+    def should_send_update (self):
+#         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr):
+#             return True 
+        if (self.ins_cnt % self.num_of_events_between_updates == 0):
+            return True
+        return False
+            
 
     def estimate_fnr_fpr (self, req_cnt = -1, key = -1):
         """
@@ -155,17 +173,13 @@ class DataStore (object):
         Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
         B1_up = sum (updated_sbf.array)             # Num of bits set in the updated indicator
         B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
-        #self.fnr_fpr = [1 - pow ( (B1-Delta[1]) / B1, self.hash_count), pow ( (B1 + Delta[0] - Delta[1])/self.BF_size, self.hash_count)]
-        self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.hash_count)
-        self.fpr = pow ( B1_st / self.BF_size, self.hash_count)
-        if (self.fnr > self.max_fnr or self.fpr > self.max_fpr): # either the fpr or the fnr is too high - need to send update
-            if (self.verbose  == 4):
-                #print ('req = %d. DS %d sending update' % (req_cnt, self.ID), file = self.debug_file, flush = True)
-                print ('req = %d. DS %d sending update' % (req_cnt, self.ID))
-            size_of_delta_update = sum (Delta)     
-            self.update_bw += (size_of_delta_update * self.lg_BF_size) if (size_of_delta_update < self.delta_th) else self.BF_size     
-            self.stale_indicator.array = updated_sbf.array # Send update
-            self.num_of_updates += 1
-            self.fnr = 0
-            self.fpr = pow ( B1_up / self.BF_size, self.hash_count) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
+        self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.num_of_hashes)
+        self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
+#         if (self.should_send_update()==True): # either the fpr or the fnr is too high - need to send update
+#             size_of_delta_update = sum (Delta)     
+#             self.update_bw += (size_of_delta_update * self.lg_BF_size) if (size_of_delta_update < self.delta_th) else self.BF_size     
+#             self.stale_indicator.array = updated_sbf.array # Send update
+#             self.num_of_updates += 1
+#             self.fnr = 0
+#             self.fpr = pow ( B1_up / self.BF_size, self.num_of_hashes) # Immediately after sending an update, the expected fnr is 0, and the expected fpr is the inherent fpr
 
