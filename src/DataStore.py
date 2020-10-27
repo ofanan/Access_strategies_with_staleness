@@ -8,7 +8,7 @@ from MyConfig import get_optimal_num_of_hashes, calc_designed_fpr
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.03, max_fpr = 0.03, verbose = 0, num_of_events_between_updates = 1):
+    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.03, max_fpr = 0.03, verbose = 0, uInterval = 1):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
@@ -48,7 +48,7 @@ class DataStore (object):
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
         self.num_of_insertions_between_estimations = np.uint8 (max (self.cache_size / 1000, 1))
-        self.num_of_events_between_updates = num_of_events_between_updates
+        self.uInterval = uInterval
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
 
@@ -156,8 +156,8 @@ class DataStore (object):
     def should_send_update (self):
 #         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr):
 #             return True 
-        if (self.ins_cnt % self.num_of_events_between_updates == 0):
-            return True
+#         if (self.ins_cnt % self.uInterval == 0):
+#             return True
         return False
             
 

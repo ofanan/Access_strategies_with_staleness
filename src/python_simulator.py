@@ -36,7 +36,8 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, num_of_events_between_updates = self.num_of_events_between_updates) 
+        self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, 
+                                            uInterval = self.num_of_req_between_updates) 
                         for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
@@ -45,7 +46,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, output_file, settings_str, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, num_of_events_between_updates = 0):
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, uInterval = 0):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -98,8 +99,14 @@ class Simulator(object):
         self.comp_miss_cnt      = 0
         self.non_comp_miss_cnt  = 0
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
+        self.tot_num_of_updates = 0
 
-        self.num_of_events_between_updates = num_of_events_between_updates
+        self.num_of_req_between_updates = int (round(uInterval / self.num_of_DSs))
+        self.uInterval          = uInterval
+        self.update_cycle_of_DS = np.zeros(self.num_of_DSs, dtype = 'uint16')
+        for ds_id in range (self.num_of_DSs):
+            self.update_cycle_of_DS[ds_id] = ds_id * self.uInterval / self.num_of_DSs
+        self.cur_updating_DS = 0
         self.init_DS_list() #DS_list is the list of DSs
 
         # Debug / verbose variables
@@ -154,9 +161,10 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
+        #avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
+        avg_num_of_updates_per_DS = self.tot_num_of_updates / self.num_of_DSs
         avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
-        self.settings_str += '.Bw{:.0f}' .format ((avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) / 8) #Each update is a full indicator, sent to n-1 DSs)
+        self.settings_str += '.B{:.0f}' .format ((avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) / 8) #Each update is a full indicator, sent to n-1 DSs)
         printf (self.output_file, '\n\n{} | tot_cost = {}\n'  .format (self.settings_str, self.total_cost))
                  
         if (self.verbose == 1):
@@ -189,12 +197,25 @@ class Simulator(object):
                 self.DS_list[access_DS_id].access(self.cur_req.key)
                 self.client_list[self.client_id].hit_cnt += 1
 
+    def consider_send_update (self):
+        remainder = self.req_cnt % self.uInterval
+        for ds_id in range (self.num_of_DSs):
+            if (remainder == self.update_cycle_of_DS[ds_id]):
+                self.DS_list[ds_id].send_update ()
+                self.tot_num_of_updates += 1
+
+#         if (self.req_cnt % self.num_of_req_between_updates == 0):
+#             self.DS_list[self.cur_updating_DS].send_update ()
+#             self.cur_updating_DS = self.cur_updating_DS + 1 if (self.cur_updating_DS < self.num_of_DSs - 1) else 0
+#             self.tot_num_of_updates += 1
+
 
     def run_trace_pgm_fno_hetro (self):
         """
         Run a full trace where the access strat' is the PGM, as proposed in the journal paper "Access Srategies for Network Caching".
         """
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
@@ -212,6 +233,7 @@ class Simulator(object):
         self.PGM_FNA_partition ()
             
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
             for i in range (self.num_of_DSs):
@@ -440,18 +462,6 @@ class Simulator(object):
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
             self.handle_miss (consider_fpr_fnr_update = False)
-
-
-#     def inc_accs_cnt_n_send_update_if_needed (self, sol):
-#         """
-#         Update the cntr of accesses to each of the DSs in the list, given in the input sol.
-#         For each DS that passed the defined parameter num_of_events_between_updates accesses since the last update - send update 
-#         """
-#         for ds in sol:
-#             if (self.accss_cnt_to_DS[ds] % self.num_of_events_between_updates == 0):
-#                 print ('sending udpate because accs cnt = {:.02f}. ds.num_of_updates = {:.02f}' .format (self.accss_cnt_to_DS[ds], self.DS_list[ds].num_of_updates))
-#                 self.DS_list[ds].send_update ()
-
 
 
     def access_pgm_fna_hetro (self):

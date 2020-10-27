@@ -8,15 +8,15 @@ from printf import printf
 from   tictoc import tic, toc
 
 import python_simulator as sim
-from MyConfig import getTracesPath 
+from MyConfig import getTracesPath, bw_to_uInterval 
 from gen_requests import gen_requests
 from gen_requests import optimal_BF_size_per_DS_size
 # A main file for running a sim of access strategies for different DSs (Data Stores) sizes.
 
-num_of_DSs      = 4
+num_of_DSs      = 5
 num_of_clients  = num_of_DSs
 DS_cost_type = 'homo' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 50000 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 500#00 # Shorten the num of requests for debugging / shorter runs
 traces_path         = getTracesPath()
 # trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
@@ -27,21 +27,22 @@ trace_file_name     = 'gradle/gradle.build-cache_50K_3DSs.csv'
 requests            = pd.read_csv (traces_path + trace_file_name).head(max_num_of_req)
 
 missp   = 100
-DS_size = 4000
+DS_size = 160#00
 k_loc   = 1
 bpe     = 14
 max_fpr = 0.03
 max_fnr = max_fpr
 alg_modes = [sim.ALG_PGM_FNO] 
 # alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
-num_of_events_between_updates = 300
+bw = 20 # desired bw (in bytes)
+uInterval = bw_to_uInterval (DS_size, bpe, num_of_DSs, bw)
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
 
 output_file = open ("../res/res.txt", "a")
-basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.U{:.0f}.' .format \
-                      (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp, num_of_events_between_updates)
+basic_settings_str = '{}.C{:.0f}.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.' .format \
+                      (trace_file_name.split("/")[0], DS_size, bpe, max_num_of_req/1000, num_of_DSs, k_loc, missp, uInterval, bw)
 
 DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 if (DS_cost_type == 'homo'):
@@ -75,7 +76,7 @@ def run_sim_collection(DS_size, missp, k_loc, requests, DS_cost, settings_str):
         tic()
         sm = sim.Simulator(output_file, settings_str, alg_mode, requests, DS_cost, missp, k_loc,  
                            DS_size = DS_size, bpe = bpe, use_redundan_coef = False, max_fpr = max_fpr, max_fnr = max_fnr, 
-                           verbose = 1, num_of_events_between_updates = num_of_events_between_updates)
+                           verbose = 1, uInterval = uInterval)
         sm.run_simulator()
         toc()
 

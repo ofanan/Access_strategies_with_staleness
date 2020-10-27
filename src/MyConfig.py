@@ -23,6 +23,12 @@ def calcOvhDsCost ():
 def exponential_window (old_estimate, new_val, alpha):
 	return alpha * new_val + (1 - alpha) * old_estimate 
 
+def bw_to_uInterval (DS_size, bpe, num_of_DSs, bw):
+	return int (round (DS_size * bpe * (num_of_DSs-1)) / (bw * 8))
+
+def uInterval_to_Bw (DS_size, bpe, num_of_DSs, uInerval):
+	return (DS_size * bpe * (num_of_DSs-1)) / (uInterval * 8)
+
 def get_optimal_num_of_hashes (bpe):
     """
 	Returns the optimal number of hash functions for a given number of Bits Per Element (actually, cntrs per element) in a Bloom filter

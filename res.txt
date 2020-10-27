@@ -85,6 +85,50 @@ total bw =  88658.36594149319
 Elapsed time: 129.107635 seconds.
 
 
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.Opt.Bw0 | tot_cost = 498965.0
+// tot_access_cost= 45465.0, hit_ratio = 0.91, non_comp_miss_cnt = 0, comp_miss_cnt = 4535
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.Opt.Bw0 | tot_cost = 498965.0
+// tot_access_cost= 45465.0, hit_ratio = 0.91, non_comp_miss_cnt = 0, comp_miss_cnt = 4535
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.Opt.Bw0 | tot_cost = 498965.0
+// tot_access_cost= 45465.0, hit_ratio = 0.91, non_comp_miss_cnt = 0, comp_miss_cnt = 4535
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.FNO.Bw23 | tot_cost = 548564.0
+// tot_access_cost= 44964.0, hit_ratio = 0.9, non_comp_miss_cnt = 501, comp_miss_cnt = 4535
+// FN miss cnt = 501
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.FNO.Bw6 | tot_cost = 698846.0
+// tot_access_cost= 43446.0, hit_ratio = 0.87, non_comp_miss_cnt = 2019, comp_miss_cnt = 4535
+// FN miss cnt = 2019
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.U300.FNA_by_hist.Bw2 | tot_cost = 767603.0
+// tot_access_cost= 94503.0, hit_ratio = 0.87, non_comp_miss_cnt = 2196, comp_miss_cnt = 4535
+// spec accs cost = 56074, num of spec hits = 4840
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.FNO.Bw3 | tot_cost = 972878.0
+// tot_access_cost= 40678.0, hit_ratio = 0.81, non_comp_miss_cnt = 4787, comp_miss_cnt = 4535
+// FN miss cnt = 4787
+
+//********************************************************************************************************
+
+gradle.C40.bpe14.2Kreq.3DSs.Kloc1.M100.U300.FNO.Bw0 | tot_cost = 189412.0
+// tot_access_cost= 112.0, hit_ratio = 0.054, non_comp_miss_cnt = 233, comp_miss_cnt = 1660
+// FN miss cnt = 233
+
+gradle.C4000.bpe14.50Kreq.3DSs.Kloc1.M100.U300.FNA_by_hist.Bw2 | tot_cost = 767603.0
+// tot_access_cost= 94503.0, hit_ratio = 0.87, non_comp_miss_cnt = 2196, comp_miss_cnt = 4535
+// spec accs cost = 56074, num of spec hits = 4840
+
+
+gradle.C4000.bpe14.50Kreq.4DSs.Kloc1.M100.U300.FNO.Bw3 | tot_cost = 972878.0
+// tot_access_cost= 40678.0, hit_ratio = 0.81, non_comp_miss_cnt = 4787, comp_miss_cnt = 4535
+// FN miss cnt = 4787
+
+
+gradle.C4000.bpe14.50Kreq.4DSs.Kloc1.M100.U300.FNA_by_hist.Bw2 | tot_cost = 767603.0
+// tot_access_cost= 94503.0, hit_ratio = 0.87, non_comp_miss_cnt = 2196, comp_miss_cnt = 4535
+// spec accs cost = 56074, num of spec hits = 4840
 
 132.72.47.203
 132.72.47.204
