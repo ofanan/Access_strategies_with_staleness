@@ -10,6 +10,7 @@ import candidate
 import node 
 from   printf import printf
 from numpy.core._multiarray_umath import dtype
+from MyConfig import bw_to_uInterval 
 
 # Codes for access algorithms
 ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
@@ -23,8 +24,6 @@ ALG_PGM_FNA         = 8 # PGM alg', detailed in Access Strategies journal paper;
 ALG_PGM_FNA_MR1_BY_HIST = 10 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
 ALG_PGM_FNA_MR1_BY_HIST_ADAPT = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
 ALG_OPT_HOMO        = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
-#ALG_PGM_FNO_HOMO    = 107 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
-#ALG_PGM_FNA_HOMO    = 108 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious. Faster version for the case of homo' accs costs
 
 # client action: updated according to what client does
 # 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
@@ -36,8 +35,8 @@ class Simulator(object):
 
     # init a list of empty DSs
     def init_DS_list(self):
-        self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, 
-                                            uInterval = self.num_of_req_between_updates) 
+        self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, 
+                        max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose) 
                         for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
@@ -46,7 +45,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, output_file, settings_str, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, uInterval = 0):
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 1):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -100,9 +99,9 @@ class Simulator(object):
         self.non_comp_miss_cnt  = 0
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
         self.tot_num_of_updates = 0
-
-        self.num_of_req_between_updates = int (round(uInterval / self.num_of_DSs))
-        self.uInterval          = uInterval
+        self.requested_bw       = requested_bw
+        self.uInterval = bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, requested_bw)
+        print ('uInterval = ', self.uInterval)
         self.update_cycle_of_DS = np.zeros(self.num_of_DSs, dtype = 'uint16')
         for ds_id in range (self.num_of_DSs):
             self.update_cycle_of_DS[ds_id] = ds_id * self.uInterval / self.num_of_DSs
@@ -161,12 +160,12 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        #avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
         avg_num_of_updates_per_DS = self.tot_num_of_updates / self.num_of_DSs
         avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
-        self.settings_str += '.B{:.0f}' .format ((avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) / 8) #Each update is a full indicator, sent to n-1 DSs)
         printf (self.output_file, '\n\n{} | tot_cost = {}\n'  .format (self.settings_str, self.total_cost))
-                 
+        bw_in_practice =  int (round ( avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
+        if (self.requested_bw != bw_in_practice):
+            printf (self.output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.requested_bw, bw_in_practice))
         if (self.verbose == 1):
             printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
                (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
@@ -203,11 +202,6 @@ class Simulator(object):
             if (remainder == self.update_cycle_of_DS[ds_id]):
                 self.DS_list[ds_id].send_update ()
                 self.tot_num_of_updates += 1
-
-#         if (self.req_cnt % self.num_of_req_between_updates == 0):
-#             self.DS_list[self.cur_updating_DS].send_update ()
-#             self.cur_updating_DS = self.cur_updating_DS + 1 if (self.cur_updating_DS < self.num_of_DSs - 1) else 0
-#             self.tot_num_of_updates += 1
 
 
     def run_trace_pgm_fno_hetro (self):
