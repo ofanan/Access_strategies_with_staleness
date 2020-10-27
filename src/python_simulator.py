@@ -159,10 +159,11 @@ class Simulator(object):
         self.comp_miss_cnt      = np.sum( [client.comp_miss_cnt for client in self.client_list ] )
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
+        self.mean_service_cost  = self.total_cost / self.req_cnt 
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
         avg_num_of_updates_per_DS = self.tot_num_of_updates / self.num_of_DSs
         avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
-        printf (self.output_file, '\n\n{} | tot_cost = {}\n'  .format (self.settings_str, self.total_cost))
+        printf (self.output_file, '\n\n{} | service_cost = {}\n'  .format (self.settings_str, self.mean_service_cost))
         bw_in_practice =  int (round ( avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
         if (self.requested_bw != bw_in_practice):
             printf (self.output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.requested_bw, bw_in_practice))
