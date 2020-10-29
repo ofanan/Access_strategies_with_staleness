@@ -170,7 +170,9 @@ class Simulator(object):
         if (self.verbose == 1):
             printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
                (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
-    
+        num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
+        if (self.verbose == 1):
+            printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
 
     def run_trace_opt_hetro (self):
         """
@@ -201,7 +203,8 @@ class Simulator(object):
         remainder = self.req_cnt % self.uInterval
         for ds_id in range (self.num_of_DSs):
             if (remainder == self.update_cycle_of_DS[ds_id]):
-                self.DS_list[ds_id].send_update ()
+                check_delta_th = False # True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
+                self.DS_list[ds_id].send_update (check_delta_th)
                 self.tot_num_of_updates += 1
 
 
