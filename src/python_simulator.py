@@ -10,7 +10,7 @@ import candidate
 import node 
 from   printf import printf
 from numpy.core._multiarray_umath import dtype
-from MyConfig import bw_to_uInterval 
+from MyConfig import bw_to_uInterval, settings_string 
 
 # Codes for access algorithms
 ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
@@ -44,7 +44,7 @@ class Simulator(object):
         use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, output_file, settings_str, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
+    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
                  use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 1):
         """
         Return a Simulator object with the following attributes:
@@ -57,7 +57,7 @@ class Simulator(object):
             alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
         """
         self.output_file    = output_file
-        self.settings_str   = settings_str
+        self.trace_file_name= trace_file_name
         self.missp          = missp
         self.k_loc          = k_loc
         self.DS_size        = DS_size
@@ -145,7 +145,7 @@ class Simulator(object):
             for ds_id in (range(self.num_of_DSs)):
                 DSs_in_leaf[self.leaf_of_DS[client_id][ds_id]].append(ds_id)
             self.DSs_in_leaf.append(DSs_in_leaf)
-
+                
 
     def gather_statistics(self):
         """
@@ -161,10 +161,9 @@ class Simulator(object):
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.mean_service_cost  = self.total_cost / self.req_cnt 
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        avg_num_of_updates_per_DS = self.tot_num_of_updates / self.num_of_DSs
-        avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
+        self.settings_str = settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.requested_bw, self.alg_mode)
         printf (self.output_file, '\n\n{} | service_cost = {}\n'  .format (self.settings_str, self.mean_service_cost))
-        bw_in_practice =  int (round ( avg_num_of_updates_per_DS * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
+        bw_in_practice =  int (round ( self.tot_num_of_updates * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
         if (self.requested_bw != bw_in_practice):
             printf (self.output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.requested_bw, bw_in_practice))
         if (self.verbose == 1):
@@ -172,7 +171,8 @@ class Simulator(object):
                (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
         if (self.verbose == 1):
-            printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
+            printf (self.output_file, '// uInterval = {:.0f},  avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
+                                .format (self.uInterval, num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
 
     def run_trace_opt_hetro (self):
         """
@@ -203,7 +203,7 @@ class Simulator(object):
         remainder = self.req_cnt % self.uInterval
         for ds_id in range (self.num_of_DSs):
             if (remainder == self.update_cycle_of_DS[ds_id]):
-                check_delta_th = False # True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
+                check_delta_th = False #True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
                 self.DS_list[ds_id].send_update (check_delta_th)
                 self.tot_num_of_updates += 1
 
@@ -266,8 +266,8 @@ class Simulator(object):
             self.indications            = np.array (range (self.num_of_DSs), dtype = 'bool')
             self.run_trace_pgm_fna_hetro ()
             self.gather_statistics()
-            avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
-            avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
+#             avg_num_of_updates_per_DS = sum (DS.num_of_updates for DS in self.DS_list) / self.num_of_DSs
+#             avg_update_interval = -1 if (avg_num_of_updates_per_DS == 0) else self.req_cnt / avg_num_of_updates_per_DS
             if (self.verbose == 1):
                 printf (self.output_file, '// spec accs cost = {:.0f}, num of spec hits = {:.0f}' .format (self.speculate_accs_cost, self.speculate_hit_cnt))             
         else: 

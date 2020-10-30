@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import python_simulator as sim
 
 def getTracesPath():
 	trace_path_splitted = os.getcwd().split ("\\")
@@ -24,16 +25,32 @@ def exponential_window (old_estimate, new_val, alpha):
 	return alpha * new_val + (1 - alpha) * old_estimate 
 
 def bw_to_uInterval (DS_size, bpe, num_of_DSs, bw):
-	return int (round (DS_size * bpe * (num_of_DSs-1)) / bw)
-
+	return int (round (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / bw)
+ 
 def uInterval_to_Bw (DS_size, bpe, num_of_DSs, uInerval):
-	return (DS_size * bpe * (num_of_DSs-1)) / uInterval
+	return (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / uInterval
 
 def get_optimal_num_of_hashes (bpe):
     """
 	Returns the optimal number of hash functions for a given number of Bits Per Element (actually, cntrs per element) in a Bloom filter
     """
     return int (bpe * np.log (2))
+
+
+def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, alg_mode):
+	settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.' .format (
+		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw)
+	if (alg_mode == sim.ALG_OPT):
+		return settings_str + 'Opt'
+	elif (alg_mode == sim.ALG_PGM_FNO):
+		return settings_str + 'FNO'
+	elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
+		return settings_str + 'FNA'
+
+
+
+
+
 
 def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
     return pow (1 - pow (1 - 1/BF_size, num_of_hashes * cache_size), num_of_hashes)
