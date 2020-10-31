@@ -15,12 +15,13 @@ from gen_requests import gen_requests, optimal_BF_size_per_DS_size
 num_of_DSs      = 3
 num_of_clients  = num_of_DSs
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 500000 # Shorten the num of requests for debugging / shorter runs
-trace_file_name     = 'wiki/wiki.1190448987_500K_3DSs.csv'
+max_num_of_req      = 750000 # Shorten the num of requests for debugging / shorter runs
+
+# trace_file_name     = 'wiki/wiki.1190448987_500K_5DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
 # trace_file_name     = 'gradle/short.csv'
-# trace_file_name     = 'gradle/gradle.build-cache_full_750K_3DSs.csv'
+trace_file_name     = 'gradle/gradle.build-cache_full_750K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_400K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_50K_3DSs.csv'
 requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
@@ -33,7 +34,7 @@ bpe     = 14
 max_fpr = 0.03
 max_fnr = max_fpr
 # alg_modes = [sim.ALG_PGM_FNO] 
-alg_modes = [sim.ALG_PGM_FNO] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 bw = 40 # desired update bw [bits / req]
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')

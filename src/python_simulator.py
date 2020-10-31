@@ -10,7 +10,8 @@ import candidate
 import node 
 from   printf import printf
 from numpy.core._multiarray_umath import dtype
-from MyConfig import bw_to_uInterval, settings_string 
+#from MyConfig import MyConfing.bw_to_uInterval, settings_string 
+import MyConfig 
 
 # Codes for access algorithms
 ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
@@ -100,7 +101,7 @@ class Simulator(object):
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
         self.tot_num_of_updates = 0
         self.requested_bw       = requested_bw
-        self.uInterval = bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, requested_bw)
+        self.uInterval = MyConfig.bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, requested_bw)
         print ('uInterval = ', self.uInterval)
         self.update_cycle_of_DS = np.zeros(self.num_of_DSs, dtype = 'uint16')
         for ds_id in range (self.num_of_DSs):
@@ -161,7 +162,7 @@ class Simulator(object):
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.mean_service_cost  = self.total_cost / self.req_cnt 
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        self.settings_str = settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.requested_bw, self.alg_mode)
+        self.settings_str       = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.requested_bw, self.alg_mode)
         printf (self.output_file, '\n\n{} | service_cost = {}\n'  .format (self.settings_str, self.mean_service_cost))
         bw_in_practice =  int (round ( self.tot_num_of_updates * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
         if (self.requested_bw != bw_in_practice):
@@ -203,7 +204,7 @@ class Simulator(object):
         remainder = self.req_cnt % self.uInterval
         for ds_id in range (self.num_of_DSs):
             if (remainder == self.update_cycle_of_DS[ds_id]):
-                check_delta_th = False #True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
+                check_delta_th = True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
                 self.DS_list[ds_id].send_update (check_delta_th)
                 self.tot_num_of_updates += 1
 

@@ -3,7 +3,7 @@ import mod_pylru
 import itertools
 import CountingBloomFilter as CBF
 import copy
-from MyConfig import get_optimal_num_of_hashes, calc_designed_fpr
+import MyConfig 
 
 
 class DataStore (object):
@@ -25,8 +25,8 @@ class DataStore (object):
         self.bpe                    = bpe
         self.BF_size                = self.bpe * self.cache_size
         self.lg_BF_size             = np.log2 (self.BF_size) 
-        self.num_of_hashes          = get_optimal_num_of_hashes (self.bpe)
-        self.designed_fpr           = calc_designed_fpr (self.cache_size, self.BF_size, self.num_of_hashes)
+        self.num_of_hashes          = MyConfig.get_optimal_num_of_hashes (self.bpe)
+        self.designed_fpr           = MyConfig.calc_designed_fpr (self.cache_size, self.BF_size, self.num_of_hashes)
         self.window_alpha           = window_alpha
         self.estimation_window      = estimation_window
         self.one_min_alpha          = 1 - self.window_alpha

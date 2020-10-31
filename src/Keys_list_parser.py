@@ -7,7 +7,7 @@ import mmh3
 import sys
 from collections import defaultdict
 
-from MyConfig import getTracesPath 
+import MyConfig  
 
 # Parses a trace whose format is merely a list of keys (each key in a different line). 
 # Output: a csv file, where:
@@ -18,11 +18,11 @@ input_file_name =  'wiki/wiki.1190448987.txt'
 # input_file_name = 'gradle/gradle.build-cache_full.txt'
 # input_file_name = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req.txt'
 #input_file_name = 'umass/storage/F2.3M_req.txt'
-num_of_clients      = 3
+num_of_clients      = 5
 kloc = 1
-num_of_req = 500000
+num_of_req = 5#00000
 
-traces_path = getTracesPath()
+traces_path = MyConfig.getTracesPath()
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
 
 
