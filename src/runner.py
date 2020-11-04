@@ -33,9 +33,9 @@ k_loc   = 1
 bpe     = 14
 max_fpr = 0.03
 max_fnr = max_fpr
-# alg_modes = [sim.ALG_PGM_FNO] 
-alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
-bw = 40 # desired update bw [bits / req]
+alg_modes = [sim.ALG_PGM_FNO] 
+# alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
+bw = 180 # desired update bw [bits / req]
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
