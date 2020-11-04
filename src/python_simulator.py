@@ -204,7 +204,7 @@ class Simulator(object):
         remainder = self.req_cnt % self.uInterval
         for ds_id in range (self.num_of_DSs):
             if (remainder == self.update_cycle_of_DS[ds_id]):
-                check_delta_th = True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
+                check_delta_th = False #True if (self.req_cnt > (self.num_of_DSs * self.DS_size)) else False
                 self.DS_list[ds_id].send_update (check_delta_th)
                 self.tot_num_of_updates += 1
 

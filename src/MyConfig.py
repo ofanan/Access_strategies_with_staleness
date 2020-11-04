@@ -47,11 +47,6 @@ def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_lo
 	elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
 		return settings_str + 'FNA'
 
-
-
-
-
-
 def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
     return pow (1 - pow (1 - 1/BF_size, num_of_hashes * cache_size), num_of_hashes)
 # def get_designed_fpr (hash_cnt):
