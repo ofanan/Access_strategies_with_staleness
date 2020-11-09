@@ -48,7 +48,7 @@ class DataStore (object):
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
         self.num_of_fpr_fnr_updates = int (0)
-        self.num_of_insertions_between_estimations = np.uint8 (max (self.cache_size / 1000, 1))
+        self.num_of_insertions_between_estimations = np.uint8 (max (self.cache_size / 500, 1))
         self.uInterval = uInterval
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
@@ -113,16 +113,16 @@ class DataStore (object):
     def send_update (self, check_delta_th = False):
             
         self.num_of_updates += 1
-        self.fnr = 0 # Immediately after sending an update, the expected fnr is 0
-        updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
         if (check_delta_th):
+            updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
             Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
             if (sum (Delta) < self.delta_th):
                 print ('sum_Delta = ', sum (Delta), 'delta_th = ', self.delta_th, 'Sending delta updates is cheaper\n')
                 exit ()
-        self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter ()
-        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
+        self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter () # "stale_indicator" is the snapshot of the current state of the ind', until the next update
+        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the updated indicator
         self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
+        self.fnr = 0 # Immediately after sending an update, the expected fnr is 0
 #         print ('d.fpr = {:.4f}, B1_st = {:.0f}, calc.fpr = {:.4f}' .format (self.designed_fpr, B1_st, pow ( B1_st / self.BF_size, self.num_of_hashes)))
 #         self.fpr = self.designed_fpr # Immediately after sending an update, the expected fpr is the inherent fpr
         
