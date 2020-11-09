@@ -42,8 +42,8 @@ class DataStore (object):
         self.cache                  = mod_pylru.lrucache(self.cache_size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
-        self.delta_th               = self.BF_size / self.lg_BF_size # threshold for number of flipped bits in the BF; below this th, it's cheaper to send only the "delta" (indices of flipped bits), rather than the full ind'
-#         self.update_bw              = 0
+        self.delta_th               = self.BF_size / self.lg_BF_size # threshold for number of flipped bits in the BF; below this th, it's cheaper to send only the "delta" (indices of flipped bits), rather than the full ind'         
+        self.update_bw              = 0
         self.num_of_updates         = 0
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
@@ -98,8 +98,7 @@ class DataStore (object):
             self.updated_indicator.add(key)
             self.ins_cnt += 1
             if (consider_fpr_fnr_update):
-                if ( #(req_cnt < 3 * self.cache_size) or 
-                     self.ins_cnt % self.num_of_insertions_between_estimations == 0): 
+                if ( self.ins_cnt % self.num_of_insertions_between_estimations == 0): 
                     self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
                     self.num_of_fpr_fnr_updates += 1
             if (self.should_send_update() ):
@@ -164,8 +163,8 @@ class DataStore (object):
     def should_send_update (self):
 #         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr):
 #             return True 
-#         if (self.ins_cnt % self.uInterval == 0):
-#             return True
+        if (self.ins_cnt % self.uInterval == 0):
+            return True
         return False
             
 

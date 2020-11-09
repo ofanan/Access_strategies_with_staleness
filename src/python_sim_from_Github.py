@@ -37,7 +37,7 @@ class Simulator(object):
     # init a list of empty DSs
     def init_DS_list(self):
         self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, 
-                        max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, uInterval = self.uInterval) 
+                        max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose) 
                         for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
@@ -46,7 +46,7 @@ class Simulator(object):
         for i in range(self.num_of_clients)]
     
     def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 0, uInterval = -1):
+                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 1):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -84,7 +84,7 @@ class Simulator(object):
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
-        self.pos_ind_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
+        self.cur_pos_DS_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
         
@@ -101,17 +101,11 @@ class Simulator(object):
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
         self.tot_num_of_updates = 0
         self.requested_bw       = requested_bw
-        
-        # If the uInterval is given in the input (as a non-negative value) - use it. 
-        # Else, calculate uInterval by the given requested_bw parameter.
-        if (uInterval == -1): # Should calculate uInterval by the given requested_bw parameter
-            self.use_global_uInerval = True
-            self.uInterval = MyConfig.bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, requested_bw)
-            self.update_cycle_of_DS = np.array ( [ds_id * self.uInterval / self.num_of_DSs for ds_id in range (self.num_of_DSs)]) 
-        else:
-            self.use_global_uInerval = False
-            self.uInterval = uInterval
+        self.uInterval = MyConfig.bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, requested_bw)
         print ('uInterval = ', self.uInterval)
+        self.update_cycle_of_DS = np.zeros(self.num_of_DSs, dtype = 'uint16')
+        for ds_id in range (self.num_of_DSs):
+            self.update_cycle_of_DS[ds_id] = ds_id * self.uInterval / self.num_of_DSs
         self.cur_updating_DS = 0
         self.init_DS_list() #DS_list is the list of DSs
 
@@ -168,7 +162,7 @@ class Simulator(object):
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.mean_service_cost  = self.total_cost / self.req_cnt 
         self.avg_DS_hit_ratio   = np.average ([DS.get_hr() for DS in self.DS_list])
-        self.settings_str       = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.requested_bw, self.uInterval, self.alg_mode)
+        self.settings_str       = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.requested_bw, self.alg_mode)
         printf (self.output_file, '\n\n{} | service_cost = {}\n'  .format (self.settings_str, self.mean_service_cost))
         bw_in_practice =  int (round ( self.tot_num_of_updates * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
         if (self.requested_bw != bw_in_practice):
@@ -207,8 +201,6 @@ class Simulator(object):
                 self.client_list[self.client_id].hit_cnt += 1
 
     def consider_send_update (self):
-        if (not(self.use_global_uInerval)): # To be used only if we have a "globally calculated uInterval"
-            return
         remainder = self.req_cnt % self.uInterval
         for ds_id in range (self.num_of_DSs):
             if (remainder == self.update_cycle_of_DS[ds_id]):
@@ -225,8 +217,8 @@ class Simulator(object):
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.cur_req.client_id
-            self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.pos_ind_list <- list of DSs with positive indications
-            if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
+            self.cur_pos_DS_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.cur_pos_DS_list <- list of DSs with positive indications
+            if (len(self.cur_pos_DS_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss (consider_fpr_fnr_update = False)
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
@@ -377,20 +369,20 @@ class Simulator(object):
         The PGM FNO (false negative oblivious) alg' detailed in the paper: Access Strategies for Network Caching, Journal verison.
         """ 
         # Now we know that there exists at least one positive indication
-        #self.pos_ind_list = [int(i) for i in self.pos_ind_list] # cast pos_ind_list to int
+        #self.cur_pos_DS_list = [int(i) for i in self.cur_pos_DS_list] # cast cur_pos_DS_list to int
 
         # Partition stage
         ###############################################################################################################
         # leaf_of_DS (i,j) holds the leaf to which DS with cost (i,j) belongs, that is, log_2 (DS(i,j))
 
         # leaves_of_DSs_w_pos_ind will hold the leaves of the DSs with pos' ind'
-        cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[self.client_id], self.pos_ind_list)) + 1
+        cur_num_of_leaves = np.max (np.take(self.leaf_of_DS[self.client_id], self.cur_pos_DS_list)) + 1
 
         # DSs_in_leaf[j] will hold the list of DSs which belong leaf j, that is, the IDs of all the DSs with access in [2^j, 2^{j+1})
         DSs_in_leaf = [[]]
         for leaf_num in range (cur_num_of_leaves):
             DSs_in_leaf.append ([])
-        for ds in (self.pos_ind_list):
+        for ds in (self.cur_pos_DS_list):
             DSs_in_leaf[self.leaf_of_DS[self.client_id][ds]].append(ds)
 
         # Generate stage
@@ -568,5 +560,3 @@ class Simulator(object):
             self.client_list[self.client_id].hit_cnt += 1
         else: # Miss
             self.handle_miss ()
-
-

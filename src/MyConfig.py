@@ -25,6 +25,12 @@ def exponential_window (old_estimate, new_val, alpha):
 	return alpha * new_val + (1 - alpha) * old_estimate 
 
 def bw_to_uInterval (DS_size, bpe, num_of_DSs, bw):
+	"""
+	Given a requested bw [bits / system request], returns the per-cache uInterval, namely, the avg num of events this cache has to count before sending an update.
+	An "event" here is either a user access to the cache, or an insertion to that cache.
+	The simulator calculates the number of events implicitly, by assuming that each user request causes an event to a single cache -- 
+	and hence, each cache sees an event once in num_of_DSs user requests on average. 
+	"""
 	return int (round (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / bw)
  
 def uInterval_to_Bw (DS_size, bpe, num_of_DSs, uInerval):
@@ -37,20 +43,15 @@ def get_optimal_num_of_hashes (bpe):
     return int (bpe * np.log (2))
 
 
-def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, alg_mode):
-	settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.' .format (
-		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw)
+def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode):
+	settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.U{:.0f}.' .format (
+		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw, uInterval)
 	if (alg_mode == sim.ALG_OPT):
 		return settings_str + 'Opt'
 	elif (alg_mode == sim.ALG_PGM_FNO):
 		return settings_str + 'FNO'
 	elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
 		return settings_str + 'FNA'
-
-
-
-
-
 
 def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
     return pow (1 - pow (1 - 1/BF_size, num_of_hashes * cache_size), num_of_hashes)
