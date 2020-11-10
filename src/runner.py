@@ -20,11 +20,11 @@ Run a simulation, looping over all requested values of parameters
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
 max_num_of_req      = 500000 # Shorten the num of requests for debugging / shorter runs
 
-trace_file_name     = 'wiki/wiki.1190448987_500K_3DSs.csv'
+# trace_file_name     = 'wiki/wiki.1190448987_500K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_50K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_full_750K_3DSs.csv'
-# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req.1000K.3DSs.csv'
+trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 
 num_of_DSs      = int (trace_file_name.split("DSs")[0].split("_")[-1]) 
 num_of_clients  = num_of_DSs
@@ -45,7 +45,7 @@ alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.AL
 # if we fix uInterval = -1, then the simulator will calculate the uInterval according to the requested BW.
 # Else, the simulator will fix uInterval to the input parameter uInterval
 # uIntervals = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
-uIntervals = [512, 256] #[8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]
+uIntervals = [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]
 # Bandwidth budgets to be used.  
 #bws = [180, 200]# [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] # desired update bw [bits / req]
 bw = 0
