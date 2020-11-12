@@ -27,15 +27,15 @@ class Res_file_parser (object):
 #         print ('splitted line = ', splitted_line)
 #         print ('cache_size = ', splitted_line[cache_size_idx].split("C")[1].split("K")[0])
         self.dict = {
-            "trace"        : splitted_line[trace_idx],
-            "cache_size"   : int (splitted_line[cache_size_idx].split("C")[1].split("K")[0]),   
+            "trace"      : splitted_line[trace_idx],
+            "cache_size" : int (splitted_line[cache_size_idx].split("C")[1].split("K")[0]),   
             "bpe"        : int (splitted_line[bpe_idx].split("bpe")[1]),
             "num_of_req" : splitted_line[num_of_req_idx].split("req")[0],
             "num_of_DSs" : int (splitted_line[num_of_DSs_idx].split("DSs")[0]), 
             "Kloc"       : int (splitted_line[kloc_idx].split("Kloc")[1]),
             "missp"      : int (splitted_line[missp_idx].split("M")[1]),
             "bw"         : int(splitted_line[bw_idx].split('B')[1]), 
-             "uInterval"  : int(splitted_line[uInterval_idx].split('U')[1]), 
+            "uInterval"  : int(splitted_line[uInterval_idx].split('U')[1]), 
             "alg_mode"   : splitted_line[alg_idx].split(" ")[0],
             "cost"       : cost
             }
@@ -43,7 +43,7 @@ class Res_file_parser (object):
     def print_tikz_line (self, list_of_dict, key_to_sort, legend_entry):
         for dict in sorted (list_of_dict, key = lambda i: i[key_to_sort]):
             printf (self.output_file, '({:.0f} ,{:.04f})' .format (dict[key_to_sort], dict['cost']))
-        printf (self.output_file, '\n};\\addlegendentry {')
+        printf (self.output_file, '\n};\n\\addlegendentry {')
         printf (self.output_file, legend_entry)
         printf (self.output_file, '}\n\n')
         
