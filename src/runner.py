@@ -39,16 +39,17 @@ k_loc   = 1
 bpe     = 14
 max_fpr = 0.03
 max_fnr = max_fpr 
-alg_modes = [sim.ALG_OPT] 
+alg_modes = [sim.ALG_PGM_FNO] 
 # alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 # Bandwidth / update Interval allocation:
 # if we fix uInterval = -1, then the simulator will calculate the uInterval according to the requested BW.
 # Else, the simulator will fix uInterval to the input parameter uInterval
-# uIntervals = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
-uIntervals = [1000] #[8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]
+# uIntervals = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
 # Bandwidth budgets to be used.  
 #bws = [180, 200]# [20, 40, 60, 80, 100, 120, 140, 160, 180, 200] # desired update bw [bits / req]
+
+DS_sizes = [6000, 10000]
 bw = 0
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
@@ -74,17 +75,17 @@ else:
 def run_sim_collection (missp, k_loc, requests, DS_cost):
     
     for DS_size in DS_sizes:
-        for uInterval in uIntervals:
-            for alg_mode in alg_modes:
-        
-                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
-                print ('running', settings_str)
-                tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
-                                   DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
-                                   verbose = 1, uInterval = uInterval)
-                sm.run_simulator()
-                toc()
+        uInterval = DS_size / 10
+        for alg_mode in alg_modes:
+    
+            settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+            print ('running', settings_str)
+            tic()
+            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+                               DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
+                               verbose = 1, uInterval = uInterval)
+            sm.run_simulator()
+            toc()
 
 run_sim_collection (missp, k_loc, requests, DS_cost)
 

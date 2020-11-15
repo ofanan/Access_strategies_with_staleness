@@ -31,7 +31,7 @@ class DataStore (object):
         self.estimation_window      = estimation_window
         self.one_min_alpha          = 1 - self.window_alpha
         self.alpha_over_window      = float (self.window_alpha) / float (self.estimation_window)
-        self.fp_events_cnt          = int(0)
+        self.fp_events_cnt          = int(0) # Number of False Positive events that happened in the current estimatio window
         self.access_cnt             = 0
         self.hit_cnt                = 0
         self.max_fnr                = max_fnr
@@ -67,7 +67,7 @@ class DataStore (object):
         """
         self.access_cnt += 1
         
-        # check to see if an update to the estimated miss-rate is required
+        # check to see if an update to the estimated conditional miss-rate is required
         if (self.access_cnt % self.estimation_window == 0):
             self.update_mr1()
             # self.update_mr0()
@@ -135,7 +135,6 @@ class DataStore (object):
         done using an exponential moving average.
         Used by False-Negative-Oblivious strategeis, such as the algorithms in the paper "Access Strategies for Network Caching."
         """
-#         self.mr_estimate = (float(self.fp_events_cnt) / self.estimation_window)
         self.mr_cur = self.alpha_over_window * float(self.fp_events_cnt) + self.one_min_alpha * self.mr_cur 
         self.fp_events_cnt = int(0)
         
