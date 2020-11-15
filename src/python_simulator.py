@@ -73,7 +73,8 @@ class Simulator(object):
         self.num_of_clients     = client_DS_cost.shape[0]
         self.num_of_DSs         = client_DS_cost.shape[1]
         self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
-        self.estimation_window  = self.DS_size # window for parameters' estimation 
+        self.est_win_factor     = 10
+        self.estimation_window  = self.DS_size / self.est_win_factor # window for parameters' estimation 
         self.max_fnr            = max_fnr
         self.max_fpr            = max_fpr
         self.verbose            = verbose # Used for debug / analysis: a higher level verbose prints more msgs to the Screen / output file.
@@ -180,6 +181,8 @@ class Simulator(object):
         if (self.verbose == 1):
             printf (self.output_file, '// uInterval = {:.0f},  avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
                                 .format (self.uInterval, num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
+        printf (self.output_file, '// USING ESTIMATION WINDOW FACTOR = {}\n' .format (self.est_win_factor))
+        
 
     def run_trace_opt_hetro (self):
         """

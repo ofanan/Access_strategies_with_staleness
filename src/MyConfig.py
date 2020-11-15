@@ -3,8 +3,9 @@ import numpy as np
 import python_simulator as sim
 
 def getTracesPath():
-	trace_path_splitted = os.getcwd().split ("\\")
-	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
+	return 'C:/Users/ofanan/Google Drive/Comnet/traces/'
+# 	trace_path_splitted = os.getcwd().split ("\\")
+# 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
 
 
 def calcOvhDsCost ():

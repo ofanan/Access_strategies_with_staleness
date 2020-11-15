@@ -14,13 +14,13 @@ import MyConfig
 #         - the first col. is the keys,
 #         - the 2nd col. is the id of the clients of this req,
 #         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss.
-input_file_name =  'wiki/wiki.1190448987.txt'
+#input_file_name =  'wiki/wiki.1190448987.txt'
 # input_file_name = 'gradle/gradle.build-cache_full.txt'
 # input_file_name = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req.txt'
-#input_file_name = 'umass/storage/F2.3M_req.txt'
-num_of_clients      = 5
+input_file_name = 'umass/storage/F2.3M_req.txt'
+num_of_clients      = 3
 kloc = 1
-num_of_req = 5#00000
+num_of_req = 500000
 
 traces_path = MyConfig.getTracesPath()
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
