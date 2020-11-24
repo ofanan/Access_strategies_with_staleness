@@ -8,7 +8,9 @@ import MyConfig
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, max_fnr = 0.03, max_fpr = 0.03, verbose = 0, uInterval = 1):
+    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, 
+                 max_fnr = 0.03, max_fpr = 0.03, verbose = 0, uInterval = 1,
+                 num_of_insertions_between_estimations = 20):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
@@ -48,7 +50,7 @@ class DataStore (object):
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
         self.num_of_fpr_fnr_updates = int (0)
-        self.num_of_insertions_between_estimations = np.uint8 (max (self.cache_size / 500, 1))
+        self.num_of_insertions_between_estimations = num_of_insertions_between_estimations
         self.uInterval = uInterval
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")

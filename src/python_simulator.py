@@ -37,7 +37,8 @@ class Simulator(object):
     # init a list of empty DSs
     def init_DS_list(self):
         self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, estimation_window = self.estimation_window, 
-                        max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, uInterval = self.uInterval) 
+                        max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, uInterval = self.uInterval,
+                        num_of_insertions_between_estimations = self.num_of_insertions_between_estimations) 
                         for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
@@ -114,6 +115,8 @@ class Simulator(object):
             self.uInterval = uInterval
         print ('uInterval = ', self.uInterval)
         self.cur_updating_DS = 0
+        #self.num_of_insertions_between_estimations_factor = 100
+        self.num_of_insertions_between_estimations = np.uint8 (20)
         self.init_DS_list() #DS_list is the list of DSs
 
         # Debug / verbose variables
@@ -178,10 +181,11 @@ class Simulator(object):
             printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
                (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
-        if (self.verbose == 1):
-            printf (self.output_file, '// uInterval = {:.0f},  avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
-                                .format (self.uInterval, num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
-        printf (self.output_file, '// USING ESTIMATION WINDOW FACTOR = {}\n' .format (self.est_win_factor))
+        if (self.verbose == 1 and self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+            printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
+                                .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
+            printf (self.output_file, '// estimation window factor = {}, num of insertions between fpr_fnr estimations = {}\n' .format (
+                self.est_win_factor, self.num_of_insertions_between_estimations))
         
 
     def run_trace_opt_hetro (self):

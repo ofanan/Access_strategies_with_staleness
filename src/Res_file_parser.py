@@ -27,16 +27,16 @@ class Res_file_parser (object):
 #         print ('splitted line = ', splitted_line)
 #         print ('cache_size = ', splitted_line[cache_size_idx].split("C")[1].split("K")[0])
         self.dict = {
-            "trace"      : splitted_line[trace_idx],
-            "cache_size" : int (splitted_line[cache_size_idx].split("C")[1].split("K")[0]),   
-            "bpe"        : int (splitted_line[bpe_idx].split("bpe")[1]),
-            "num_of_req" : splitted_line[num_of_req_idx].split("req")[0],
-            "num_of_DSs" : int (splitted_line[num_of_DSs_idx].split("DSs")[0]), 
-            "Kloc"       : int (splitted_line[kloc_idx].split("Kloc")[1]),
-            "missp"      : int (splitted_line[missp_idx].split("M")[1]),
-            "bw"         : int(splitted_line[bw_idx].split('B')[1]), 
-            "uInterval"  : int(splitted_line[uInterval_idx].split('U')[1]), 
-            "alg_mode"   : splitted_line[alg_idx].split(" ")[0],
+            "trace"      : splitted_line        [trace_idx],
+            "cache_size" : int (splitted_line   [cache_size_idx].split("C")[1].split("K")[0]),   
+            "bpe"        : int (splitted_line   [bpe_idx]       .split("bpe")[1]),
+            "num_of_req" : splitted_line        [num_of_req_idx].split("req")[0],
+            "num_of_DSs" : int (splitted_line   [num_of_DSs_idx].split("DSs")[0]), 
+            "Kloc"       : int (splitted_line   [kloc_idx]      .split("Kloc")[1]),
+            "missp"      : int (splitted_line   [missp_idx]     .split("M")[1]),
+            "bw"         : int(splitted_line    [bw_idx]        .split('B')[1]), 
+            "uInterval"  : int(splitted_line    [uInterval_idx] .split('U')[1]), 
+            "alg_mode"   : splitted_line        [alg_idx]       .split(" ")[0],
             "cost"       : cost
             }
 
@@ -45,8 +45,7 @@ class Res_file_parser (object):
             printf (self.output_file, '({:.0f} ,{:.04f})' .format (dict[key_to_sort], dict['cost']))
         printf (self.output_file, '\n};\n\\addlegendentry {')
         printf (self.output_file, legend_entry)
-        printf (self.output_file, '}\n\n')
-        
+        printf (self.output_file, '}\n\n')    
         
 
     def print_to_tikz (self, key_to_sort, alg_mode):
@@ -56,6 +55,11 @@ class Res_file_parser (object):
         else:
             printf (self.output_file, '\\addplot[color=red,          mark=o,                 width = \plotwidth] coordinates {\n')
             self.print_tikz_line (self.list_of_dicts_FNO, key_to_sort, 'FNO')             
+
+    def print_table (self):
+        traces = ['gradel', 'wiki', 'scarab', 'F2']
+        algs   = ['FNO', 'FNA']
+        miss_penalties = [40, 400, 4000]
 
     def parse_file (self, input_file_name):
     
@@ -80,8 +84,8 @@ class Res_file_parser (object):
                 self.list_of_dicts_FNO.append(self.dict)
                 
         
-        self.print_to_tikz ('uInterval', 'FNA')
-        self.print_to_tikz ('uInterval', 'FNO')
+        self.print_to_tikz ('cache_size', 'FNA')
+        self.print_to_tikz ('cache_size', 'FNO')
  
         self.input_file.close
         
