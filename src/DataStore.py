@@ -49,7 +49,7 @@ class DataStore (object):
         self.num_of_updates         = 0
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
-        self.num_of_fpr_fnr_updates = int (0)
+        self.num_of_fpr_fnr_updates = int (0) #323434
         self.num_of_insertions_between_estimations = num_of_insertions_between_estimations
         self.uInterval = uInterval
         if (self.verbose == 3):
