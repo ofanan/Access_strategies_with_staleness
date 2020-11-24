@@ -14,13 +14,13 @@ import MyConfig
 #         - the first col. is the keys,
 #         - the 2nd col. is the id of the clients of this req,
 #         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss.
-#input_file_name =  'wiki/wiki.1190448987.txt'
+input_file_name =  'wiki/wiki.1190448987.txt'
 # input_file_name = 'gradle/gradle.build-cache_full.txt'
 # input_file_name = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req.txt'
-input_file_name = 'umass/storage/F2.3M_req.txt'
+# input_file_name = 'umass/storage/F2.3M_req.txt'
 num_of_clients      = 3
 kloc = 1
-num_of_req = 500000
+num_of_req = 1000000
 
 traces_path = MyConfig.getTracesPath()
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
@@ -40,6 +40,9 @@ req_id = np.array(range(df.shape[0])).astype('uint32')
 
 unique_permutations_array  = np.array ([np.random.RandomState(seed=i).permutation(range(num_of_clients)) for i in range(unique_urls.size)]).astype('uint8') # generate permutation for each unique key in the trace
 unique_permutations_array  = unique_permutations_array [:, range (kloc)] # Select only the first kloc columns for each row (unique key) in the random permutation matrix
+
+print ('num of uniques = ', unique_permutations_array.size )
+
 permutation_lut_dict = dict(zip(unique_urls , unique_permutations_array)) # generate dictionary to serve as a LUT of unique_key -> permutation
 
 permutations_array = np.array([permutation_lut_dict[url] for url in df[0]]).astype('uint8') # generate full permutations array for all requests. identical keys will get identical permutations
