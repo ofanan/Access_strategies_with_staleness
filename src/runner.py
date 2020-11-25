@@ -36,7 +36,7 @@ miss_penalties = [100]
 k_loc   = 1
 max_fpr = 0.03
 max_fnr = max_fpr 
-alg_modes = [sim.ALG_PGM_FNO] #, sim.ALG_PGM_FNA_MR1_BY_HIST] 
+alg_modes = [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST] 
 # alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 bw = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
@@ -66,7 +66,7 @@ DS_sizes    = [1000, 2000, 4000, 8000, 16000, 32000]
 missp       = 100
 def run_sim_collection (k_loc, requests, DS_cost):
     
-    uInterval   = 1
+    uInterval   = 1024
     for DS_size in DS_sizes:
         for alg_mode in alg_modes:
     

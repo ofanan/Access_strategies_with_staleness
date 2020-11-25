@@ -3,7 +3,8 @@ import numpy as np
 import python_simulator as sim
 
 def getTracesPath():
-	return 'C:/Users/ofanan/Google Drive/Comnet/traces/'
+	user_name = os.getcwd().split ("\\")[2]
+	return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
 # 	trace_path_splitted = os.getcwd().split ("\\")
 # 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
 
