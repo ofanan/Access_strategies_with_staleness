@@ -181,11 +181,12 @@ class Simulator(object):
             printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
                (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
-        if (self.verbose == 1 and self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
-            printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
-                                .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
-            printf (self.output_file, '// estimation window = {}, num of insertions between fpr_fnr estimations = {}\n' .format (
-                self.estimation_window, self.num_of_insertions_between_estimations))
+        if (self.verbose == 1):
+            printf (self.output_file, '// estimation window = {}, ' .format (self.estimation_window))
+            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+                printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
+                printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
+                                    .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
         
 
     def run_trace_opt_hetro (self):

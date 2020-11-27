@@ -8,7 +8,7 @@ from printf import printf
 from   tictoc import tic, toc
 
 import python_simulator as sim
-from MyConfig import getTracesPath, settings_string 
+from MyConfig import getTracesPath, settings_string, calc_service_cost_of_opt
 from gen_requests import gen_requests, optimal_BF_size_per_DS_size
 
 """
@@ -18,7 +18,7 @@ Run a simulation, looping over all requested values of parameters
 
 # A main file for running simulations of Access Strategies with Staleness
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 500000 # Shorten the num of requests for debugging / shorter runs
 
 trace_file_name     = 'wiki/wiki.1190448987_1000K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
@@ -32,11 +32,10 @@ requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_n
 trace_file_name     = trace_file_name.split("/")[0]
 num_of_req          = requests.shape[0]
 
-miss_penalties = [100]
 k_loc   = 1
 max_fpr = 0.03
 max_fnr = max_fpr 
-alg_modes = [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST] 
+alg_modes = [sim.ALG_PGM_FNO] 
 # alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 bw = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
@@ -62,22 +61,21 @@ else:
 
 # Cache size sim'                
 bpe         = 14
-DS_sizes    = [1000, 2000, 4000, 8000, 16000, 32000]
 missp       = 100
+alg_mode    = sim.ALG_PGM_FNA_MR1_BY_HIST 
+DS_size     = 10000
+
 def run_sim_collection (k_loc, requests, DS_cost):
     
-    uInterval   = 1024
-    for DS_size in DS_sizes:
-        for alg_mode in alg_modes:
-    
-            settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
-            print ('running', settings_str)
-            tic()
-            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
-                               DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
-                               verbose = 1, uInterval = uInterval)
-            sm.run_simulator()
-            toc()
+    for uInterval in [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]:
+        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+        print ('running', settings_str)
+        tic()
+        sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+                           DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
+                           verbose = 1, uInterval = uInterval)
+        sm.run_simulator()
+        toc()
             
 # # bpe sim'                
 # DS_size     = 10000
@@ -102,3 +100,12 @@ run_sim_collection (k_loc, requests, DS_cost)
 
 print ('Finished all sims')
 
+
+# # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
+# # Hence, it suffices to run Opt only once per trace and network, and then calculate its service cost for other 
+# # parameters' values. Below is the relevant auxiliary code. 
+# tot_access_cost= 1018126.0
+# comp_miss_cnt = 63808
+# for missp in [40, 400, 4000]:
+#     print ("Opt's service cost is ", calc_service_cost_of_opt (tot_access_cost, comp_miss_cnt, missp, 500000))
+# exit ()

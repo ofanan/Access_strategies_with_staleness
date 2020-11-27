@@ -2,6 +2,14 @@ import os
 import numpy as np
 import python_simulator as sim
 
+def calc_service_cost_of_opt (accs_cost, comp_miss_cnt, missp, req_cnt):
+	"""
+	Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
+	Hence, it suffices to run Opt only once per trace and network, and then calculate its service cost for other 
+	parameters' values using this func'
+	"""
+	return (accs_cost + comp_miss_cnt * missp) / req_cnt
+
 def getTracesPath():
 	user_name = os.getcwd().split ("\\")[2]
 	return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
