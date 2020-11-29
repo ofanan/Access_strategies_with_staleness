@@ -18,7 +18,7 @@ Run a simulation, looping over all requested values of parameters
 
 # A main file for running simulations of Access Strategies with Staleness
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 500000 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
 
 trace_file_name     = 'wiki/wiki.1190448987_1000K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
@@ -59,15 +59,29 @@ elif (DS_cost_type == 'ovh'):
 else: 
     print ('The DS_cost type you chose is not supported')
 
-# Cache size sim'                
+# def run_sim_collection (k_loc, requests, DS_cost):
+#     
+#     bpe         = 14
+#     missp       = 100
+#     alg_mode    = sim.ALG_PGM_FNA_MR1_BY_HIST
+#     uInterval   = 8192 
+#     DS_size     = 10000
+#     settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+#     print ('running', settings_str)
+#     tic()
+#     sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+#                        DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
+#                        verbose = 1, uInterval = uInterval)
+#     sm.run_simulator()
+#     toc()
+
 bpe         = 14
 missp       = 100
-alg_mode    = sim.ALG_PGM_FNA_MR1_BY_HIST 
-DS_size     = 10000
-
+alg_mode    = sim.ALG_PGM_FNO
+uInterval   = 256 
 def run_sim_collection (k_loc, requests, DS_cost):
-    
-    for uInterval in [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]:
+     
+    for DS_size in [8000, 16000, 32000]:
         settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
         print ('running', settings_str)
         tic()

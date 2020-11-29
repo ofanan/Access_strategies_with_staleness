@@ -18,12 +18,12 @@ class Res_file_parser (object):
     def __init__ (self):
         """
         """
-        self.add_plot_str1 = '\\addplot[color=blue,mark=square,] coordinates {\n'
-        self.add_plot_str2 = '\\addplot[color=yellow,mark=o] coordinates {\n'
-        self.add_plot_str3 = '\\addplot[color=red,mark=triangle*] coordinates {\n'
-        self.add_plot_str4 = '\\addplot[color=cyan,mark=x,]    coordinates {\n'
-        self.add_plot_str5 = '\\addplot[color=black,mark=triangle,]coordinates {\n'
-        self.add_legend_str = '\n};\n\\addlegendentry {'
+        self.add_plot_str1 = '\t\t\\addplot [color=blue, mark=square, line width = \\plotLineWidth] coordinates {\n\t\t'
+        self.add_plot_str2 = '\t\t\\addplot [color=green, mark=o, line width=0.8pt] coordinates {\n\t\t'
+        self.add_plot_str3 = '\t\t\\addplot [color=red, mark=triangle*, line width=0.8pt] coordinates {\n\t\t'
+        self.add_plot_str4 = '\t\t\\addplot [color=cyan, mark=x, line width=0.8pt]    coordinates {\n\t\t'
+        self.add_plot_str5 = '\t\t\\addplot [color=black, mark=triangle, line width=0.8pt]coordinates {\n\t\t'
+        self.add_legend_str = '\n\t\t};\n\t\t\\addlegendentry {'
 
     def parse_line (self, line):
         splitted_line = line.split ("|")
@@ -53,6 +53,8 @@ class Res_file_parser (object):
         """
         Print table of service costs, normalized w.r.t. to Opt, in tikz format
         """
+        self.tbl_output_file    = open ("../res/tbl.dat", "w")
+
         traces          = ['wiki', 'gradle', 'scarab', 'umass']
         alg_modes       = ['FNO', 'FNA']
         miss_penalties  = [40, 400, 4000]
@@ -112,25 +114,89 @@ class Res_file_parser (object):
         for dict in sorted (list_of_dict, key = lambda i: i[key_to_sort]):
             printf (self.output_file, '({:.0f}, {:.04f})' .format (dict[key_to_sort], dict['cost']))
         if (not (add_legend_str == None)): # if the caller requested to print an "add legend" str          
-            printf (self.output_file, '{}{}' .format (self.add_legend_str, legend_entry))    
+            printf (self.output_file, '\t\t{}{}' .format (self.add_legend_str, legend_entry))    
             printf (self.output_file, '}\n\n')    
         
         
-    def print_bpes_plot (self):
+    def print_cache_size_plot (self):
         """
         Print a tikz plot of the service cost as a func' of the bpe
         """    
         filtered_list = self.gen_filtered_list (self.list_of_dicts, bpe = 14, missp = 100) # Filter only relevant from the results file  
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 16), 
                                      'cache_size', addplot_str = self.add_plot_str1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 1') 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 16') 
         
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 128), 
+                                     'cache_size', addplot_str = self.add_plot_str2, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 128') 
         
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 128), 
+                                     'cache_size', addplot_str = self.add_plot_str3, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 128') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
+                                     'cache_size', addplot_str = self.add_plot_str2, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 256') 
+        
+#         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
+#                                      'cache_size', addplot_str = self.add_plot_str3, 
+#                                      add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 256') 
+
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1024), 
+                                     'cache_size', addplot_str = self.add_plot_str4, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 1024') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 1024), 
+                                     'cache_size', addplot_str = self.add_plot_str5, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 1024') 
+        
+    def print_bpe_plot (self):
+        """
+        Print a tikz plot of the service cost as a func' of the bpe
+        """    
+        filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100) # Filter only relevant from the results file  
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1), 
+                                     'bpe', addplot_str = self.add_plot_str1, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 1') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 128), 
+                                     'bpe', addplot_str = self.add_plot_str2, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 128') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 128), 
+                                     'bpe', addplot_str = self.add_plot_str3, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 128') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1024), 
+                                     'bpe', addplot_str = self.add_plot_str4, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 1024') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 1024), 
+                                     'bpe', addplot_str = self.add_plot_str5, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 1024') 
+        
+    def print_uInterval_plot (self):
+        """
+        Print a tikz plot of the service cost as a func' of the bpe
+        """    
+        filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100, bpe = 14) # Filter only relevant from the results file  
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt', uInterval = 1), 
+                                     'uInterval', addplot_str = self.add_plot_str1, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'Opt') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO'), 
+                                     'uInterval', addplot_str = self.add_plot_str2, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO') 
+        
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA'), 
+                                     'uInterval', addplot_str = self.add_plot_str3, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA') 
+                
     def parse_file (self, input_file_name):
     
         self.input_file         = open ("../res/" + input_file_name,  "r")
         self.output_file        = open ("../res/" + input_file_name.split(".")[0] + ".dat", "w")
-        self.tbl_output_file    = open ("../res/tbl.dat", "w")
         lines               = (line.rstrip() for line in self.input_file) # "lines" contains all lines in input file
         lines               = (line for line in lines if line)       # Discard blank lines
         self.list_of_dicts  = []
@@ -148,11 +214,12 @@ class Res_file_parser (object):
         cache_size = 10 # cache size to plot, in units of [K] entries        
         uInterval  = 1000
         alg_modes = ['FNA', 'FNO']
-        for alg_mode in alg_modes:
-            self.print_single_tikz_plot (self.gen_filtered_list(self.list_of_dicts, alg_mode = alg_mode, uInterval = uInterval),
-                                     'cache_size', addplot_str = self.add_plot_str_fna, 
-                                     add_legend_str = self.add_legend_str, legend_entry = alg_mode) #, cache_size = cache_size)
- 
+        self.print_cache_size_plot ()
+#         for alg_mode in alg_modes:
+#             self.print_single_tikz_plot (self.gen_filtered_list(self.list_of_dicts, alg_mode = alg_mode, uInterval = uInterval),
+#                                      'cache_size', addplot_str = self.add_plot_str1, 
+#                                      add_legend_str = self.add_legend_str, legend_entry = alg_mode) #, cache_size = cache_size)
+#  
         self.input_file.close
         
     
