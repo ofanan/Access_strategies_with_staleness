@@ -18,7 +18,7 @@ Run a simulation, looping over all requested values of parameters
 
 # A main file for running simulations of Access Strategies with Staleness
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 10#00000 # Shorten the num of requests for debugging / shorter runs
 
 trace_file_name     = 'wiki/wiki.1190448987_1000K_3DSs.csv'
 # trace_file_name     = 'wiki/wiki.1190448987_800K_19DSs.csv'
@@ -35,15 +35,12 @@ num_of_req          = requests.shape[0]
 k_loc   = 1
 max_fpr = 0.03
 max_fnr = max_fpr 
-alg_modes = [sim.ALG_PGM_FNO] 
-# alg_modes = [sim.ALG_PGM_FNA_MR1_BY_HIST] #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST_ADAPT]
 
 bw = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
 
-output_file = open ("../res/" + trace_file_name + ".res", "a")
 DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
 if (DS_cost_type == 'homo'):
     DS_cost.fill(1)
@@ -59,48 +56,14 @@ elif (DS_cost_type == 'ovh'):
 else: 
     print ('The DS_cost type you chose is not supported')
 
-# def run_sim_collection (k_loc, requests, DS_cost):
-#     
-#     bpe         = 14
-#     missp       = 100
-#     alg_mode    = sim.ALG_PGM_FNA_MR1_BY_HIST
-#     uInterval   = 8192 
-#     DS_size     = 10000
-#     settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
-#     print ('running', settings_str)
-#     tic()
-#     sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
-#                        DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
-#                        verbose = 1, uInterval = uInterval)
-#     sm.run_simulator()
-#     toc()
-
-bpe         = 14
-missp       = 100
-alg_mode    = sim.ALG_PGM_FNO
-uInterval   = 256 
-def run_sim_collection (k_loc, requests, DS_cost):
-     
-    for DS_size in [8000, 16000, 32000]:
-        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
-        print ('running', settings_str)
-        tic()
-        sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
-                           DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
-                           verbose = 1, uInterval = uInterval)
-        sm.run_simulator()
-        toc()
-            
-# # bpe sim'                
-# DS_size     = 10000
-# uInterval   = DS_size / 10
+# bpe         = 14
 # missp       = 100
-# bpes        = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+# DS_size     = 10000
+# output_file = open ("../res/" + trace_file_name + "_uInterval.res", "a")
 # def run_sim_collection (k_loc, requests, DS_cost):
-#     
-#     for bpe in bpes:
-#         for alg_mode in alg_modes:
-#     
+#      
+#     for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
+#         for uInterval in [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
 #             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
 #             print ('running', settings_str)
 #             tic()
@@ -109,6 +72,43 @@ def run_sim_collection (k_loc, requests, DS_cost):
 #                                verbose = 1, uInterval = uInterval)
 #             sm.run_simulator()
 #             toc()
+
+# # cache_size sim
+# bpe         = 14
+# missp       = 100
+# alg_mode    = sim.ALG_OPT
+# uInterval   = 256 
+# output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
+# def run_sim_collection (k_loc, requests, DS_cost):
+#       
+#     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
+#         settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+#         print ('running', settings_str)
+#         tic()
+#         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+#                            DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
+#                            verbose = 1, uInterval = uInterval)
+#         sm.run_simulator()
+#         toc()
+            
+# bpe sim'                
+DS_size     = 10000
+uInterval   = 16
+missp       = 100
+output_file = open ("../res/" + trace_file_name + "_bpe.res", "a")
+def run_sim_collection (k_loc, requests, DS_cost):
+     
+    for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+        for alg_mode in [sim.ALG_PGM_FNO]:
+            
+            settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+            print ('running', settings_str)
+            tic()
+            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+                               DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
+                               verbose = 1, uInterval = uInterval)
+            sm.run_simulator()
+            toc()
 
 run_sim_collection (k_loc, requests, DS_cost)
 
