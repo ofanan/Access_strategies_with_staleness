@@ -46,8 +46,9 @@ class Simulator(object):
         use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, rand_seed = 42, 
-                 use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 0, uInterval = -1):
+    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, 
+                 rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 0, 
+                 uInterval = -1, use_given_loc_per_item = True):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -118,6 +119,7 @@ class Simulator(object):
         #self.num_of_insertions_between_estimations_factor = 100
         self.num_of_insertions_between_estimations = np.uint8 (20)
         self.init_DS_list() #DS_list is the list of DSs
+        self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
 
         # Debug / verbose variables
         if (self.verbose == 3):
@@ -195,7 +197,7 @@ class Simulator(object):
         """
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.client_id = self.cur_req.client_id
+            self.calc_client_id()
             # get the list of datastores holding the request
             true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
@@ -232,7 +234,7 @@ class Simulator(object):
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.client_id = self.cur_req.client_id
+            self.calc_client_id()
             self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.pos_ind_list <- list of DSs with positive indications
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss (consider_fpr_fnr_update = False)
@@ -250,7 +252,7 @@ class Simulator(object):
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.client_id = self.cur_req.client_id
+            self.calc_client_id ()
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             if (self.alg_mode == ALG_PGM_FNA): 
@@ -259,7 +261,9 @@ class Simulator(object):
                 self.mr_of_DS  = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr_cur for DS in self.DS_list])) 
             self.access_pgm_fna_hetro ()
 
-        
+    def calc_client_id (self):
+        self.client_id = self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_DSs-1)
+
 
 
     def run_simulator (self):
@@ -333,25 +337,36 @@ class Simulator(object):
         if self.DS_insert_mode == 2:
             self.DS_list[self.client_id].insert(req.key)
 
-    def insert_key_to_random_DSs(self, req):
-        # use the first location as the random DS to insert to.
-        self.DS_list[req['0']].insert(req.key, req_cnt = self.req_cnt)
-
     def insert_key_to_DSs_without_indicator (self):
         """
-        insert key to all k_loc DSs, which are defined by the input (parsed) trace
+        insert key to all k_loc DSs.
+        The DSs to which the key is inserted are either: 
+        - Defined by the input (parsed) trace (if self.use_given_loc_per_item==True)
+        - Chosen as a "hash" (actually, merely a modulo calculation) of the key 
         Do not use indicator. Used for Opt, which doesn't need indicators.
         """
-        for i in range(self.k_loc):
-            self.DS_list[self.cur_req['%d'%i]].insert (self.cur_req.key, use_indicator = False) 
+        if (self.use_given_loc_per_item):
+            for i in range(self.k_loc):
+                self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, use_indicator = False)
+        else:
+            for i in range(self.k_loc):
+                self.DS_list[(self.cur_req.key+i) % self.num_of_DSs].insert (key = self.cur_req.key, use_indicator = False)
             
     def insert_key_to_DSs(self, consider_fpr_fnr_update = True):
         """
-        insert key to all k_loc DSs, which are defined by the input (parsed) trace
+        insert key to all k_loc DSs.
+        The DSs to which the key is inserted are either: 
+        - Defined by the input (parsed) trace (if self.use_given_loc_per_item==True)
+        - Chosen as a "hash" (actually, merely a modulo calculation) of the key 
         """
-        for i in range(self.k_loc):
-            self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
-            
+        if (self.use_given_loc_per_item):
+            for i in range(self.k_loc):
+                self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
+        else:
+            for i in range(self.k_loc):
+                self.DS_list[(self.cur_req.key+i) % self.num_of_DSs].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
+        
+        
     def is_compulsory_miss (self):
         """
         Returns true iff the access is compulsory miss, namely, the requested datum is indeed not found in any DS.
