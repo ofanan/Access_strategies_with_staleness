@@ -161,17 +161,21 @@ class Res_file_parser (object):
         Print a tikz plot of the service cost as a func' of the bpe
         """    
         filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100) # Filter only relevant from the results file  
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt'), 
+                                     'bpe', addplot_str = self.add_plot_opt, 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'Opt') 
+
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 16), 
                                      'bpe', addplot_str = self.add_plot_str1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 1') 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 16') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 128), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
                                      'bpe', addplot_str = self.add_plot_fno1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 128') 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 256') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 128), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
                                      'bpe', addplot_str = self.add_plot_fna1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 128') 
+                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 256') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1024), 
                                      'bpe', addplot_str = self.add_plot_fno2, 
@@ -186,16 +190,16 @@ class Res_file_parser (object):
         Print a tikz plot of the service cost as a func' of the bpe
         """    
         filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100, bpe = 14) # Filter only relevant from the results file  
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt', uInterval = 1), 
-                                     'uInterval', addplot_str = self.add_plot_str1, 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt'), 
+                                     'uInterval', addplot_str = self.add_plot_opt, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'Opt') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO'), 
-                                     'uInterval', addplot_str = self.add_plot_fno1, 
+                                     'uInterval', addplot_str = self.add_plot_fno2, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'FNO') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA'), 
-                                     'uInterval', addplot_str = self.add_plot_fna1, 
+                                     'uInterval', addplot_str = self.add_plot_fna2, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'FNA') 
                 
     def parse_file (self, input_file_name):
@@ -227,3 +231,14 @@ class Res_file_parser (object):
         self.input_file.close
         
     
+if __name__ == "__main__":
+    my_Res_file_parser = Res_file_parser ()
+    for trace in ['wiki']:
+        for op in ['bpe']:
+            my_Res_file_parser.parse_file (trace + '_' + op + '.res') #("wiki_uInterval.res")
+            if (op == 'uInterval'):
+                my_Res_file_parser.print_uInterval_plot ()
+            if (op == 'bpe'):
+                my_Res_file_parser.print_bpe_plot ()
+            if (op == 'cache_size'):
+                my_Res_file_parser.print_cache_size_plot ()
