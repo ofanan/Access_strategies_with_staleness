@@ -198,7 +198,7 @@ class Simulator(object):
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.calc_client_id()
-            # get the list of datastores holding the request
+            # get the list of caches holding the request
             true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
             if true_answer_DS_list.size == 0: # Miss: request is indeed not found in any DS 
