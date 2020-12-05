@@ -20,10 +20,10 @@ class Res_file_parser (object):
         """
         self.add_plot_opt   = '\t\t\\addplot [color = green, mark=+, line width = \\plotLineWidth] coordinates {\n\t\t'
         self.add_plot_str1  = '\t\t\\addplot [color = blue, mark=square, line width = \\plotLineWidth] coordinates {\n\t\t'
-        self.add_plot_fno1  = '\t\t\\addplot [color = purple, mark=o, line width=0.8pt] coordinates {\n\t\t'
-        self.add_plot_fna1  = '\t\t\\addplot [color = red, mark=triangle*, line width=0.8pt] coordinates {\n\t\t'
-        self.add_plot_fno2  = '\t\t\\addplot [color = cyan, mark=x, line width=0.8pt]    coordinates {\n\t\t'
-        self.add_plot_fna2  = '\t\t\\addplot [color = black, mark=triangle, line width=0.8pt]coordinates {\n\t\t'
+        self.add_plot_fno1  = '\t\t\\addplot [color = purple, mark=o, line width = \\plotLineWidth] coordinates {\n\t\t'
+        self.add_plot_fna1  = '\t\t\\addplot [color = red, mark=triangle*, line width = \\plotLineWidth] coordinates {\n\t\t'
+        self.add_plot_fno2  = '\t\t\\addplot [color = cyan, mark=x, line width = \\plotLineWidth]    coordinates {\n\t\t'
+        self.add_plot_fna2  = '\t\t\\addplot [color = black, mark=triangle, line width = \\plotLineWidth]coordinates {\n\t\t'
         self.add_legend_str = '\n\t\t};\n\t\t\\addlegendentry {'
 
     def parse_line (self, line):

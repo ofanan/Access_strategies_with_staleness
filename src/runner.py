@@ -102,8 +102,8 @@ def run_bpe_sim ():
     missp       = 25
     output_file = open ("../res/" + trace_file_name + "_bpe.res", "a")
        
-    for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
-        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
+    for bpe in [5]: #, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #, sim.ALG_PGM_FNO]:
               
             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
             print ('running', settings_str)
@@ -118,34 +118,33 @@ def run_num_of_caches_homo_sim ():
     """
     Run a simulation where the running parameter is the num of caches, and access costs are all 1.
     """
-    num_of_DSs          = 1 #int (trace_file_name.split("DSs")[0].split("_")[-1]) 
-    num_of_clients      = num_of_DSs
-    k_loc   = 1
-     
-    if (k_loc > num_of_DSs):
-        print ('error: k_loc must be at most num_of_DSs')
-        exit ()
-     
-    DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
-    DS_cost.fill(1)
     bw          = 0 
     DS_size     = 10000
     uInterval   = 16
     missp       = 100
     bpe         = 14
-    output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
-    for alg_mode in [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT]:
-               
-        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
-        print ('running', settings_str)
-        tic()
-        sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
-                           DS_size = DS_size, bpe = bpe, use_redundan_coef = False, verbose = 1, 
-                           uInterval = uInterval, use_given_loc_per_item = False,)
-        sm.run_simulator()
-        toc()
+    for num_of_DSs in [2, 3, 4, 5, 6, 7, 8]: #int (trace_file_name.split("DSs")[0].split("_")[-1]) 
+        num_of_clients      = num_of_DSs
+        k_loc   = 1    
+        if (k_loc > num_of_DSs):
+            print ('error: k_loc must be at most num_of_DSs')
+            exit ()
+         
+        DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
+        DS_cost.fill(1)
+        output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
+        for alg_mode in [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT]:
+                   
+            settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+            print ('running', settings_str)
+            tic()
+            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+                               DS_size = DS_size, bpe = bpe, use_redundan_coef = False, verbose = 1, 
+                               uInterval = uInterval, use_given_loc_per_item = False,)
+            sm.run_simulator()
+            toc()
 
-run_num_of_caches_homo_sim ()
+run_bpe_sim ()
 print ('Finished all sims')
 
 # # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.

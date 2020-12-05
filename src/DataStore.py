@@ -50,8 +50,10 @@ class DataStore (object):
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
         self.num_of_fpr_fnr_updates = int (0) #323434
-        self.num_of_insertions_between_estimations = num_of_insertions_between_estimations
-        self.uInterval = uInterval
+        self.uInterval              = uInterval
+        
+        self.num_of_insertions_between_estimations  = num_of_insertions_between_estimations
+        self.ins_since_last_fpr_fnr_estimation      = int (0)
         if (self.verbose == 3):
             self.debug_file = open ("../res/fna.txt", "w")
 
@@ -98,11 +100,13 @@ class DataStore (object):
             if (self.cache.currSize() == self.cache.size()):
                 self.updated_indicator.remove(self.cache.get_tail())
             self.updated_indicator.add(key)
-            self.ins_cnt += 1
+            self.ins_cnt                += 1
+            self.ins_since_last_fpr_fnr_estimation  += 1
             if (consider_fpr_fnr_update):
-                if ( self.ins_cnt % self.num_of_insertions_between_estimations == 0): 
+                if (self.ins_since_last_fpr_fnr_estimation == self.num_of_insertions_between_estimations): 
                     self.estimate_fnr_fpr (req_cnt) # Update the estimates of fpr and fnr, and check if it's time to send an update
                     self.num_of_fpr_fnr_updates += 1
+                    self.ins_since_last_fpr_fnr_estimation = 0
             if (self.should_send_update() ):
                 self.send_update ()
                 
@@ -121,15 +125,11 @@ class DataStore (object):
             if (sum (Delta) < self.delta_th):
                 print ('sum_Delta = ', sum (Delta), 'delta_th = ', self.delta_th, 'Sending delta updates is cheaper\n')
                 exit ()
-        self.stale_indicator = self.updated_indicator.gen_SimpleBloomFilter () # "stale_indicator" is the snapshot of the current state of the ind', until the next update
-        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the updated indicator
-        self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
-        self.fnr = 0 # Immediately after sending an update, the expected fnr is 0
-#         print ('d.fpr = {:.4f}, B1_st = {:.0f}, calc.fpr = {:.4f}' .format (self.designed_fpr, B1_st, pow ( B1_st / self.BF_size, self.num_of_hashes)))
-#         self.fpr = self.designed_fpr # Immediately after sending an update, the expected fpr is the inherent fpr
-        
-
-        # self.updated_indicator.reset_delta_cntrs ()
+        self.stale_indicator                    = self.updated_indicator.gen_SimpleBloomFilter () # "stale_indicator" is the snapshot of the current state of the ind', until the next update
+        B1_st                                   = sum (self.stale_indicator.array)    # Num of bits set in the updated indicator
+        self.fpr                                = pow ( B1_st / self.BF_size, self.num_of_hashes)
+        self.fnr                                = 0 # Immediately after sending an update, the expected fnr is 0
+        self.ins_since_last_fpr_fnr_estimation  = 0
 
     def update_mr1(self):
         """
@@ -179,11 +179,12 @@ class DataStore (object):
         updated_sbf = self.updated_indicator.gen_SimpleBloomFilter ()
         # Delta[0] will hold the # of bits that are reset in the updated array, and set in the stale array.
         # Delta[1] will hold the # of bits that are set in the updated array, and reset in the stale array.
-        Delta = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
-        B1_up = sum (updated_sbf.array)             # Num of bits set in the updated indicator
-        B1_st = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
-        self.fnr = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.num_of_hashes)
-        self.fpr = pow ( B1_st / self.BF_size, self.num_of_hashes)
+        Delta       = [sum (np.bitwise_and (~updated_sbf.array, self.stale_indicator.array)), sum (np.bitwise_and (updated_sbf.array, ~self.stale_indicator.array))]
+        B1_up       = sum (updated_sbf.array)             # Num of bits set in the updated indicator
+        B1_st       = sum (self.stale_indicator.array)    # Num of bits set in the stale indicator
+        self.fnr    = 1 - pow ( (B1_up-Delta[1]) / B1_up, self.num_of_hashes)
+        self.fpr    = pow ( B1_st / self.BF_size, self.num_of_hashes)
+
 #         if (self.should_send_update()==True): # either the fpr or the fnr is too high - need to send update
 #             size_of_delta_update = sum (Delta)     
 #             self.update_bw += (size_of_delta_update * self.lg_BF_size) if (size_of_delta_update < self.delta_th) else self.BF_size     
