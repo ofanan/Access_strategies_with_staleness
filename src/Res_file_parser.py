@@ -141,6 +141,28 @@ class Res_file_parser (object):
         printf (self.output_file, '\n\n')    
         
         
+    def print_cache_size_plot_normalized (self):
+        """
+        Print a tikz plot of the service cost as a func' of the bpe
+        """    
+        opt_list     = sorted (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt'), key = lambda i: i['cache_size']) 
+
+        add_legend_str = None
+        for uInterval in [256, 1024]:
+            if (uInterval == 1024):
+                add_legend_str = self.add_legend_str
+            printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
+            for alg_mode in ['FNO', 'FNA']:
+                filtered_list  = self.gen_filtered_list(self.list_of_dicts, num_of_DSs = 3, Kloc = 1, missp = 100, 
+                                                        alg_mode = alg_mode, uInterval = uInterval)
+                for dict in filtered_list: 
+    
+                     dict['cost'] /= self.gen_filtered_list (opt_list, cache_size = dict['cache_size'])[0]['cost'] # normalize the cost w.r.t. Opt
+     
+                self.print_single_tikz_plot (filtered_list, key_to_sort = 'cache_size', addplot_str = self.add_plot_str_dict[alg_mode], 
+                                             add_legend_str = add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
+
+       
     def print_cache_size_plot (self):
         """
         Print a tikz plot of the service cost as a func' of the bpe
@@ -155,7 +177,7 @@ class Res_file_parser (object):
                                      add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 16') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
-                                     'cache_size', addplot_str = self.add_plot_fno1, 
+                                     'cache_siz e', addplot_str = self.add_plot_fno1, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 256') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
@@ -264,6 +286,16 @@ class Res_file_parser (object):
     
 if __name__ == "__main__":
     my_Res_file_parser = Res_file_parser ()
+                
+#     my_Res_file_parser.parse_file ('wiki_cache_size.res') 
+#     my_Res_file_parser.print_cache_size_plot_normalized ()
+
+# my_Res_file_parser.parse_file ('gradle_bpe.res') 
+# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+
+
+
 #     for trace in ['wiki']:
 #         for op in ['bpe']:
 #             my_Res_file_parser.parse_file (trace + '_' + op + '.res') #("wiki_uInterval.res")
@@ -273,18 +305,3 @@ if __name__ == "__main__":
 #                 my_Res_file_parser.print_bpe_plot ()
 #             if (op == 'cache_size'):
 #                 my_Res_file_parser.print_cache_size_plot ()
-                
-# my_Res_file_parser.parse_file ('gradle_bpe.res') 
-# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
-# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
-
-my_Res_file_parser.parse_file ('wiki_cache_bpe.res') 
-my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
-my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
-
-
-
-# my_Res_file_parser.print_normalized_plot('bpe', uInterval=256)
-# my_Res_file_parser.print_normalized_plot('bpe', uInterval=1024)
-# my_Res_file_parser.parse_file ('wiki_bpe.res') 
-#my_Res_file_parser.print_bpe_plot()

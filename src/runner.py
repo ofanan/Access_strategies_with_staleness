@@ -21,8 +21,8 @@ from   tictoc import tic, toc
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
 max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
 
-# trace_file_name     = 'wiki/wiki.1190448987_1000K_3DSs.csv'
-trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
+trace_file_name     = 'wiki/wiki.1190448987_1000K_3DSs.csv'
+# trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
@@ -124,7 +124,7 @@ def run_cache_size_sim ():
                 sm.run_simulator()
                 toc()
             
-def run_bpe_sim ():
+def run_bpe_sim (homo = False):
     """
     Run a simulation where the running parameter is bpe.
     """
@@ -132,9 +132,13 @@ def run_bpe_sim ():
     missp       = 100
     output_file = open ("../res/" + trace_file_name + "_bpe.res", "a")
        
-    for bpe in [12, 13, 14, 15]: #[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+    if (homo):
+        DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
+        DS_cost.fill(1)
+        missp = 300 / 7 # Keep the same missp w.r.t the average a.cost as in the 3-DSs settings, with costs 1, 2, 4,
+    for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
         for alg_mode in [sim.ALG_PGM_FNO]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO, sim.ALG_OPT]:            
-            for uInterval in [1024]:
+            for uInterval in [1]:
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
@@ -198,7 +202,7 @@ def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
 
 
 # calc_opt_service_cost (2182567, 64717, 40, 1000000)
-run_bpe_sim()
+run_bpe_sim(homo = True)
 # run_num_of_caches_sim (homo = False)
 
 

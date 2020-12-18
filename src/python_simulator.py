@@ -281,8 +281,6 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-            if (self.verbose == 1):
-                printf (self.output_file, '// FN miss cnt = {:.0f}\n' .format ( self.FN_miss_cnt))
         elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
