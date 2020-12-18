@@ -174,23 +174,23 @@ class Res_file_parser (object):
 
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 16), 
                                      'cache_size', addplot_str = self.add_plot_str1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 16') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, \\pgmfna, uInterval = 16') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
                                      'cache_siz e', addplot_str = self.add_plot_fno1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 256') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 256') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
                                      'cache_size', addplot_str = self.add_plot_fna1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 256') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 256') 
 
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1024), 
                                      'cache_size', addplot_str = self.add_plot_fno2, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 1024') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 1024') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 1024), 
                                      'cache_size', addplot_str = self.add_plot_fna2, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 1024') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 1024') 
         
     def print_bpe_plot (self):
         """
@@ -203,23 +203,23 @@ class Res_file_parser (object):
 
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 16), 
                                      'bpe', addplot_str = self.add_plot_str1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, FNA, uInterval = 16') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, \\pgmfna, uInterval = 16') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
                                      'bpe', addplot_str = self.add_plot_fno1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 256') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 256') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
                                      'bpe', addplot_str = self.add_plot_fna1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 256') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 256') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1024), 
                                      'bpe', addplot_str = self.add_plot_fno2, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO, uInterval = 1024') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 1024') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 1024), 
                                      'bpe', addplot_str = self.add_plot_fna2, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA, uInterval = 1024') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 1024') 
         
     def print_uInterval_plot (self):
         """
@@ -233,11 +233,11 @@ class Res_file_parser (object):
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO'), 
                                      'uInterval', addplot_str = self.add_plot_fno2, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNO') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA'), 
                                      'uInterval', addplot_str = self.add_plot_fna2, 
-                                     add_legend_str = self.add_legend_str, legend_entry = 'FNA') 
+                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna') 
                 
     def print_normalized_plot (self, key_to_sort, uInterval = 0, print_add_legend = True):
         """
