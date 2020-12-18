@@ -114,9 +114,9 @@ class Simulator(object):
         else:
             self.use_global_uInerval = False
             self.uInterval = uInterval
-        print ('uInterval = ', self.uInterval)
         self.cur_updating_DS = 0
         #self.num_of_insertions_between_estimations_factor = 100
+        self.use_only_updated_ind = True if (uInterval == 1) else False
         self.num_of_insertions_between_estimations = np.uint8 (20)
         self.init_DS_list() #DS_list is the list of DSs
         self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
@@ -235,7 +235,10 @@ class Simulator(object):
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.calc_client_id()
-            self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) # self.pos_ind_list <- list of DSs with positive indications
+            
+            # self.pos_ind_list <- list of DSs with positive indications
+            self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.updated_indicator) ]) if self.use_only_updated_ind else \
+                                np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) 
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss (consider_fpr_fnr_update = False)
                 continue        

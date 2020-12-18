@@ -132,10 +132,9 @@ def run_bpe_sim ():
     missp       = 100
     output_file = open ("../res/" + trace_file_name + "_bpe.res", "a")
        
-    for bpe in [15]: #[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
-        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO, sim.ALG_OPT]:
-            
-            for uInterval in [1024]: #[256, 1024]:
+    for bpe in [12, 13, 14, 15]: #[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+        for alg_mode in [sim.ALG_PGM_FNO]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO, sim.ALG_OPT]:            
+            for uInterval in [1024]:
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
@@ -154,14 +153,14 @@ def run_num_of_caches_sim (homo = False):
     bpe         = 14
     output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
 
-    for num_of_DSs in [1, 2, 3, 4, 5, 6, 7, 8]: 
+    for num_of_DSs in [2, 3, 4, 5, 6, 7, 8]: #[1, 2, 3, 4, 5, 6, 7, 8]: 
         for uInterval in [256, 1024]:
             num_of_clients      = num_of_DSs
             k_loc   = 1    
             if (k_loc > num_of_DSs):
                 print ('error: k_loc must be at most num_of_DSs')
                 exit ()
-            
+             
             DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
             if (homo): 
                 DS_cost.fill(1)
@@ -169,11 +168,11 @@ def run_num_of_caches_sim (homo = False):
                 for i in range (num_of_DSs):
                     for j in range (i, i + num_of_DSs):
                         DS_cost[i][j % num_of_DSs] = j-i+1
-            
+             
             missp   = 50 * np.average (DS_cost)
-    
+     
             for alg_mode in [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
-                       
+                        
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
@@ -183,7 +182,7 @@ def run_num_of_caches_sim (homo = False):
                 sm.run_simulator()
                 toc()
 
-        alg_mode = sim.ALG_PGM_OPT
+        alg_mode = sim.ALG_OPT
                        
         settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
         print ('running', settings_str)
@@ -198,8 +197,8 @@ def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
 
-calc_opt_service_cost (2182567, 64717, 40, 1000000)
-# run_uInterval_sim()
+# calc_opt_service_cost (2182567, 64717, 40, 1000000)
+run_bpe_sim()
 # run_num_of_caches_sim (homo = False)
 
 

@@ -22,9 +22,10 @@ class Res_file_parser (object):
         self.add_plot_str1  = '\t\t\\addplot [color = blue, mark=square, line width = \\plotLineWidth] coordinates {\n\t\t'
         self.add_plot_fno1  = '\t\t\\addplot [color = purple, mark=o, line width = \\plotLineWidth] coordinates {\n\t\t'
         self.add_plot_fna1  = '\t\t\\addplot [color = red, mark=triangle*, line width = \\plotLineWidth] coordinates {\n\t\t'
-        self.add_plot_fno2  = '\t\t\\addplot [color = cyan, mark=x, line width = \\plotLineWidth]    coordinates {\n\t\t'
-        self.add_plot_fna2  = '\t\t\\addplot [color = black, mark=triangle, line width = \\plotLineWidth]coordinates {\n\t\t'
-        self.add_legend_str = '\n\t\t};\n\t\t\\addlegendentry {'
+        self.add_plot_fno2  = '\t\t\\addplot [color = cyan, mark=x, line width = \\plotLineWidth] coordinates {\n\t\t'
+        self.add_plot_fna2  = '\t\t\\addplot [color = black, mark=triangle, line width = \\plotLineWidth] coordinates {\n\t\t'
+        self.end_add_plot_str = '\n\t\t};'
+        self.add_legend_str = '\n\t\t\\addlegendentry {'
         self.add_plot_str_dict = {'FNA' : self.add_plot_fna2, 'FNO' : self.add_plot_fno2}
         self.legend_entry_dict = {'FNA' : '\\pgmfna', 'FNO' : '\\pgmfno'}
 
@@ -92,6 +93,10 @@ class Res_file_parser (object):
                            num_of_req = 0, alg_mode = None):
         """
         filters and takes from all the items in a given list (that was read from the res file) only those with the desired parameters value
+        The function filters by some parameter only if this parameter is given an input value > 0.
+        E.g.: 
+        If bpe == 0, the function discards bpe values, and doesn't filter out entries by their bpe values.
+        If bpe == 5, the function returns only entries in which bpe == 5.      
         """
         if (not (trace == None)):
             list_to_filter = list (filter (lambda item : item['trace'] == trace, list_to_filter))
@@ -129,9 +134,11 @@ class Res_file_parser (object):
             printf (self.output_file, addplot_str)
         for dict in sorted (list_of_dict, key = lambda i: i[key_to_sort]):
             printf (self.output_file, '({:.0f}, {:.04f})' .format (dict[key_to_sort], dict['cost']))
+        printf (self.output_file, self.end_add_plot_str)
         if (not (add_legend_str == None)): # if the caller requested to print an "add legend" str          
             printf (self.output_file, '\t\t{}{}' .format (self.add_legend_str, legend_entry))    
-            printf (self.output_file, '}\n\n')    
+            printf (self.output_file, '}\n')    
+        printf (self.output_file, '\n\n')    
         
         
     def print_cache_size_plot (self):
@@ -210,7 +217,7 @@ class Res_file_parser (object):
                                      'uInterval', addplot_str = self.add_plot_fna2, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'FNA') 
                 
-    def print_normalized_plot (self, key_to_sort, uInterval = 0):
+    def print_normalized_plot (self, key_to_sort, uInterval = 0, print_add_legend = True):
         """
         Print a tikz plot of the service cost as a func' of the update interval
         The print shows FNO and FNA, both normalized w.r.t. Opt
@@ -218,14 +225,17 @@ class Res_file_parser (object):
         filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100, bpe = 14) # Filter only relevant from the results file  
         opt_cost = self.gen_filtered_list(self.list_of_dicts, cache_size = 10, num_of_DSs = 3, Kloc = 1, missp = 100, alg_mode = 'Opt')[0]['cost']
 
+        if (uInterval > 0 ):
+            printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
         for alg_mode in ['FNO', 'FNA']:
             
-            filtered_list = self.gen_filtered_list(self.list_of_dicts, uInterval = uInterval, cache_size = 10, num_of_DSs = 3, Kloc = 1, missp = 100, alg_mode = alg_mode)
+            filtered_list  = self.gen_filtered_list(self.list_of_dicts, uInterval = uInterval, cache_size = 10, num_of_DSs = 3, Kloc = 1, missp = 100, alg_mode = alg_mode)
+            add_legend_str = self.add_legend_str if print_add_legend else None
             for dict in filtered_list: 
                 dict['cost'] /= opt_cost
 
             self.print_single_tikz_plot (filtered_list, key_to_sort = key_to_sort, addplot_str = self.add_plot_str_dict[alg_mode], 
-                                         add_legend_str = self.add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
+                                         add_legend_str = add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
             
                     
     def parse_file (self, input_file_name):
@@ -264,11 +274,17 @@ if __name__ == "__main__":
 #             if (op == 'cache_size'):
 #                 my_Res_file_parser.print_cache_size_plot ()
                 
-# my_Res_file_parser.parse_file ('wiki_uInterval.res') 
-# my_Res_file_parser.print_normalized_plot('uInterval')
+# my_Res_file_parser.parse_file ('gradle_bpe.res') 
+# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
 
-my_Res_file_parser.parse_file ('gradle_bpe_M40.res') 
+my_Res_file_parser.parse_file ('wiki_cache_bpe.res') 
+my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+
+
+
 # my_Res_file_parser.print_normalized_plot('bpe', uInterval=256)
 # my_Res_file_parser.print_normalized_plot('bpe', uInterval=1024)
 # my_Res_file_parser.parse_file ('wiki_bpe.res') 
-my_Res_file_parser.print_bpe_plot()
+#my_Res_file_parser.print_bpe_plot()
