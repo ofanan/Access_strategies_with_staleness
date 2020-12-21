@@ -19,9 +19,9 @@ from   tictoc import tic, toc
 
 
 DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 2000000 # Shorten the num of requests for debugging / shorter runs
+max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
 
-trace_file_name     = 'wiki/wiki.1190448987_2000K_3DSs.csv'
+trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
@@ -110,11 +110,10 @@ def run_cache_size_sim ():
     """
     bpe         = 14
     missp       = 100
-    uInterval   = 1024 
     output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
-        for uInterval in [256, 1024]:
-            for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]:
+        for uInterval in [256]:
+            for alg_mode in [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
@@ -163,7 +162,7 @@ def run_num_of_caches_sim (homo = False):
     output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
 
     for num_of_DSs in [1, 2, 3, 4, 5, 6, 7, 8]: 
-        for uInterval in [256, 1024]:
+        for uInterval in [256]:
             num_of_clients      = num_of_DSs
             k_loc   = 1    
             if (k_loc > num_of_DSs):

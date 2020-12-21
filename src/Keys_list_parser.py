@@ -20,7 +20,7 @@ input_file_name =  'wiki/wiki.1190448987.txt'
 # input_file_name = 'umass/storage/F2.3M_req.txt'
 num_of_clients      = 3
 kloc = 1
-num_of_req = 2000000
+num_of_req = 4300000
 
 traces_path = MyConfig.getTracesPath()
 df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
