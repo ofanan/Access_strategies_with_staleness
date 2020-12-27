@@ -43,7 +43,8 @@ class Simulator(object):
             
     def init_client_list(self):
         self.client_list = [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose, 
-        use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp) 
+        use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp,
+        verbose_file = self.verbose_file) 
         for i in range(self.num_of_clients)]
     
     def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, 
@@ -83,7 +84,7 @@ class Simulator(object):
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
         self.req_df             = req_df        
         self.use_redundan_coef  = use_redundan_coef
-        self.use_adaptive_alg   = True if alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False
+        self.use_adaptive_alg   = True if alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False        
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
@@ -91,8 +92,10 @@ class Simulator(object):
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
         
+        if (alg_mode == ALG_PGM_FNA or alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+            print ('You chose an obsolete alg mode. Please verify the relevant code.')
+            exit ()
         self.alg_mode           = alg_mode
-        self.init_client_list ()
 
         # Statistical parameters (collected / estimated at run time)
         self.total_cost         = float(0)
@@ -118,16 +121,16 @@ class Simulator(object):
         #self.num_of_insertions_between_estimations_factor = 100
         self.use_only_updated_ind = True if (uInterval == 1) else False
         self.num_of_insertions_between_estimations = np.uint8 (20)
-        self.init_DS_list() #DS_list is the list of DSs
         self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
 
-        # Debug / verbose variables
-        if (self.verbose == 3):
-            self.avg_DS_accessed_per_req = float(0)
-            if (self.alg_mode == ALG_PGM_FNA):
-                self.debug_file = open ("../res/fna.txt", "w", buffering=1)
-            elif (self.alg_mode == ALG_PGM_FNO):
-                self.debug_file = open ("../res/fno.txt", "w", buffering=1)
+        self.avg_DS_accessed_per_req = float(0)
+        if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+            self.verbose_file = open ("../res/debug.txt", "w", buffering=1)
+        elif (self.alg_mode == ALG_PGM_FNO):
+            self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
+
+        self.init_DS_list() #DS_list is the list of DSs
+        self.init_client_list ()
             
 
 
@@ -257,10 +260,8 @@ class Simulator(object):
             self.calc_client_id ()
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
-            if (self.alg_mode == ALG_PGM_FNA): 
-                self.mr_of_DS  = self.client_list [self.client_id].get_mr (self.indications) # Get the probability that the requested item is in DS i, given to the concrete indication of its indicator
-            else: #alg_mode = ALG_PGM_FNA_MR1_BY_HIST
-                self.mr_of_DS  = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr_cur for DS in self.DS_list])) 
+            verbose         = 4 if (self.verbose == 4 and self.req_cnt > 20000) else 0  
+            self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose) 
             self.access_pgm_fna_hetro ()
 
     def calc_client_id (self):

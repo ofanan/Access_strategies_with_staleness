@@ -1,6 +1,8 @@
 import numpy as np
 import math
 
+from printf import printf
+
 class Request(object):
     """
     """
@@ -13,7 +15,7 @@ class Request(object):
 class Client(object):
     
     def __init__(self, ID, num_of_DSs, estimation_window  = 1000, window_alpha = 0.25, verbose = 0, 
-                use_redundan_coef = False, k_loc = 1, use_adaptive_alg = False, missp = 100):
+                use_redundan_coef = False, k_loc = 1, use_adaptive_alg = False, missp = 100, verbose_file = None):
         """
         Return a Client object with the following attributes:
         """
@@ -57,7 +59,8 @@ class Client(object):
         if (self.verbose == 1):
             self.DS_accessed 		= {} # dictionary containing DSs accessed for every req_id of client where access takes place. Currently used only in higher-verbose modes.
             self.num_DS_accessed 	= [] # Total Num of DSs accessed by this client perrequest. Currently unused
-
+            self.verbose_file       = verbose_file
+            
     def add_DS_accessed(self, req_id, DS_index_list):
         """
         Logs the identity and the number of DSs accessed upon each request. Called only when verbose > 0 
@@ -65,59 +68,62 @@ class Client(object):
         self.DS_accessed[req_id] = DS_index_list
         self.num_DS_accessed.append(len(DS_index_list))
         
-    def get_mr (self, indications):
+#     def get_mr (self, indications):
+#         """
+#         Calculate and return the expected miss prob' of each DS, based on its indication.
+#         Input: indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
+#         Details: The func' does the following:  
+#         - Increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together  
+#         - Increment pos_ind_cnt[j] (the cntr of queries to indicator i in the current window), for each indicator j which gave positive indication  
+#         - Update the estimation of q. q[i] holds the prob' that indicator i gives positive indication
+#         - Update mr0 (the expected prob' of a miss, given a negative indication), and mr1 (the expected prob' of a miss, given a positive indication).
+#         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
+#         """
+#         self.ind_cnt += 1 # Received a new set of indications
+#         self.pos_ind_cnt += indications #self.pos_ind_cnt[i]++ iff (indications[i]==True)
+#         if (self.ind_cnt < self.estimation_window ): # Init period - use merely the data collected so far
+#             self.q_estimation   = self.pos_ind_cnt/self.estimation_window
+#         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
+#             if (self.verbose == 3 and self.ID == 0):
+#                 print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
+#             self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation
+#             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
+# 
+#         hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
+#         if (self.use_adaptive_alg):
+#             if (self.speculate_accs_cost > (max (10, self.speculate_hit_cnt) * self.missp))   : #Collected enough history, and realized that we only loose from speculations
+#                 self.use_spec_factor             = True
+#                 self.spec_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
+#                 if (self.ID == 0):
+#                     print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, spec_factor = {:.2}' .format(
+#                            self.speculate_accs_cost, self.speculate_hit_cnt, self.spec_factor))
+#                 self.speculate_accs_cost  = 0
+#                 self.speculate_hit_cnt    = 0
+#         for i in range (self.num_of_DSs):
+#             if (indications[i]): #positive ind'
+#                 if (self.fpr[i] == 0): # No false positives at this DS
+#                     self.mr[i] = 0     #
+#                 else:
+#                     self.mr[i] = 1 if (self.q_estimation[i] == 0) else self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i] # if DS i gave pos' ind', then mr[i] will hold the estimated prob' that a datum is not in DS i, given that pos' indication for x        
+#             else:
+#                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
+# #                 if (self.use_redundan_coef and self.mr[i] != 1):
+# #                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
+#                 if (self.use_spec_factor):
+#                     self.mr[i] = 1 - (1 - self.mr[i]) / self.spec_factor
+# 
+#         self.mr = np.minimum (self.mr, self.ones_ar)
+#         if (self.verbose == 2):
+#             print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
+#         return self.mr
+
+    def get_mr_given_mr1 (self, indications, mr0, mr1, verbose):
         """
         Calculate and return the expected miss prob' of each DS, based on its indication.
-        Input: indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
-        Details: The func' does the following:  
-        - Increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together  
-        - Increment pos_ind_cnt[j] (the cntr of queries to indicator i in the current window), for each indicator j which gave positive indication  
-        - Update the estimation of q. q[i] holds the prob' that indicator i gives positive indication
-        - Update mr0 (the expected prob' of a miss, given a negative indication), and mr1 (the expected prob' of a miss, given a positive indication).
-        - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
-        """
-        self.ind_cnt += 1 # Received a new set of indications
-        self.pos_ind_cnt += indications #self.pos_ind_cnt[i]++ iff (indications[i]==True)
-        if (self.ind_cnt < self.estimation_window ): # Init period - use merely the data collected so far
-            self.q_estimation   = self.pos_ind_cnt/self.estimation_window
-        elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
-            if (self.verbose == 3 and self.ID == 0):
-                print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
-            self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation
-            self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
-
-        hit_ratio = np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr))
-        if (self.use_adaptive_alg):
-            if (self.speculate_accs_cost > (max (10, self.speculate_hit_cnt) * self.missp))   : #Collected enough history, and realized that we only loose from speculations
-                self.use_spec_factor             = True
-                self.spec_factor = self.speculate_accs_cost / (self.speculate_hit_cnt * self.missp)    
-                if (self.ID == 0):
-                    print ('speculate_accs_cost = {}, speculate_hit_cnt = {}, spec_factor = {:.2}' .format(
-                           self.speculate_accs_cost, self.speculate_hit_cnt, self.spec_factor))
-                self.speculate_accs_cost  = 0
-                self.speculate_hit_cnt    = 0
-        for i in range (self.num_of_DSs):
-            if (indications[i]): #positive ind'
-                if (self.fpr[i] == 0): # No false positives at this DS
-                    self.mr[i] = 0     #
-                else:
-                    self.mr[i] = 1 if (self.q_estimation[i] == 0) else self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i] # if DS i gave pos' ind', then mr[i] will hold the estimated prob' that a datum is not in DS i, given that pos' indication for x        
-            else:
-                self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1) else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
-#                 if (self.use_redundan_coef and self.mr[i] != 1):
-#                     self.mr[i] = 1 - (1 - self.mr[i]) / self.redundan_coef
-                if (self.use_spec_factor):
-                    self.mr[i] = 1 - (1 - self.mr[i]) / self.spec_factor
-
-        self.mr = np.minimum (self.mr, self.ones_ar)
-        if (self.verbose == 2):
-            print ('id = ', self.ID, 'q_estimation = ', self.q_estimation, 'fpr = ', self.fpr, 'fnr = ', self.fnr, 'hit ratio = ', hit_ratio, 'mr = ', self.mr)
-        return self.mr
-
-    def get_mr_given_mr1 (self, indications, mr1):
-        """
-        Calculate and return the expected miss prob' of each DS, based on its indication.
-        Input: indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
+        Input: 
+        indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
+        mr0 - a vector. mr0[i] is the estimation (based on historic data) of the miss probab' in cache i, given a pos' ind' by indicator i
+        mr1 - a vector. mr1[i] is the estimation (based on historic data) of the miss probab' in cache i, given a neg' ind' by indicator i        
         Details: The func' does the following:  
         - Increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together  
         - Increment pos_ind_cnt[j] (the cntr of queries to indicator i in the current window), for each indicator j which gave positive indication  
@@ -144,6 +150,8 @@ class Client(object):
             else:
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1 or hit_ratio[i]==1) \
                 else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
+                if (verbose == 4):
+                    printf (self.verbose_file, 'mr_0[{}]: by analysis = {}, by hist = {}\n' .format (i, self.mr[i], mr0[i]))
 
         self.mr = np.maximum (self.zeros_ar, np.minimum (self.mr, self.ones_ar))
         return self.mr

@@ -74,10 +74,11 @@ class DataStore (object):
             
     def access(self, key, is_speculative_accs = False):
         """
-        accesses a key in the cache, and inc the ins cntr.
+        - Accesses a key in the cache.
+        - Return True iff the access was a hit.
+        - Update the relevant cntrs (regular / spec access cnt, fp / tn cnt).
+        - Update the mr0, mr1 (prob' of a miss, given a neg / pos ind'), if needed.
         """
-        self.access_cnt += 1
-
         hit = True if (key in self.cache) else False          
         if hit: 
             self.cache[key] #Touch the element, so as to update the LRU mechanism
