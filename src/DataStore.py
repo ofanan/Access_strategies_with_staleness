@@ -8,7 +8,7 @@ import MyConfig
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, window_alpha = 0.25, estimation_window = 1000, 
+    def __init__(self, ID, size = 1000, bpe = 5, mr1_window_alpha = 0.25, mr1_estimation_window = 100, 
                  max_fnr = 0.03, max_fpr = 0.03, verbose = 0, uInterval = 1,
                  num_of_insertions_between_estimations = 20):
         """
@@ -16,8 +16,8 @@ class DataStore (object):
             ID:                 datastore ID 
             size:               number of elements that can be stored in the datastore (default 1000)
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
-            window_alpha:    sliding window parameter for miss-rate estimation 
-            estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000)
+            mr1_window_alpha:    sliding window parameter for miss-rate estimation 
+            mr1_estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000)
             max_fnr, max_fpr : maximum allowed (estimated) fpr, fnr. When the estimated fnr is above max_fnr, or the estimated fpr is above mx_fpr, the DS sends an update.
                                (FPR: False Positive Ratio, FNR: False Negative Ratio).
             verbose:           how much details are written to the output
@@ -29,18 +29,24 @@ class DataStore (object):
         self.lg_BF_size             = np.log2 (self.BF_size) 
         self.num_of_hashes          = MyConfig.get_optimal_num_of_hashes (self.bpe)
         self.designed_fpr           = MyConfig.calc_designed_fpr (self.cache_size, self.BF_size, self.num_of_hashes)
-        self.window_alpha           = window_alpha
-        self.estimation_window      = estimation_window
-        self.one_min_alpha          = 1 - self.window_alpha
-        self.alpha_over_window      = float (self.window_alpha) / float (self.estimation_window)
+        self.mr1_window_alpha       = mr1_window_alpha
+        self.mr0_window_alpha       = mr1_window_alpha
+        self.mr1_estimation_window  = mr1_estimation_window
+        self.mr0_estimation_window  = mr1_estimation_window
+        self.one_min_mr1_alpha      = 1 - self.mr1_window_alpha
+        self.one_min_mr0_alpha      = 1 - self.mr0_window_alpha
+        self.mr1_alpha_over_window  = float (self.mr1_window_alpha) / float (self.mr1_estimation_window)
+        self.mr0_alpha_over_window  = float (self.mr0_window_alpha) / float (self.mr0_estimation_window)
         self.fp_events_cnt          = int(0) # Number of False Positive events that happened in the current estimatio window
-        self.access_cnt             = 0
-        self.hit_cnt                = 0
+        self.tn_events_cnt          = int(0) # Number of False Positive events that happened in the current estimatio window
+        self.reg_accs_cnt           = 0
+        self.spec_accs_cnt          = 0
         self.max_fnr                = max_fnr
         self.max_fpr                = max_fpr
         self.updated_indicator      = CBF.CountingBloomFilter (size = self.BF_size, num_of_hashes = self.num_of_hashes)
         self.stale_indicator        = self.updated_indicator.gen_SimpleBloomFilter ()         
-        self.mr_cur                 = 0.5 
+        self.mr1_cur                = 0.5 
+        self.mr0_cur                = 1 # Initially assume that there're no FN events, that is: the miss prob' in case of a negative ind' is 1.
         self.cache                  = mod_pylru.lrucache(self.cache_size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
         self.fpr                    = 0 # Initially, there are no false indications
@@ -71,19 +77,24 @@ class DataStore (object):
         accesses a key in the cache, and inc the ins cntr.
         """
         self.access_cnt += 1
-        
-        # check to see if an update to the estimated conditional miss-rate is required
-        if (self.access_cnt % self.estimation_window == 0):
-            self.update_mr1()
-            # self.update_mr0()
-        if key in self.cache: # hit
+
+        hit = True if (key in self.cache) else False          
+        if hit: 
             self.cache[key] #Touch the element, so as to update the LRU mechanism
-            self.hit_cnt += 1
-            return True
-        else: 
-            if (not(is_speculative_accs)):
+
+        if (is_speculative_accs):
+            self.spec_accs_cnt += 1
+            if (not(hit)):
+                self.tn_events_cnt += 1
+            if (self.spec_accs_cnt % self.mr0_estimation_window == 0):
+                self.update_mr0()
+        else: # regular accs
+            self.reg_accs_cnt  += 1
+            if (not(hit)):
                 self.fp_events_cnt += 1
-            return False
+            if (self.reg_accs_cnt % self.mr1_estimation_window == 0):
+                self.update_mr1()
+        return hit 
 
     def insert(self, key, use_indicator = True, req_cnt = -1, consider_fpr_fnr_update = True):
         """
@@ -134,28 +145,25 @@ class DataStore (object):
         self.fnr                                = 0 # Immediately after sending an update, the expected fnr is 0
         self.ins_since_last_fpr_fnr_estimation  = 0
 
+    def update_mr0(self):
+        """
+        update the miss-probability in case of a positive indication, using an exponential moving average.
+        """
+        self.mr0_cur = self.mr0_alpha_over_window * float(self.tn_events_cnt) + self.one_min_mr0_alpha * self.mr0_cur 
+        self.fn_events_cnt = int(0)
+        
     def update_mr1(self):
         """
-        update the miss-rate estimate
-        done using an exponential moving average.
-        Used by False-Negative-Oblivious strategeis, such as the algorithms in the paper "Access Strategies for Network Caching."
+        update the miss-probability in case of a positive indication, using an exponential moving average.
         """
-        self.mr_cur = self.alpha_over_window * float(self.fp_events_cnt) + self.one_min_alpha * self.mr_cur 
+        self.mr1_cur = self.mr1_alpha_over_window * float(self.fp_events_cnt) + self.one_min_mr1_alpha * self.mr1_cur 
         self.fp_events_cnt = int(0)
         
-    def get_hr(self):
-        """
-        get the current overall hit-rate
-        """
-        if (self.access_cnt == 0):
-            return 0
-        return self.hit_cnt / self.access_cnt
-
     def get_mr(self): 
         """
         get the current miss-rate estimate
         """
-        return self.mr_cur
+        return self.mr1_cur
 
     def print_cache(self, head = 5):
         """
