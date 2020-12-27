@@ -172,12 +172,8 @@ class Res_file_parser (object):
                                      'cache_size', addplot_str = self.add_plot_opt, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'Opt') 
 
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 16), 
-                                     'cache_size', addplot_str = self.add_plot_str1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, \\pgmfna, uInterval = 16') 
-        
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
-                                     'cache_siz e', addplot_str = self.add_plot_fno1, 
+                                     'cache_size', addplot_str = self.add_plot_fno1, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 256') 
         
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
@@ -200,11 +196,7 @@ class Res_file_parser (object):
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt'), 
                                      'bpe', addplot_str = self.add_plot_opt, 
                                      add_legend_str = self.add_legend_str, legend_entry = 'Opt') 
-
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 16), 
-                                     'bpe', addplot_str = self.add_plot_str1, 
-                                     add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, \\pgmfna, uInterval = 16') 
-        
+       
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
                                      'bpe', addplot_str = self.add_plot_fno1, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 256') 
@@ -287,8 +279,9 @@ class Res_file_parser (object):
 if __name__ == "__main__":
     my_Res_file_parser = Res_file_parser ()
                 
-#     my_Res_file_parser.parse_file ('wiki_cache_size.res') 
-#     my_Res_file_parser.print_cache_size_plot_normalized ()
+    my_Res_file_parser.parse_file ('wiki_cache_size.res') 
+    my_Res_file_parser.print_cache_size_plot_normalized ()
+#     my_Res_file_parser.print_cache_size_plot ()
 
 # my_Res_file_parser.parse_file ('gradle_bpe.res') 
 # my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)

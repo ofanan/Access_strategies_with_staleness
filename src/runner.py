@@ -113,7 +113,7 @@ def run_cache_size_sim ():
     output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
         for uInterval in [256]:
-            for alg_mode in [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
+            for alg_mode in [sim.ALG_OPT]: #[sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
@@ -161,8 +161,8 @@ def run_num_of_caches_sim (homo = False):
     bpe         = 14
     output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
 
-    for num_of_DSs in [1, 2, 3, 4, 5, 6, 7, 8]: 
-        for uInterval in [256]:
+    for num_of_DSs in [8, 7, 6]: 
+        for uInterval in [1024]:
             num_of_clients      = num_of_DSs
             k_loc   = 1    
             if (k_loc > num_of_DSs):
@@ -204,10 +204,10 @@ def run_num_of_caches_sim (homo = False):
 def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
-run_cache_size_sim()
+# run_cache_size_sim()
 # calc_opt_service_cost (2182567, 64717, 40, 1000000)
 # run_bpe_sim(homo = False)
-# run_num_of_caches_sim (homo = False)
+run_num_of_caches_sim (homo = False)
 
 
 # # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
