@@ -9,8 +9,7 @@ import os
 import pickle
 import sys
 
-from MyConfig import getTracesPath, settings_string, calc_service_cost_of_opt
-from gen_requests import gen_requests, optimal_BF_size_per_DS_size
+from MyConfig import getTracesPath, settings_string, calc_service_cost_of_opt, reduce_trace_mem_print, gen_requests
 import numpy as np
 import pandas as pd
 from printf import printf
@@ -42,16 +41,17 @@ elif (DS_cost_type == 'ovh'):
 else: 
     print ('The DS_cost type you chose is not supported')
 
-def run_tbl_sim ():
+def run_tbl_sim (trace_file_name):
     """
     Run a simulation with different miss penalties for the initial table
     """
-    bpe         = 14
-    missp       = 100
-    DS_size     = 10000
-    uInterval   = 1000
-    output_file = open ("../res/tbl.res", "a")
+    bpe                 = 14
+    missp               = 100
+    DS_size             = 10000
+    uInterval           = 1000
+    output_file         = open ("../res/tbl.res", "a")
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
+    requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
 
     for missp in [40, 400, 4000]:
         for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
@@ -74,20 +74,19 @@ def run_tbl_sim ():
     sm.run_simulator()
     toc()
 
-
 def run_uInterval_sim (trace_file_name):
     """
     Run a simulation where the running parameter is uInterval.
     """
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
-    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
-
-    bpe         = 14
-    missp       = 100
-    DS_size     = 10000
-    output_file = open ("../res/" + trace_file_name + "_uInterval.res", "a")
+    bpe                  = 14
+    missp               = 100
+    DS_size             = 10000
+    output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
+    
     for alg_mode in [sim.ALG_PGM_FNO]:
         for uInterval in [8192, 4096, 2048]: #[16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
@@ -99,12 +98,14 @@ def run_uInterval_sim (trace_file_name):
             sm.run_simulator()
             toc()
 
+
 def run_cache_size_sim (trace_file_name):
     """
     Run a simulation where the running parameter is cache_size.
     """
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+
+    requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
     if (num_of_req < 4300000):
@@ -124,18 +125,17 @@ def run_cache_size_sim (trace_file_name):
                 sm.run_simulator()
                 toc()
             
-def run_bpe_sim (homo = False):
+def run_bpe_sim (trace_file_name, homo = False):
     """
     Run a simulation where the running parameter is bpe.
     """
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
-
-    DS_size     = 10000
-    missp       = 10
-    output_file = open ("../res/" + trace_file_name + "_bpe.res", "a")
+    DS_size             = 10000
+    missp               = 100
+    output_file         = open ("../res/" + trace_file_name + "_bpe.res", "a")
        
     DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
     if (homo):
@@ -158,26 +158,26 @@ def run_bpe_sim (homo = False):
                 sm.run_simulator()
                 toc()
  
-def run_num_of_caches_sim (homo = False):
+
+def run_num_of_caches_sim (trace_file_name, homo = False):
     """
     Run a simulation where the running parameter is the num of caches, and access costs are all 1.
     """
-    bw          = 0 
-    DS_size     = 10000
-    bpe         = 14
-    output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
-
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
+    bw                  = 0 
+    DS_size             = 10000
+    bpe                 = 14
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
+    output_file         = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
+    
     if (num_of_req < 4300000):
         print ('Note: you used only {} requests for a num of caches sim' .format(num_of_req))
 
     for num_of_DSs in [8, 7, 6, 5, 4, 3, 2, 1]: 
         for uInterval in [1024, 256]:
             num_of_clients      = num_of_DSs
-            k_loc   = 1    
             if (k_loc > num_of_DSs):
                 print ('error: k_loc must be at most num_of_DSs')
                 exit ()
@@ -222,10 +222,10 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
-run_uInterval_sim(trace_file_name)
-# run_cache_size_sim()
-# run_bpe_sim(homo = False)
-# run_num_of_caches_sim (homo = False)
+# run_uInterval_sim      (trace_file_name)
+# run_cache_size_sim     (trace_file_name)
+# run_bpe_sim              (trace_file_name, homo = False)
+run_num_of_caches_sim  (trace_file_name, homo = False)
 
 
 # # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.

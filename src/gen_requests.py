@@ -1,4 +1,5 @@
-import pandas
+import pandas as pd
+from MyConfig import getTracesPath
 
 
 
@@ -30,7 +31,8 @@ def optimal_BF_size_per_DS_size ():
     return BF_size_for_DS_size 
 
 
-def gen_requests (trace_file_name, numOfReq, num_of_DSs):
-    trace_df = reduce_trace_mem_print (pandas.read_csv(trace_file_name), num_of_DSs)
-    return trace_df.head (numOfReq)
+def gen_requests (trace_file_name, max_num_of_req, num_of_DSs):
+    print (getTracesPath() + trace_file_name)
+    trace_df = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    return reduce_trace_mem_print (trace_df, num_of_DSs)
 

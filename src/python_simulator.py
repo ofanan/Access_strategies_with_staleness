@@ -359,11 +359,11 @@ class Simulator(object):
         insert key to all k_loc DSs.
         The DSs to which the key is inserted are either: 
         - Defined by the input (parsed) trace (if self.use_given_loc_per_item==True)
-        - Chosen as a "hash" (actually, merely a modulo calculation) of the key 
+        - Chosen as a "hash" (actually, merely a modulo calculation) of the key v
         """
         if (self.use_given_loc_per_item):
             for i in range(self.k_loc):
-                self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
+                self.DS_list[self.cur_req['%d'%i ]].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
         else:
             for i in range(self.k_loc):
                 self.DS_list[(self.cur_req.key+i) % self.num_of_DSs].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
