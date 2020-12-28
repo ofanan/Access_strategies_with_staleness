@@ -124,10 +124,13 @@ class Simulator(object):
         self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
 
         self.avg_DS_accessed_per_req = float(0)
-        if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
-            self.verbose_file = open ("../res/debug.txt", "w", buffering=1)
-        elif (self.alg_mode == ALG_PGM_FNO):
-            self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
+        if (self.verbose > 1):
+            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+                self.verbose_file = open ("../res/debug.txt", "w", buffering=1)
+            elif (self.alg_mode == ALG_PGM_FNO):
+                self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
+        else:
+            self.verbose_file = None
 
         self.init_DS_list() #DS_list is the list of DSs
         self.init_client_list ()

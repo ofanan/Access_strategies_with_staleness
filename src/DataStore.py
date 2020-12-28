@@ -55,7 +55,7 @@ class DataStore (object):
         self.num_of_updates         = 0
         self.verbose                = verbose #if self.ID==0 else 0
         self.ins_cnt                = np.uint32 (0)
-        self.num_of_fpr_fnr_updates = int (0) #323434
+        self.num_of_fpr_fnr_updates = int (0) 
         self.use_only_updated_ind   = True if (uInterval == 1) else False
         self.uInterval              = uInterval if (self.use_only_updated_ind == False) else float('inf')
         

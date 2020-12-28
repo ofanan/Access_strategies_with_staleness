@@ -17,22 +17,10 @@ from printf import printf
 import python_simulator as sim
 from   tictoc import tic, toc
 
-
-DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-
-trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
-# trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
-# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
-# trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
-
+k_loc   = 1
 num_of_DSs          = 3 #int (trace_file_name.split("DSs")[0].split("_")[-1]) 
 num_of_clients      = num_of_DSs
-requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
-trace_file_name     = trace_file_name.split("/")[0]
-num_of_req          = requests.shape[0]
-
-k_loc   = 1
+DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
 
 bw = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
 if (k_loc > num_of_DSs):
@@ -63,6 +51,8 @@ def run_tbl_sim ():
     DS_size     = 10000
     uInterval   = 1000
     output_file = open ("../res/tbl.res", "a")
+    max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
+
     for missp in [40, 400, 4000]:
         for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
@@ -85,16 +75,21 @@ def run_tbl_sim ():
     toc()
 
 
-def run_uInterval_sim ():
+def run_uInterval_sim (trace_file_name):
     """
     Run a simulation where the running parameter is uInterval.
     """
+    max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
+    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    trace_file_name     = trace_file_name.split("/")[0]
+    num_of_req          = requests.shape[0]
+
     bpe         = 14
     missp       = 100
     DS_size     = 10000
     output_file = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     for alg_mode in [sim.ALG_PGM_FNO]:
-        for uInterval in [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
+        for uInterval in [8192, 4096, 2048]: #[16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
             print ('running', settings_str)
             tic()
@@ -104,10 +99,16 @@ def run_uInterval_sim ():
             sm.run_simulator()
             toc()
 
-def run_cache_size_sim ():
+def run_cache_size_sim (trace_file_name):
     """
     Run a simulation where the running parameter is cache_size.
     """
+    max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
+    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    trace_file_name     = trace_file_name.split("/")[0]
+    num_of_req          = requests.shape[0]
+    if (num_of_req < 4300000):
+        print ('Note: you used only {} requests for a cache size sim' .format(num_of_req))
     bpe         = 14
     missp       = 100
     output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
@@ -127,6 +128,11 @@ def run_bpe_sim (homo = False):
     """
     Run a simulation where the running parameter is bpe.
     """
+    max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
+    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    trace_file_name     = trace_file_name.split("/")[0]
+    num_of_req          = requests.shape[0]
+
     DS_size     = 10000
     missp       = 10
     output_file = open ("../res/" + trace_file_name + "_bpe.res", "a")
@@ -161,8 +167,15 @@ def run_num_of_caches_sim (homo = False):
     bpe         = 14
     output_file = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
 
-    for num_of_DSs in [8, 7, 6]: 
-        for uInterval in [1024]:
+    max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
+    requests            = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
+    trace_file_name     = trace_file_name.split("/")[0]
+    num_of_req          = requests.shape[0]
+    if (num_of_req < 4300000):
+        print ('Note: you used only {} requests for a num of caches sim' .format(num_of_req))
+
+    for num_of_DSs in [8, 7, 6, 5, 4, 3, 2, 1]: 
+        for uInterval in [1024, 256]:
             num_of_clients      = num_of_DSs
             k_loc   = 1    
             if (k_loc > num_of_DSs):
@@ -204,7 +217,12 @@ def run_num_of_caches_sim (homo = False):
 def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
-run_uInterval_sim()
+trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
+# trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
+# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
+# trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
+
+run_uInterval_sim(trace_file_name)
 # run_cache_size_sim()
 # run_bpe_sim(homo = False)
 # run_num_of_caches_sim (homo = False)
