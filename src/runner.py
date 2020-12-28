@@ -204,8 +204,8 @@ def run_num_of_caches_sim (homo = False):
 def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
-run_cache_size_sim()
-# calc_opt_service_cost (2182567, 64717, 40, 1000000)
+run_uInterval_sim()
+# run_cache_size_sim()
 # run_bpe_sim(homo = False)
 # run_num_of_caches_sim (homo = False)
 
@@ -219,3 +219,4 @@ run_cache_size_sim()
 #     print ("Opt's service cost is ", calc_service_cost_of_opt (tot_access_cost, comp_miss_cnt, missp, 500000))
 # exit ()
 
+# calc_opt_service_cost (2182567, 64717, 40, 1000000)

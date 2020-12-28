@@ -299,7 +299,7 @@ class Simulator(object):
         Update the estimated miss rate of each DS, based on the history.
         This estimation is good only for non-speculative accesses, i.e. accesses after a positive ind' (mr[1]) 
         """
-        self.mr_of_DS = np.array([DS.mr_cur for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
+        self.mr_of_DS = np.array([DS.mr1_cur for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
 
     def handle_compulsory_miss (self, consider_fpr_fnr_update = True):
         """
