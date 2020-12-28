@@ -56,10 +56,11 @@ class Client(object):
         # dictionary describing for every req_id of client: 0: init, 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer beta, 4: no pos ind, pay beta
         # self.action 			= {}
         self.verbose            = verbose
+        self.verbose_file       = verbose_file
+        
         if (self.verbose == 1):
             self.DS_accessed 		= {} # dictionary containing DSs accessed for every req_id of client where access takes place. Currently used only in higher-verbose modes.
             self.num_DS_accessed 	= [] # Total Num of DSs accessed by this client perrequest. Currently unused
-            self.verbose_file       = verbose_file
             
     def add_DS_accessed(self, req_id, DS_index_list):
         """

@@ -120,7 +120,7 @@ class Simulator(object):
         self.cur_updating_DS = 0
         #self.num_of_insertions_between_estimations_factor = 100
         self.use_only_updated_ind = True if (uInterval == 1) else False
-        self.num_of_insertions_between_estimations = np.uint8 (20)
+        self.num_of_insertions_between_estimations = np.uint8 (50)
         self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
 
         self.avg_DS_accessed_per_req = float(0)
@@ -180,17 +180,15 @@ class Simulator(object):
         printf (self.output_file, '\n\n{} | service_cost = {}\n'  .format (self.settings_str, self.mean_service_cost))
         bw_in_practice =  int (round ( self.tot_num_of_updates * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
         if (self.requested_bw != bw_in_practice):
-            printf (self.output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.requested_bw, bw_in_practice))
-        if (self.verbose == 1):
-            printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
-               (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
+            printf (self. output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.requested_bw, bw_in_practice))
+        printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
+           (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
-        if (self.verbose == 1):
-            printf (self.output_file, '// estimation window = {}, ' .format (self.estimation_window))
-            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
-                printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
-                printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
-                                    .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
+        printf (self.output_file, '// estimation window = {}, ' .format (self.estimation_window))
+        if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+            printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
+            printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
+                                .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
         
 
     def run_trace_opt_hetro (self):

@@ -112,7 +112,7 @@ def run_cache_size_sim ():
     missp       = 100
     output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
-        for uInterval in [256]:
+        for uInterval in [1024]:
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT, sim.ALG_PGM_FNO]:
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
