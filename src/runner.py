@@ -88,7 +88,7 @@ def run_uInterval_sim (trace_file_name):
     output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     
     for alg_mode in [sim.ALG_PGM_FNO]:
-        for uInterval in [8192, 4096, 2048]: #[16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
+        for uInterval in [16, 32, 64, 128, 256, 512, 1024]: #[16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
             print ('running', settings_str)
             tic()
@@ -175,8 +175,8 @@ def run_num_of_caches_sim (trace_file_name, homo = False):
     if (num_of_req < 4300000):
         print ('Note: you used only {} requests for a num of caches sim' .format(num_of_req))
 
-    for num_of_DSs in [8, 7, 6, 5, 4, 3, 2, 1]: 
-        for uInterval in [1024, 256]:
+    for num_of_DSs in [1, 2, 3, 4, 5, 6, 7, 8]: 
+        for uInterval in [1024]:
             num_of_clients      = num_of_DSs
             if (k_loc > num_of_DSs):
                 print ('error: k_loc must be at most num_of_DSs')
@@ -192,7 +192,7 @@ def run_num_of_caches_sim (trace_file_name, homo = False):
              
             missp   = 50 * np.average (DS_cost)
      
-            for alg_mode in [sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
+            for alg_mode in [sim.ALG_PGM_FNO]: #[sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
                         
                 settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
@@ -217,15 +217,15 @@ def run_num_of_caches_sim (trace_file_name, homo = False):
 def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
-trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
-# trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
+# trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
+trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
-# run_uInterval_sim      (trace_file_name)
+run_uInterval_sim      (trace_file_name)
 # run_cache_size_sim     (trace_file_name)
 # run_bpe_sim              (trace_file_name, homo = False)
-run_num_of_caches_sim  (trace_file_name, homo = False)
+# run_num_of_caches_sim  (trace_file_name, homo = True)
 
 
 # # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
@@ -235,6 +235,3 @@ run_num_of_caches_sim  (trace_file_name, homo = False)
 # comp_miss_cnt = 63808
 # for missp in [40, 400, 4000]:
 #     print ("Opt's service cost is ", calc_service_cost_of_opt (tot_access_cost, comp_miss_cnt, missp, 500000))
-# exit ()
-
-# calc_opt_service_cost (2182567, 64717, 40, 1000000)
