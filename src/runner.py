@@ -34,7 +34,7 @@ def run_tbl_sim (trace_file_name):
     uInterval           = 1000
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
-    DS_costs            = calc_costs (num_of_DSs, use_homo_DS_costs)
+    DS_costs            = calc_DS_costs (num_of_DSs, use_homo_DS_costs)
     output_file         = open ("../res/tbl.res", "a")
     
     for missp in [50, 100, 500]:
@@ -69,7 +69,7 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_costs = True):
     bpe                 = 14
     missp               = 100
     DS_size             = 10000
-    DS_costs            = calc_costs (num_of_DSs, use_homo_DS_costs)
+    DS_costs            = calc_DS_costs (num_of_DSs, use_homo_DS_costs)
     output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     
     for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]:
@@ -122,7 +122,7 @@ def calc_hetro_costs (num_of_DSs):
             DS_cost[i][j % num_of_DSs] = j - i + 1
     return DS_cost
 
-def calc_costs (num_of_DSs, use_homo_DS_costs = False):
+def calc_DS_costs (num_of_DSs, use_homo_DS_costs = False):
     if (use_homo_DS_costs):
         return calc_homo_costs(num_of_DSs)
     else:
@@ -141,7 +141,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_costs = False):
     num_of_req          = requests.shape[0]
     DS_size             = 10000
     missp               = 100
-    DS_costs            = calc_costs (num_of_DSs, use_homo_DS_costs)
+    DS_cost             = calc_DS_costs (num_of_DSs, use_homo_DS_costs)
     output_file         = open ("../res/" + trace_file_name + "_bpe.res", "a")
                        
     for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
@@ -182,7 +182,7 @@ def run_num_of_caches_sim (trace_file_name, use_homo_DS_costs = False):
                 print ('error: k_loc must be at most num_of_DSs')
                 exit ()
              
-            DS_costs = calc_costs (num_of_DSs, use_homo_DS_costs)
+            DS_costs = calc_DS_costs (num_of_DSs, use_homo_DS_costs)
              
             missp    = 50 * np.average (DS_cost)
      
