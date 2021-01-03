@@ -14,12 +14,16 @@ class DataStore (object):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
-            size:               number of elements that can be stored in the datastore (default 1000)
+            size:               number of elements that can be stored in the datastore
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
             mr1_window_alpha:    sliding window parameter for miss-rate estimation 
-            mr1_estimation_window:  how often (queries) should the miss-rate estimation be updated (default 1000)
+            mr1_estimation_window:  Number of regular accesses between new performing new estimation of mr1 (prob' of a miss given a pos' ind'). 
             max_fnr, max_fpr : maximum allowed (estimated) fpr, fnr. When the estimated fnr is above max_fnr, or the estimated fpr is above mx_fpr, the DS sends an update.
                                (FPR: False Positive Ratio, FNR: False Negative Ratio).
+                               currently usually unused, as the time to update is defined exclusively by the update interval.
+            num_of_insertions_between_estimations : number of cache insertions between performing fresh estimations of fpr, and fnr.
+                - Each time a new indicator is published, the update contains a fresh estimation, and a counter is reset. Then, each 
+                  time the counter reaches num_of_insertions_between_estimations. a new fpr and fnr estimation is published, and the counter is reset.  
             verbose:           how much details are written to the output
         """
         self.ID                     = ID
@@ -132,6 +136,10 @@ class DataStore (object):
         return (key in self.stale_indicator)
 
     def send_update (self, check_delta_th = False):
+        """
+        Send an updated indicator.
+        If the input check_delta_th, then calculate the "deltas", namely, number of bits set / reset since the last update has been advertised.
+        """
             
         self.num_of_updates += 1
         if (check_delta_th):
@@ -174,6 +182,9 @@ class DataStore (object):
             print (i.key)
     
     def should_send_update (self):
+        """
+        Returns true iff an updated indicator should be sent.
+        """
 #         if (self.fnr > self.max_fnr or self.fpr > self.max_fpr):
 #             return True 
         if (self.ins_cnt % self.uInterval == 0):

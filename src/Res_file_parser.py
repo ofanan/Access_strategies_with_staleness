@@ -26,8 +26,8 @@ class Res_file_parser (object):
         self.add_plot_fna2  = '\t\t\\addplot [color = black, mark=triangle, line width = \\plotLineWidth] coordinates {\n\t\t'
         self.end_add_plot_str = '\n\t\t};'
         self.add_legend_str = '\n\t\t\\addlegendentry {'
-        self.add_plot_str_dict = {'FNA' : self.add_plot_fna2, 'FNO' : self.add_plot_fno2}
-        self.legend_entry_dict = {'FNA' : '\\pgmfna', 'FNO' : '\\pgmfno'}
+        self.add_plot_str_dict = {'Opt' : self.add_plot_opt, 'FNA' : self.add_plot_fna2, 'FNO' : self.add_plot_fno2}
+        self.legend_entry_dict = {'Opt' : '\\opt', 'FNA' : '\\pgmfna', 'FNO' : '\\pgmfno'}
 
     def parse_line (self, line):
         splitted_line = line.split ("|")
@@ -52,6 +52,7 @@ class Res_file_parser (object):
             "alg_mode"   : splitted_line        [alg_idx]       .split(" ")[0],
             "cost"       : cost
             }
+
 
     def print_tbl (self):
         """
@@ -88,6 +89,36 @@ class Res_file_parser (object):
                 printf (self.tbl_output_file, ' \\\\\n')
             printf (self.tbl_output_file, '\t\\hline\n\n')
                 
+    def print_bar (self):
+        """
+        Print table of service costs, normalized w.r.t. to Opt, in the following format
+        # input    FNO40    FNA40    FNO400    FNA400    FNO4000    FNA4000
+        # wiki    2.0280    1.7800    2.4294    1.1564    2.4859    1.1039
+        # gradle    2.5706    2.3600    3.8177    1.3357    4.0305    1.2014
+        # scarab    2.5036    2.3053    3.2211    1.1940    3.3310    1.1183
+        # F2        2.3688    2.2609    2.9604    1.1507    3.0546    1.0766
+        """
+        self.bar_output_file    = open ("../res/three_caches.dat", "w")
+        traces = ['wiki', 'gradle', 'scarab', 'umass']
+
+        printf (self.bar_output_file, 'input \t FNO40 \t FNA40    FNO400 \t FNA400 \t FNO4000 \t FNA4000\n')
+        for trace in traces:
+            trace_to_print = 'F2' if trace == 'umass' else trace 
+            printf (self.bar_output_file, '{}\t' .format (trace_to_print))
+
+        self.gen_filtered_list(self.list_of_dicts, num_of_req = 1000) 
+        for trace in traces:
+            for missp in [40, 400, 4000]:
+                for alg_mode in ['FNO', 'FNA']:
+                    opt_cost = self.gen_filtered_list(self.list_of_dicts, 
+                            trace = trace, cache_size = 10, num_of_DSs = 3, Kloc = 1,missp = missp, alg_mode = 'Opt') \
+                            [0]['cost']
+                    alg_cost = self.gen_filtered_list(self.list_of_dicts, 
+                            trace = trace, cache_size = 10, bpe = 14, num_of_DSs = 3, Kloc = 1, missp = missp, uInterval = 1000, 
+                            alg_mode = alg_mode) \
+                            [0]['cost']
+                    printf (self.bar_output_file, ' {:.4f} \t' .format(alg_cost / opt_cost))
+            printf (self.bar_output_file, ' \\\\\n')
 
     def gen_filtered_list (self, list_to_filter, trace = None, cache_size = 0, bpe = 0, num_of_DSs = 0, Kloc = 0, missp = 0, uInterval = 0, 
                            num_of_req = 0, alg_mode = None):
@@ -274,13 +305,55 @@ class Res_file_parser (object):
         uInterval  = 1000
         alg_modes = ['FNA', 'FNO']
         self.input_file.close
+
+    def print_num_of_caches_plot_normalized (self):
+        """
+        Print a tikz plot of the service cost as a func' of the number of DSs, normalized by the cost of Opt
+        """    
+        opt_list = sorted (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'Opt'), key = lambda i: i['num_of_DSs']) 
+
+        add_legend_str = None
+        for uInterval in [256, 1024]:
+            if (uInterval == 1024):
+                add_legend_str = self.add_legend_str
+            printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
+            for alg_mode in ['FNO', 'FNA']:
+                filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 50, 
+                                                        alg_mode = alg_mode, uInterval = uInterval)
+                for dict in filtered_list: 
+    
+                     dict['cost'] /= self.gen_filtered_list (opt_list, num_of_DSs = dict['num_of_DSs'])[0]['cost'] # normalize the cost w.r.t. Opt
+     
+                self.print_single_tikz_plot (filtered_list, key_to_sort = 'num_of_DSs', addplot_str = self.add_plot_str_dict[alg_mode], 
+                                             add_legend_str = add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
+
+
+    def print_num_of_caches_plot_abs (self):
+        """
+        Print a tikz plot of the service cost as a func' of the number of DSs, absolute values
+        """    
+
+        add_legend_str = None
+        for uInterval in [256, 1024]:
+            if (True): #(uInterval == 1024):
+                add_legend_str = self.add_legend_str
+            printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
+            for alg_mode in ['Opt', 'FNO', 'FNA']:
+                filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 50, 
+                                                        alg_mode = alg_mode, uInterval = uInterval)
+                self.print_single_tikz_plot (filtered_list, key_to_sort = 'num_of_DSs', addplot_str = self.add_plot_str_dict[alg_mode], 
+                                             add_legend_str = add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
+       
         
     
 if __name__ == "__main__":
     my_Res_file_parser = Res_file_parser ()
                 
-    my_Res_file_parser.parse_file ('wiki_cache_size.res') 
-    my_Res_file_parser.print_cache_size_plot_normalized ()
+    my_Res_file_parser.parse_file ('wiki_num_of_caches.res')
+    my_Res_file_parser.print_num_of_caches_plot_abs()
+#     my_Res_file_parser.print_num_of_caches_plot_normalized()
+        
+#     my_Res_file_parser.print_cache_size_plot_normalized ()
 #     my_Res_file_parser.print_cache_size_plot ()
 
 # my_Res_file_parser.parse_file ('gradle_bpe.res') 

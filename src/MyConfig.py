@@ -3,7 +3,10 @@ import numpy as np
 import python_simulator as sim
 import pandas as pd
 
-## This reduces the memory print of the trace by using the smallest type that still supports the values in the trace
+# This file contains several accessory functions, used throughout the project.
+
+
+## Reduces the memory print of the trace by using the smallest type that still supports the values in the trace
 ## Note: this configuration can support up to 2^8 locations, and traces of length up to 2^32
 def reduce_trace_mem_print(trace_df, k_loc):
     new_trace_df = trace_df
@@ -50,8 +53,13 @@ def calc_service_cost_of_opt (accs_cost, comp_miss_cnt, missp, req_cnt):
 	return (accs_cost + comp_miss_cnt * missp) / req_cnt
 
 def getTracesPath():
-	user_name = os.getcwd().split ("\\")[2]
-	return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
+    """
+    returns the path in which the traces files are found at this machine.
+    This path should be:
+    C:/Users/userName/Google Drive/Comnet/traces
+    """
+    user_name = os.getcwd().split ("\\")[2]
+    return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
 # 	trace_path_splitted = os.getcwd().split ("\\")
 # 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
 
@@ -93,19 +101,20 @@ def get_optimal_num_of_hashes (bpe):
 
 
 def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode):
-	settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.U{:.0f}.' .format (
+    """
+    Returns a formatted string based on the values of the given parameters' (e.g., num of caches, trace_file_name, update intervals etc.). 
+    """
+    settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.U{:.0f}.' .format (
 		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw, uInterval)
-	if (alg_mode == sim.ALG_OPT):
-		return settings_str + 'Opt'
-	elif (alg_mode == sim.ALG_PGM_FNO):
-		return settings_str + 'FNO'
-	elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
-		return settings_str + 'FNA'
+    if (alg_mode == sim.ALG_OPT):
+        return settings_str + 'Opt'     
+    elif (alg_mode == sim.ALG_PGM_FNO):
+        return settings_str + 'FNO'
+    elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
+        return settings_str + 'FNA'
 
 def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
+    """
+    returns the designed (inherent) fpr of a BF, based on the given cache size, BF size, and number of hash functions used by the BF.
+    """
     return pow (1 - pow (1 - 1/BF_size, num_of_hashes * cache_size), num_of_hashes)
-# def get_designed_fpr (hash_cnt):
-# 	"""
-# 	Returns the designed (inherent) fpr of a simple BF with the given number of Bits Per Element 
-# 	"""
-# 	return pow (0.5, hash_cnt)
