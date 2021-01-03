@@ -19,8 +19,6 @@ from   tictoc import tic, toc
 k_loc   = 1
 num_of_DSs          = 3 #int (trace_file_name.split("DSs")[0].split("_")[-1]) 
 num_of_clients      = num_of_DSs
-DS_cost_type = 'hetro' # choose either 'homo'; 'hetro' (exponential costs - the costs are 1, 2, 4, ...); or 'ovh' (valid only if using the full 19-nodes ovh network)
-
 bw = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
 if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
@@ -34,10 +32,11 @@ def run_tbl_sim (trace_file_name):
     missp               = 100
     DS_size             = 10000
     uInterval           = 1000
-    output_file         = open ("../res/tbl.res", "a")
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
-
+    DS_costs            = calc_costs (num_of_DSs, use_homo_DS_costs)
+    output_file         = open ("../res/tbl.res", "a")
+    
     for missp in [50, 100, 500]:
         for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
             settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
@@ -59,7 +58,7 @@ def run_tbl_sim (trace_file_name):
     sm.run_simulator()
     toc()
 
-def run_uInterval_sim (trace_file_name):
+def run_uInterval_sim (trace_file_name, use_homo_DS_costs = True):
     """
     Run a simulation where the running parameter is uInterval.
     """
@@ -67,9 +66,10 @@ def run_uInterval_sim (trace_file_name):
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
-    bpe                  = 14
+    bpe                 = 14
     missp               = 100
     DS_size             = 10000
+    DS_costs            = calc_costs (num_of_DSs, use_homo_DS_costs)
     output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     
     for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]:
@@ -110,6 +110,11 @@ def run_cache_size_sim (trace_file_name):
                 sm.run_simulator()
                 toc()
                      
+def calc_homo_costs (num_of_DSs):
+    DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
+    DS_cost.fill(2)
+    return DS_cost
+
 def calc_hetro_costs (num_of_DSs):
     DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
     for i in range (num_of_DSs):
@@ -117,7 +122,14 @@ def calc_hetro_costs (num_of_DSs):
             DS_cost[i][j % num_of_DSs] = j - i + 1
     return DS_cost
 
-def run_bpe_sim (trace_file_name, homo = False):
+def calc_costs (num_of_DSs, use_homo_DS_costs = False):
+    if (use_homo_DS_costs):
+        return calc_homo_costs(num_of_DSs)
+    else:
+        return calc_hetro_costs(num_of_DSs)
+
+
+def run_bpe_sim (trace_file_name, use_homo_DS_costs = False):
     """
     Run a simulation where the running parameter is bpe.
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
@@ -129,15 +141,9 @@ def run_bpe_sim (trace_file_name, homo = False):
     num_of_req          = requests.shape[0]
     DS_size             = 10000
     missp               = 100
+    DS_costs            = calc_costs (num_of_DSs, use_homo_DS_costs)
     output_file         = open ("../res/" + trace_file_name + "_bpe.res", "a")
-       
-    if (homo):
-        DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
-        DS_cost.fill(1)
-        missp = 300 / 7 # Keep the same missp w.r.t the average a.cost as in the 3-DSs settings, with costs 1, 2, 4,
-    else:
-        DS_cost = calc_hetro_costs(num_of_DSs)
-                   
+                       
     for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
         for uInterval in [256, 1024]:
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:            
@@ -151,7 +157,7 @@ def run_bpe_sim (trace_file_name, homo = False):
                 toc()
  
 
-def run_num_of_caches_sim (trace_file_name, homo = False):
+def run_num_of_caches_sim (trace_file_name, use_homo_DS_costs = False):
     """
     Run a simulation where the running parameter is the num of caches, and access costs are all 1.
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
@@ -176,15 +182,9 @@ def run_num_of_caches_sim (trace_file_name, homo = False):
                 print ('error: k_loc must be at most num_of_DSs')
                 exit ()
              
-            DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
-            if (homo): 
-                DS_cost.fill(1)
-            else:
-                for i in range (num_of_DSs):
-                    for j in range (i, i + num_of_DSs):
-                        DS_cost[i][j % num_of_DSs] = j-i+1
+            DS_costs = calc_costs (num_of_DSs, use_homo_DS_costs)
              
-            missp   = 50 * np.average (DS_cost)
+            missp    = 50 * np.average (DS_cost)
      
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
                         
@@ -220,8 +220,8 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # 
 # # run_uInterval_sim      (trace_file_name)
 # # run_cache_size_sim     (trace_file_name)
-run_bpe_sim              (trace_file_name, homo = False)
-# run_num_of_caches_sim  (trace_file_name, homo = True)
+run_bpe_sim              (trace_file_name, use_homo_DS_costs = True)
+# run_num_of_caches_sim  (trace_file_name, use_homo_DS_costs = True)
 
 
 
