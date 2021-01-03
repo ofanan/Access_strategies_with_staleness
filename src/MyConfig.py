@@ -100,13 +100,13 @@ def get_optimal_num_of_hashes (bpe):
     return int (bpe * np.log (2))
 
 
-def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, is_homo):
+def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode):
     """
     Returns a formatted string based on the values of the given parameters' (e.g., num of caches, trace_file_name, update intervals etc.). 
     """
-    homo_or_hetro = 'homo' if is_homo else 'hetro'
-    settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.U{:.0f}.{}.' .format (
-		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw, uInterval, homo_or_hetro)
+    # homo_or_hetro = 'homo' if is_homo else 'hetro'
+    settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.U{:.0f}.' .format (
+		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw, uInterval)
     if (alg_mode == sim.ALG_OPT):
         return settings_str + 'Opt'     
     elif (alg_mode == sim.ALG_PGM_FNO):

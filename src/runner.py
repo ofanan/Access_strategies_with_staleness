@@ -24,7 +24,7 @@ if (k_loc > num_of_DSs):
     print ('error: k_loc must be at most num_of_DSs')
     exit ()
 
-def run_tbl_sim (trace_file_name):
+def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     """
     Run a simulation with different miss penalties for the initial table
     """
@@ -34,12 +34,12 @@ def run_tbl_sim (trace_file_name):
     uInterval           = 1000
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
-    DS_cost            = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
+    DS_cost             = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
     output_file         = open ("../res/tbl.res", "a")
     
     for missp in [50, 100, 500]:
         for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
-            settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, False)
+            settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
             print ('running', settings_str)
             tic()
             sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
@@ -49,7 +49,7 @@ def run_tbl_sim (trace_file_name):
             toc()
     alg_mode = sim.ALG_OPT
     missp = 40
-    settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, False)
+    settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
     print ('running', settings_str)
     tic()
     sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
@@ -58,7 +58,7 @@ def run_tbl_sim (trace_file_name):
     sm.run_simulator()
     toc()
 
-def run_uInterval_sim (trace_file_name, use_homo_DS_cost = True):
+def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     """
     Run a simulation where the running parameter is uInterval.
     """
@@ -74,7 +74,7 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = True):
     
     alg_mode  = sim.ALG_PGM_FNO 
     for uInterval in [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
-        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, use_homo_DS_cost)
+        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
         print ('running', settings_str)
         tic()
         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
@@ -85,7 +85,7 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = True):
 
     alg_mode  = sim.ALG_PGM_FNA_MR1_BY_HIST
     for uInterval in [64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
-        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, use_homo_DS_cost)
+        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
         print ('running', settings_str)
         tic()
         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
@@ -99,19 +99,20 @@ def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     Run a simulation where the running parameter is cache_size.
     """
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-
+    bpe         = 14
+    missp       = 100
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
+    DS_cost            = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
+    output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
+
     if (num_of_req < 4300000):
         print ('Note: you used only {} requests for a cache size sim' .format(num_of_req))
-    bpe         = 14
-    missp       = 100
-    output_file = open ("../res/" + trace_file_name + "_cache_size.res", "a")
     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
         for uInterval in [1024]:
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT, sim.ALG_PGM_FNO]:
-                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, use_homo_DS_cost)
+                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
@@ -157,7 +158,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
         for uInterval in [256, 1024]:
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:            
-                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, use_homo_DS_cost)
+                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
@@ -167,7 +168,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
                 toc()
  
 
-def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = False):
+def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = True):
     """
     Run a simulation where the running parameter is the num of caches, and access costs are all 1.
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
@@ -192,13 +193,12 @@ def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = False):
                 print ('error: k_loc must be at most num_of_DSs')
                 exit ()
              
-            DS_cost = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
-             
+            DS_cost = calc_DS_cost (num_of_DSs, use_homo_DS_cost)            
             missp    = 50 * np.average (DS_cost)
      
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_OPT, sim.ALG_PGM_FNO, sim.ALG_PGM_FNA_MR1_BY_HIST]:
                         
-                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode, use_homo_DS_cost)
+                settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
                 print ('running', settings_str)
 #                 print("now =", datetime.now())
                 tic()
@@ -218,8 +218,8 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
-run_uInterval_sim          (trace_file_name, use_homo_DS_cost = False)
-# run_bpe_sim              (trace_file_name, use_homo_DS_cost = False)
+run_uInterval_sim          (trace_file_name)
+# run_bpe_sim              (trace_file_name)
 # run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
 
 
