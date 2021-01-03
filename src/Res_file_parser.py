@@ -1,16 +1,17 @@
 from printf import printf 
 
-trace_idx       = 0
-cache_size_idx  = 1
-bpe_idx         = 2
-num_of_req_idx  = 3
-num_of_DSs_idx  = 4
-kloc_idx        = 5
-missp_idx       = 6
-bw_idx          = 7
-uInterval_idx   = 8
-alg_idx         = 9
-num_of_fields   = alg_idx + 1
+trace_idx           = 0
+cache_size_idx      = 1
+bpe_idx             = 2
+num_of_req_idx      = 3
+num_of_DSs_idx      = 4
+kloc_idx            = 5
+missp_idx           = 6
+bw_idx              = 7
+uInterval_idx       = 8
+homo_or_hetro_idx   = 9
+alg_idx             = 10
+num_of_fields       = alg_idx + 1
 
 
 class Res_file_parser (object):  
