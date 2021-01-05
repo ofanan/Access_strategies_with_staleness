@@ -196,7 +196,7 @@ class Simulator(object):
 
     def run_trace_opt_hetro (self):
         """
-        Run a full trace as Opt access strat' when the DS costs are heterogneous
+        Run a full trace as Opt access strat' when the DS costs are heterogeneous
         """
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
