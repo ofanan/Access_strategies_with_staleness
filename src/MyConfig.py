@@ -56,7 +56,7 @@ def getTracesPath():
         user_name = os.getcwd().split ("\\")[2]
         return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
     else:
-        return ('home/itamarq/itamarq/traces/')
+        return ('/home/itamarq/itamarq/traces/')
 # 	trace_path_splitted = os.getcwd().split ("\\")
 # 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
 

@@ -175,7 +175,7 @@ def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = True):
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
     Else, the access costs are 1, 2, 4, and the miss penalty is 100.
     """
-    max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
+    max_num_of_req      = 43#W00000 # Shorten the num of requests for debugging / shorter runs
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     bw                  = 0 
     DS_size             = 10000
@@ -221,8 +221,8 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # run_tbl_sim(trace_file_name)
 # run_uInterval_sim          (trace_file_name)
 # run_bpe_sim              (trace_file_name)
-print (getTracesPath())
-#run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
+
+run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
 
 
 
