@@ -38,12 +38,6 @@ def optimal_BF_size_per_DS_size ():
     return BF_size_for_DS_size 
 
 
-# def gen_requests (trace_file_name, max_num_of_req, num_of_DSs):
-#     print (getTracesPath() + trace_file_name)
-#     trace_df = pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req)
-#     return reduce_trace_mem_print (trace_df, num_of_DSs)
-
-
 def calc_service_cost_of_opt (accs_cost, comp_miss_cnt, missp, req_cnt):
 	"""
 	Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
@@ -58,8 +52,11 @@ def getTracesPath():
     This path should be:
     C:/Users/userName/Google Drive/Comnet/traces
     """
-    user_name = os.getcwd().split ("\\")[2]
-    return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
+    if (os.getcwd().split ("\\")[0] == "C:"):
+        user_name = os.getcwd().split ("\\")[2]
+        return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
+    else:
+        return ('home/itamarq/itamarq/traces/')
 # 	trace_path_splitted = os.getcwd().split ("\\")
 # 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
 

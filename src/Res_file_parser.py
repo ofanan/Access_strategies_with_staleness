@@ -9,8 +9,8 @@ kloc_idx            = 5
 missp_idx           = 6
 bw_idx              = 7
 uInterval_idx       = 8
-homo_or_hetro_idx   = 9
-alg_idx             = 10
+#homo_or_hetro_idx   = 9
+alg_idx             = 9
 num_of_fields       = alg_idx + 1
 
 
@@ -38,7 +38,7 @@ class Res_file_parser (object):
         splitted_line   = settings.split (".")
 
         if len (splitted_line) < num_of_fields:
-            print ("encountered a format error")
+            print ("encountered a format error. Splitted line is is {}" .format (splitted_line))
             return False
         self.dict = {
             "trace"      : splitted_line        [trace_idx],
@@ -351,8 +351,8 @@ if __name__ == "__main__":
     my_Res_file_parser = Res_file_parser ()
                 
     my_Res_file_parser.parse_file ('wiki_num_of_caches.res')
-    my_Res_file_parser.print_num_of_caches_plot_abs()
-#     my_Res_file_parser.print_num_of_caches_plot_normalized()
+#     my_Res_file_parser.print_num_of_caches_plot_abs()
+    my_Res_file_parser.print_num_of_caches_plot_normalized()
         
 #     my_Res_file_parser.print_cache_size_plot_normalized ()
 #     my_Res_file_parser.print_cache_size_plot ()
