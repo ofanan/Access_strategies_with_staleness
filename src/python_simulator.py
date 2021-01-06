@@ -47,7 +47,7 @@ class Simulator(object):
         verbose_file = self.verbose_file) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp, k_loc, DS_size = 1000, bpe = 15, 
+    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 1000, bpe = 14, 
                  rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 0, 
                  uInterval = -1, use_given_loc_per_item = True):
         """

@@ -34,6 +34,7 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
+    num_of_DSs          = 3
     DS_cost             = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
     output_file         = open ("../res/tbl.res", "a")
     
@@ -48,7 +49,7 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
             sm.run_simulator()
             toc()
     alg_mode = sim.ALG_OPT
-    missp = 40
+    missp = 50
     settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
     print ('running', settings_str)
     tic()
@@ -235,8 +236,8 @@ def run_k_loc_sim (trace_file_name, use_homo_DS_cost = True):
         print ('Note: you used only {} requests for a num of caches sim' .format(num_of_req))
 
 
-    for k_loc in [3, 2]:
-        for uInterval in [1024, 256]:
+    for k_loc in [3]:
+        for uInterval in [1024]:
     
             DS_cost = calc_DS_cost (num_of_DSs, use_homo_DS_cost)            
             missp    = 50 * np.average (DS_cost)
@@ -259,7 +260,7 @@ def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
 
 trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
-# # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
+# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
 # run_tbl_sim(trace_file_name)
