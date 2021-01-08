@@ -59,20 +59,20 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     DS_cost             = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
     output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     
-    alg_mode  = sim.ALG_PGM_FNO  
     print("now = ", datetime.now(), 'running uInterval sim')
+    alg_mode  = sim.ALG_PGM_FNO  
     for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]: 
         tic()
         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)        
         sm.run_simulator()
         toc()
 
-    alg_mode  = sim.ALG_PGM_FNA_MR1_BY_HIST
-    for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64]: 
-        tic()
-        sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)        
-        sm.run_simulator()
-        toc()
+#     alg_mode  = sim.ALG_PGM_FNA_MR1_BY_HIST
+#     for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64]: 
+#         tic()
+#         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)        
+#         sm.run_simulator()
+#         toc()
 
 def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     """
@@ -137,7 +137,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
         for uInterval in [1024]:
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:            
                 tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
+                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval)
                 sm.run_simulator()
                 toc()
  
@@ -235,7 +235,8 @@ trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 
 # run_tbl_sim(trace_file_name)
 # run_FN_by_staleness_sim          (trace_file_name)
-run_bpe_sim              (trace_file_name)
+# run_bpe_sim              (trace_file_name)
+run_uInterval_sim(trace_file_name)
 
 #run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
 # run_k_loc_sim (trace_file_name)
