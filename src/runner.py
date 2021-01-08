@@ -67,9 +67,9 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     DS_cost             = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
     output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     
-    alg_mode  = sim.ALG_OPT #sim.ALG_PGM_FNA_MR1_BY_HIST 
+    alg_mode  = sim.ALG_PGM_FNO  
     print("now = ", datetime.now(), 'running uInterval sim')
-    for uInterval in [8192]:#[16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
+    for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]: 
         settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
         print ('running', settings_str)
         tic()
@@ -79,16 +79,16 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
         sm.run_simulator()
         toc()
 
-#     alg_mode  = sim.ALG_PGM_FNA_MR1_BY_HIST
-#     for uInterval in [64, 128, 256, 512, 1024, 2048, 4096, 8192]: 
-#         settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
-#         print ('running', settings_str)
-#         tic()
-#         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
-#                            DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
-#                            verbose = 1, uInterval = uInterval)
-#         sm.run_simulator()
-#         toc()
+    alg_mode  = sim.ALG_PGM_FNA_MR1_BY_HIST
+    for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64]: 
+        settings_str = settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode)
+        print ('running', settings_str)
+        tic()
+        sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, missp, k_loc,  
+                           DS_size = DS_size, bpe = bpe, use_redundan_coef = False, 
+                           verbose = 1, uInterval = uInterval)
+        sm.run_simulator()
+        toc()
 
 def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     """
