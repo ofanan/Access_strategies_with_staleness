@@ -20,7 +20,7 @@ def reduce_trace_mem_print(trace_df, k_loc):
         new_trace_df['%d'%i] = trace_df['%d'%i].astype('uint8')
     return new_trace_df
 
-def  gen_requests (trace_file_name, max_num_of_req, k_loc):
+def  gen_requests (trace_file_name, max_num_of_req, k_loc=1):
     return reduce_trace_mem_print (pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req), k_loc)
 
 

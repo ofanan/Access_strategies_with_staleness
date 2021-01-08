@@ -26,6 +26,8 @@ ALG_PGM_FNA_MR1_BY_HIST = 10 # PGM alg', detailed in Access Strategies journal p
 ALG_PGM_FNA_MR1_BY_HIST_ADAPT = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
 ALG_OPT_HOMO        = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
 
+CNT_FN_BY_STALENESS = 5
+
 # client action: updated according to what client does
 # 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
 """
@@ -47,7 +49,7 @@ class Simulator(object):
         verbose_file = self.verbose_file) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 1000, bpe = 14, 
+    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 10000, bpe = 14, 
                  rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 0, 
                  uInterval = -1, use_given_loc_per_item = True):
         """
@@ -124,13 +126,16 @@ class Simulator(object):
         self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
 
         self.avg_DS_accessed_per_req = float(0)
+        self.verbose_file = None
         if (self.verbose > 1):
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
-                self.verbose_file = open ("../res/debug.txt", "w", buffering=1)
+                self.verbose_file = open ("../res/fna.txt", "w", buffering=1)
             elif (self.alg_mode == ALG_PGM_FNO):
                 self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
-        else:
-            self.verbose_file = None
+                if (self.verbose == CNT_FN_BY_STALENESS):
+                    lg_uInterval = np.log2 (self.uInterval).astype (int)
+                    self.PI_hits_by_staleness = np.zeros (lg_uInterval , dtype = 'uint32') #self.PI_hits_by_staleness[i] will hold the number of times in which a requested item is indeed found in any of the caches when the staleness of the respective indicator is at most 2^(i+1)
+                    self.FN_by_staleness      = np.zeros (lg_uInterval,  dtype = 'uint32') #self.FN_by_staleness[i]      will hold the number of FN events that occur when the staleness of that indicator is at most 2^(i+1)        else:
 
         self.init_DS_list() #DS_list is the list of DSs
         self.init_client_list ()
@@ -171,6 +176,11 @@ class Simulator(object):
         Accumulates and organizes the stat collected during the sim' run.
         This func' is usually called once at the end of each run of the python_simulator.
         """
+        if (self.verbose == CNT_FN_BY_STALENESS):
+            printf (self.output_file, 'FN cnt by staleness      = {}\n' .format (self.FN_by_staleness))
+            printf (self.output_file, 'PI hits cnt by staleness = {}\n' .format (self.PI_hits_by_staleness))
+            for bin in range (len(self.FN_by_staleness)):
+                printf (self.output_file, '({:.0f}, {:.07f})' .format (2**(bin+1), self.FN_by_staleness[bin]/self.PI_hits_by_staleness[bin]))
         self.total_access_cost  = np.sum ( [client.total_access_cost for client in self.client_list ] ) 
         self.hit_cnt            = np.sum ( [client.hit_cnt for client in self.client_list ] )
         self.hit_ratio          = float(self.hit_cnt) / self.req_cnt
@@ -232,26 +242,40 @@ class Simulator(object):
 
     def run_trace_pgm_fno_hetro (self):
         """
-        Run a full trace where the access strat' is the PGM, as proposed in the journal paper "Access Srategies for Network Caching".
+        Run a full trace where the access strategy is the PGM, as proposed in the journal paper "Access Strategies for Network Caching".
         """
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.calc_client_id()
             
-            # self.pos_ind_list <- list of DSs with positive indications
+            # self.pos_ind_list will hold the list of DSs with positive indications
             self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.updated_indicator) ]) if self.use_only_updated_ind else \
-                                np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ]) 
+                                np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ])
+            if (self.verbose == CNT_FN_BY_STALENESS):
+                self.cnt_fp_by_staleness ()
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss (consider_fpr_fnr_update = False)
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
             self.access_pgm_fno_hetro ()
 
+    def cnt_fp_by_staleness (self):
+        # true_answer_DS_list will hold the list of DSs which indeed have the key
+        true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
+        for DS_id in true_answer_DS_list:
+            staleness = max (self.DS_list[DS_id].ins_cnt % self.DS_list[DS_id].uInterval, 2)
+            bin = int (np.ceil (np.log2 (staleness))) - 1 # bin is the lg' of the # of insertions since the last update by cache DS_id
+            self.PI_hits_by_staleness[bin] += 1
+            if (not (self.cur_req.key in self.DS_list[DS_id].stale_indicator)):
+                self.FN_by_staleness[bin] += 1
+
+
+    
     def run_trace_pgm_fna_hetro (self):
         """
-        Run a full trace where the access strat' is PGM, at its "Staleness-Aware" version. 
-        The simplified, False-Negative-Obvliious alg' of PGM, is detailed in the journal paper "Access srategies for Network Caching".
+        Run a full trace where the access strategy is PGM, at its "false-negative-Aware" version. 
+        The simplified, False-Negative-Oblivious alg' of PGM, is detailed in the journal paper "Access Strategies for Network Caching".
         """
         self.PGM_FNA_partition ()
             

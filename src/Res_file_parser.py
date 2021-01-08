@@ -23,8 +23,8 @@ class Res_file_parser (object):
         self.add_plot_str1  = '\t\t\\addplot [color = blue, mark=square, line width = \\plotLineWidth] coordinates {\n\t\t'
         self.add_plot_fno1  = '\t\t\\addplot [color = purple, mark=o, line width = \\plotLineWidth] coordinates {\n\t\t'
         self.add_plot_fna1  = '\t\t\\addplot [color = red, mark=triangle*, line width = \\plotLineWidth] coordinates {\n\t\t'
-        self.add_plot_fno2  = '\t\t\\addplot [color = cyan, mark=x, line width = \\plotLineWidth] coordinates {\n\t\t'
-        self.add_plot_fna2  = '\t\t\\addplot [color = black, mark=triangle, line width = \\plotLineWidth] coordinates {\n\t\t'
+        self.add_plot_fno2  = '\t\t\\addplot [color = black, mark = square,      mark options = {mark size = 2, fill = black}, line width = \plotLineWidth] coordinates {\n\t\t'
+        self.add_plot_fna2  = '\t\t\\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {\n\t\t'
         self.end_add_plot_str = '\n\t\t};'
         self.add_legend_str = '\n\t\t\\addlegendentry {'
         self.add_plot_str_dict = {'Opt' : self.add_plot_opt, 'FNA' : self.add_plot_fna2, 'FNO' : self.add_plot_fno2}
@@ -90,7 +90,33 @@ class Res_file_parser (object):
                 printf (self.tbl_output_file, ' \\\\\n')
             printf (self.tbl_output_file, '\t\\hline\n\n')
                 
-    def print_bar (self):
+    def print_bar_k_loc (self):
+        """
+        Print table of service costs, normalized w.r.t. to Opt, in the following format
+        # uInterval    FNO_kloc1 FNA_kloc1 FNO_kloc2 FNA_kloc2 FNO_kloc3 FNA_kloc3
+        # 256          2.0280    1.7800    2.4294    1.1564    2.4859    1.1039
+        # 1024         2.0280    1.7800    2.4294    1.1564    2.4859    1.1039
+        """
+        self.bar_k_loc_output_file    = open ("../res/k_loc.dat", "w")
+
+        printf (self.bar_k_loc_output_file, 'uInterval\t FNO_kloc1\t FNA_kloc1\t FNO_kloc2\t FNA_kloc2\t FNO_kloc3\t FNA_kloc3\n')
+        
+        self.gen_filtered_list(self.list_of_dicts, num_of_req = 1000) 
+        for uInterval in [256, 1024]:
+            if (uInterval==256):
+                printf (self.bar_k_loc_output_file, '{} \t\t' .format (uInterval))
+            else:
+                printf (self.bar_k_loc_output_file, '{}\t\t' .format (uInterval))
+            for Kloc in [1, 2, 3]:
+                for alg_mode in ['FNO', 'FNA']:
+                    opt_cost = self.gen_filtered_list(self.list_of_dicts, 
+                            uInterval = 256, num_of_DSs = 8, Kloc = Kloc, alg_mode = 'Opt') [0]['cost']
+                    alg_cost = self.gen_filtered_list(self.list_of_dicts, 
+                            uInterval = uInterval, bpe = 14, num_of_DSs = 8, Kloc = Kloc, alg_mode = alg_mode)[0]['cost']
+                    printf (self.bar_k_loc_output_file, ' {:.4f}\t\t' .format(alg_cost / opt_cost))
+            printf (self.bar_k_loc_output_file, ' \n')
+
+    def print_bar_all_traces (self):
         """
         Print table of service costs, normalized w.r.t. to Opt, in the following format
         # input    FNO40    FNA40    FNO400    FNA400    FNO4000    FNA4000
@@ -99,27 +125,26 @@ class Res_file_parser (object):
         # scarab    2.5036    2.3053    3.2211    1.1940    3.3310    1.1183
         # F2        2.3688    2.2609    2.9604    1.1507    3.0546    1.0766
         """
-        self.bar_output_file    = open ("../res/three_caches.dat", "w")
+        self.bar_all_traces_output_file    = open ("../res/three_caches.dat", "w")
         traces = ['wiki', 'gradle', 'scarab', 'umass']
 
-        printf (self.bar_output_file, 'input \t FNO40 \t FNA40    FNO400 \t FNA400 \t FNO4000 \t FNA4000\n')
-        for trace in traces:
-            trace_to_print = 'F2' if trace == 'umass' else trace 
-            printf (self.bar_output_file, '{}\t' .format (trace_to_print))
-
+        printf (self.bar_all_traces_output_file, 'input \t\t FNO50 \t\t FNA50 \t\t FNO100 \t FNA100 \t FNO500 \t FNA500\n')
+        
         self.gen_filtered_list(self.list_of_dicts, num_of_req = 1000) 
         for trace in traces:
-            for missp in [40, 400, 4000]:
+            trace_to_print = 'F2\t' if trace == 'umass' else trace 
+            printf (self.bar_all_traces_output_file, '{}\t\t' .format (trace_to_print))
+            for missp in [50, 100, 500]:
                 for alg_mode in ['FNO', 'FNA']:
                     opt_cost = self.gen_filtered_list(self.list_of_dicts, 
                             trace = trace, cache_size = 10, num_of_DSs = 3, Kloc = 1,missp = missp, alg_mode = 'Opt') \
-                            [0]['cost']
+                            [0]['cost']  
                     alg_cost = self.gen_filtered_list(self.list_of_dicts, 
                             trace = trace, cache_size = 10, bpe = 14, num_of_DSs = 3, Kloc = 1, missp = missp, uInterval = 1000, 
                             alg_mode = alg_mode) \
                             [0]['cost']
-                    printf (self.bar_output_file, ' {:.4f} \t' .format(alg_cost / opt_cost))
-            printf (self.bar_output_file, ' \\\\\n')
+                    printf (self.bar_all_traces_output_file, ' {:.4f} \t' .format(alg_cost / opt_cost))
+            printf (self.bar_all_traces_output_file, ' \n')
 
     def gen_filtered_list (self, list_to_filter, trace = None, cache_size = 0, bpe = 0, num_of_DSs = 0, Kloc = 0, missp = 0, uInterval = 0, 
                            num_of_req = 0, alg_mode = None):
@@ -195,7 +220,7 @@ class Res_file_parser (object):
                                              add_legend_str = add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
 
        
-    def print_cache_size_plot (self):
+    def print_cache_size_plot_abs (self):
         """
         Print a tikz plot of the service cost as a func' of the bpe
         """    
@@ -349,26 +374,24 @@ class Res_file_parser (object):
     
 if __name__ == "__main__":
     my_Res_file_parser = Res_file_parser ()
+      
+#     my_Res_file_parser.parse_file ('wiki_k_loc.res')
+#     my_Res_file_parser.print_bar_k_loc()          
                 
-    my_Res_file_parser.parse_file ('wiki_num_of_caches.res')
-#     my_Res_file_parser.print_num_of_caches_plot_abs()
+#     my_Res_file_parser.parse_file ('gradle_uInterval.res')
+#     my_Res_file_parser.print_normalized_plot('uInterval', print_add_legend = True)
+    
+#     my_Res_file_parser.print_bar_all_traces()
+
+    my_Res_file_parser.parse_file('wiki_num_of_caches.res')
     my_Res_file_parser.print_num_of_caches_plot_normalized()
         
-#     my_Res_file_parser.print_cache_size_plot_normalized ()
-#     my_Res_file_parser.print_cache_size_plot ()
+#     my_Res_file_parser.parse_file ('wiki_bpe.res') 
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+#     my_Res_file_parser.parse_file ('gradle_bpe.res') 
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
 
-# my_Res_file_parser.parse_file ('gradle_bpe.res') 
-# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
-# my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
 
 
-
-#     for trace in ['wiki']:
-#         for op in ['bpe']:
-#             my_Res_file_parser.parse_file (trace + '_' + op + '.res') #("wiki_uInterval.res")
-#             if (op == 'uInterval'):
-#                 my_Res_file_parser.print_uInterval_plot ()
-#             if (op == 'bpe'):
-#                 my_Res_file_parser.print_bpe_plot ()
-#             if (op == 'cache_size'):
-#                 my_Res_file_parser.print_cache_size_plot ()
