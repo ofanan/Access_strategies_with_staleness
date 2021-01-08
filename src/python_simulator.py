@@ -10,7 +10,6 @@ import candidate
 import node 
 from   printf import printf
 from numpy.core._multiarray_umath import dtype
-#from MyConfig import MyConfing.bw_to_uInterval, settings_string 
 import MyConfig 
 
 # Codes for access algorithms
@@ -49,9 +48,9 @@ class Simulator(object):
         verbose_file = self.verbose_file) 
         for i in range(self.num_of_clients)]
     
-    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 10000, bpe = 14, 
-                 rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 0, requested_bw = 0, 
-                 uInterval = -1, use_given_loc_per_item = True):
+    def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 10000, 
+                 bpe = 14, rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 1, 
+                 bw = 0, uInterval = -1, use_given_loc_per_item = True):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -107,13 +106,13 @@ class Simulator(object):
         self.non_comp_miss_cnt  = 0
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
         self.tot_num_of_updates = 0
-        self.requested_bw       = requested_bw
+        self.bw       = bw
         
         # If the uInterval is given in the input (as a non-negative value) - use it. 
-        # Else, calculate uInterval by the given requested_bw parameter.
-        if (uInterval == -1): # Should calculate uInterval by the given requested_bw parameter
+        # Else, calculate uInterval by the given bw parameter.
+        if (uInterval == -1): # Should calculate uInterval by the given bw parameter
             self.use_global_uInerval = True
-            self.uInterval = MyConfig.bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, requested_bw)
+            self.uInterval = MyConfig.bw_to_uInterval (self.DS_size, self.bpe, self.num_of_DSs, bw)
             self.update_cycle_of_DS = np.array ( [ds_id * self.uInterval / self.num_of_DSs for ds_id in range (self.num_of_DSs)]) 
         else:
             self.use_global_uInerval = False
@@ -191,11 +190,11 @@ class Simulator(object):
         self.high_cost_mp_cnt   = np.sum( [client.high_cost_mp_cnt for client in self.client_list ] )
         self.total_cost         = self.total_access_cost + self.missp * (self.comp_miss_cnt + self.non_comp_miss_cnt + self.high_cost_mp_cnt)
         self.mean_service_cost  = self.total_cost / self.req_cnt 
-        self.settings_str       = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.requested_bw, self.uInterval, self.alg_mode)
+        self.settings_str       = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
         printf (self.output_file, '\n\n{} | service_cost = {}\n'  .format (self.settings_str, self.mean_service_cost))
         bw_in_practice =  int (round ( self.tot_num_of_updates * self.DS_size * self.bpe * (self.num_of_DSs - 1) / self.req_cnt) ) #Each update is a full indicator, sent to n-1 DSs)
-        if (self.requested_bw != bw_in_practice):
-            printf (self. output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.requested_bw, bw_in_practice))
+        if (self.bw != bw_in_practice):
+            printf (self. output_file, '//Note: requested bw was {:.0f}, but actual bw was {:.0f}\n' .format (self.bw, bw_in_practice))
         printf (self.output_file, '// tot_access_cost= {}, hit_ratio = {:.2}, non_comp_miss_cnt = {}, comp_miss_cnt = {}\n' .format 
            (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
@@ -302,6 +301,8 @@ class Simulator(object):
         """
         np.random.seed(self.rand_seed)
         num_of_req = self.req_df.shape[0]
+        settings_str = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, num_of_req, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
+        print ('running', settings_str)
         if self.alg_mode == ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
