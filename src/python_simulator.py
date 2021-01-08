@@ -60,7 +60,6 @@ class Simulator(object):
             k_loc:              number of DSs a missed key is inserted to
             DS_size:            size of DS (default 1000)
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
-            alpha:              weight for convex combination of dist-bw for calculating costs (default 0.5)
         """
         self.output_file    = output_file
         self.trace_file_name= trace_file_name
@@ -123,7 +122,10 @@ class Simulator(object):
         #self.num_of_insertions_between_estimations_factor = 100
         self.use_only_updated_ind = True if (uInterval == 1) else False
         self.num_of_insertions_between_estimations = np.uint8 (50)
-        self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
+        if (self.num_of_clients == 1):
+            self.use_given_loc_per_item = False # if there's only 1 client, all requests belong to this client, disregarding what was pre-computed in the trace file.
+        else:
+            self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
 
         self.avg_DS_accessed_per_req = float(0)
         self.verbose_file = None
@@ -290,7 +292,7 @@ class Simulator(object):
             self.access_pgm_fna_hetro ()
 
     def calc_client_id (self):
-        self.client_id = self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_DSs-1)
+        self.client_id = self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1)
 
 
 

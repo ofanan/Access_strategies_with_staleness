@@ -24,12 +24,7 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     """
     Run a simulation with different miss penalties for the initial table
     """
-    k_loc   = 1
-    bw = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
-    bpe                 = 14
-    missp               = 100
-    DS_size             = 10000
     uInterval           = 1000
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
@@ -64,12 +59,7 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     """
     Run a simulation where the running parameter is uInterval.
     """
-    bw                  = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
-    k_loc               = 1
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
-    bpe                 = 14
-    missp               = 100
-    DS_size             = 10000
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
@@ -104,11 +94,7 @@ def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     """
     Run a simulation where the running parameter is cache_size.
     """
-    bw                  = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
-    k_loc               = 1
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-    bpe                 = 14
-    missp               = 100
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
@@ -143,7 +129,7 @@ def calc_hetro_costs (num_of_DSs, num_of_clients):
     return DS_cost
 
 def calc_DS_cost (num_of_DSs = 3, use_homo_DS_cost = False):
-    num_of_clients      = num_of_DSs
+    num_of_clients      = 1 #num_of_DSs
     if (use_homo_DS_cost):
         return calc_homo_costs(num_of_DSs, num_of_clients)
     else:
@@ -156,11 +142,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
     Else, the access costs are 1, 2, 4, and the miss penalty is 100.
     """
-    bw                  = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
-    k_loc               = 1
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
-    DS_size             = 10000
-    missp               = 100
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
@@ -187,13 +169,8 @@ def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = True):
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
     Else, the access costs are 1, 2, 4, and the miss penalty is 100.
     """
-    bw                  = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
-    k_loc               = 1
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-    DS_size             = 10000
-    bpe                 = 14
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc)
-    bw                  = 0 
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
     output_file         = open ("../res/" + trace_file_name + "_num_of_caches.res", "a")
@@ -226,13 +203,8 @@ def run_k_loc_sim (trace_file_name, use_homo_DS_cost = True):
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
     Else, the access costs are 1, 2, 4, and the miss penalty is 100.
     """
-    bw                  = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
     max_num_of_req      = 4300000 # Shorten the num of requests for debugging / shorter runs
-    k_loc               = 1
     requests            = gen_requests (trace_file_name, max_num_of_req, k_loc) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
-    bw                  = 0 
-    DS_size             = 10000
-    bpe                 = 14
     num_of_DSs          = 8
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
@@ -260,7 +232,6 @@ def run_k_loc_sim (trace_file_name, use_homo_DS_cost = True):
                 toc()
 
 def run_FN_by_staleness_sim (trace_file_name): 
-    bw                  = 0 # Use fixed given update interval, rather than calculating / estimating them based on desired BW consumption   
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     requests            = gen_requests (trace_file_name, max_num_of_req) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
     DS_cost             = calc_DS_cost ()            
