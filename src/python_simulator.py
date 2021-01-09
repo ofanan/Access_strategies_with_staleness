@@ -290,7 +290,7 @@ class Simulator(object):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             verbose         = 4 if (self.verbose == 4 and self.req_cnt > 20000) else 0  
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
-                self.mr_of_DS   = self.client_list [self.client_id].get_mr_by_analysis (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
+                self.mr_of_DS   = self.client_list [self.client_id].get_mr_by_analysis (self.indications)
             else:
                 self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose) 
             self.access_pgm_fna_hetro ()
@@ -314,8 +314,7 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-        elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or 
-              self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
+        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss
