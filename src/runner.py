@@ -34,18 +34,18 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     output_file         = open ("../res/tbl.res", "a")
     
     print("now = ", datetime.now(), 'running tbl sim')
-    for missp in [50, 100, 500]:
-        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO]:
+    for missp in [50, 500]:
+        for alg_mode in [sim.ALG_PGM_FNO]:
             tic()
-            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
+            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, missp = missp)
             sm.run_simulator()
             toc()
-    alg_mode = sim.ALG_OPT
-    missp = 50
-    tic()
-    sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
-    sm.run_simulator()
-    toc()
+#     alg_mode = sim.ALG_OPT
+#     missp = 50
+#     tic()
+#     sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
+#     sm.run_simulator()
+#     toc()
 
 def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     """
@@ -89,11 +89,13 @@ def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     if (num_of_req < 4300000):
         print ('Note: you used only {} requests for a cache size sim' .format(num_of_req))
     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
+    #for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
         for uInterval in [1024]:
+#         for uInterval in [256]:
             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT, sim.ALG_PGM_FNO]:
                 print("now = ", datetime.now(), 'running cache_size sim')
                 tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
+                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, DS_size = DS_size)
                 sm.run_simulator()
                 toc()
                      
@@ -228,16 +230,17 @@ def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
 
 
 # trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
-trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
-# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
-# # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
+# trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
+trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
+# trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
 # run_tbl_sim(trace_file_name)
 # run_FN_by_staleness_sim          (trace_file_name)
-run_bpe_sim              (trace_file_name)
+# run_bpe_sim              (trace_file_name)
 # run_uInterval_sim(trace_file_name)
 
-#run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
+run_cache_size_sim(trace_file_name)
+# run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
 # run_k_loc_sim (trace_file_name)
 
 
