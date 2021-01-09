@@ -13,17 +13,17 @@ from numpy.core._multiarray_umath import dtype
 import MyConfig 
 
 # Codes for access algorithms
-ALG_OPT             = 1 # Optimal access strategy (perfect indicator)
-ALG_PGM             = 2 # PGM alg', detailed in Access Strategies journal paper
-ALG_CHEAP           = 3 # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
-ALG_ALL             = 4 # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
-ALG_KNAP            = 5 # Knapsack-based alg'. See Access Strategies papers.
-ALG_POT             = 6 # Potential-based alg'. See Access Strategies papers.
-ALG_PGM_FNO         = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
-ALG_PGM_FNA         = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
-ALG_PGM_FNA_MR1_BY_HIST = 10 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
-ALG_PGM_FNA_MR1_BY_HIST_ADAPT = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
-ALG_OPT_HOMO        = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
+ALG_OPT                         = 1 # Optimal access strategy (perfect indicator)
+ALG_PGM                         = 2 # PGM alg', detailed in Access Strategies journal paper
+ALG_CHEAP                       = 3 # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
+ALG_ALL                         = 4 # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
+ALG_KNAP                        = 5 # Knapsack-based alg'. See Access Strategies papers.
+ALG_POT                         = 6 # Potential-based alg'. See Access Strategies papers.
+ALG_PGM_FNO                     = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
+ALG_PGM_FNA_MR1_BY_ANALYSIS     = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
+ALG_PGM_FNA_MR1_BY_HIST         = 10 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
+ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
+ALG_OPT_HOMO                    = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
 
 CNT_FN_BY_STALENESS = 5
 
@@ -92,7 +92,7 @@ class Simulator(object):
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
         
-        if (alg_mode == ALG_PGM_FNA or alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+        if (alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             print ('You chose an obsolete alg mode. Please verify the relevant code.')
             exit ()
         self.alg_mode           = alg_mode
@@ -129,7 +129,7 @@ class Simulator(object):
         self.avg_DS_accessed_per_req = float(0)
         self.verbose_file = None
         if (self.verbose > 1):
-            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.verbose_file = open ("../res/fna.txt", "w", buffering=1)
             elif (self.alg_mode == ALG_PGM_FNO):
                 self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
@@ -199,11 +199,13 @@ class Simulator(object):
            (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
         printf (self.output_file, '// estimation window = {}, ' .format (self.estimation_window))
-        if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
+        if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
             printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
             printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
                                 .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
-        
+        if (self.num_of_clients == 1):
+            printf (self.output_file, '// single client\n')
+
 
     def run_trace_opt_hetro (self):
         """
@@ -287,7 +289,10 @@ class Simulator(object):
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             verbose         = 4 if (self.verbose == 4 and self.req_cnt > 20000) else 0  
-            self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose) 
+            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
+                self.mr_of_DS   = self.client_list [self.client_id].get_mr_by_analysis (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
+            else:
+                self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose) 
             self.access_pgm_fna_hetro ()
 
     def calc_client_id (self):
@@ -309,7 +314,8 @@ class Simulator(object):
         elif self.alg_mode == ALG_PGM_FNO:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-        elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+        elif (self.alg_mode == ALG_PGM_FNA or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or 
+              self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss

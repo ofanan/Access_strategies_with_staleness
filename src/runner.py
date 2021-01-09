@@ -94,7 +94,6 @@ def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
                 print("now = ", datetime.now(), 'running cache_size sim')
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
-
                 sm.run_simulator()
                 toc()
                      
@@ -235,8 +234,8 @@ trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 
 # run_tbl_sim(trace_file_name)
 # run_FN_by_staleness_sim          (trace_file_name)
-# run_bpe_sim              (trace_file_name)
-run_uInterval_sim(trace_file_name)
+run_bpe_sim              (trace_file_name)
+# run_uInterval_sim(trace_file_name)
 
 #run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
 # run_k_loc_sim (trace_file_name)
