@@ -98,7 +98,7 @@ class Client(object):
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
                 self.mr[i] = 1 if (self.fpr[i] == 0 or hit_ratio[i]==1) \
-                else fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[j]
+                else fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i]
             else:
                 self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1 or hit_ratio[i]==1) \
                 else (1 - self.fpr[i]) * (1 - hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
