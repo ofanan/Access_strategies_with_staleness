@@ -97,10 +97,14 @@ class Client(object):
         hit_ratio = np.minimum (self.ones_ar, np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr)))
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
-                # If there're no FP, then upon a positive ind', the prob' that the item is NOT in the cache is 0
-                #If the hit ratio is 1, then upon ANY indication (and, in particular, positive ind'), the prob' that the item is NOT in the cache is 0
-                self.mr[i] = 0 if (self.fpr[i] == 0 or hit_ratio[i] == 1) \
-                else self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i]
+                
+                if (self.q_estimation[i] == 0): 
+                    self.mr[i] = 1
+                elif (self.fpr[i] == 0 or # If there're no FP, then upon a positive ind', the prob' that the item is NOT in the cache is 0 
+                      hit_ratio[i] == 1): #If the hit ratio is 1, then upon ANY indication (and, in particular, positive ind'), the prob' that the item is NOT in the cache is 0
+                        self.mr[i] = 0 
+                else:
+                    self.mr[i] = self.fpr[i] * (1 - hit_ratio[i]) / self.q_estimation[i]
             else:                
                 # if there're no false-neg, then upon a negative ind', the item is SURELY not in the cache
                 # if q_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1

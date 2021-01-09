@@ -40,12 +40,12 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
             sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, missp = missp)
             sm.run_simulator()
             toc()
-#     alg_mode = sim.ALG_OPT
-#     missp = 50
-#     tic()
-#     sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
-#     sm.run_simulator()
-#     toc()
+    alg_mode = sim.ALG_OPT
+    missp = 50
+    tic()
+    sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
+    sm.run_simulator()
+    toc()
 
 def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     """
@@ -230,14 +230,14 @@ def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
 
-trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
+# trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
-# trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
+trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
-# run_tbl_sim(trace_file_name)
+run_tbl_sim(trace_file_name)
 # run_FN_by_staleness_sim          (trace_file_name)
-run_bpe_sim              (trace_file_name)
+# run_bpe_sim              (trace_file_name)
 # run_uInterval_sim(trace_file_name)
 
 # run_cache_size_sim(trace_file_name)
