@@ -230,6 +230,22 @@ def run_FN_by_staleness_sim ():
             toc()
 
 
+def run_FN_by_uInterval_sim (trace_file_name): 
+    max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
+    requests            = gen_requests (trace_file_name, max_num_of_req) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
+    DS_cost             = calc_DS_cost(num_of_DSs=1)            
+    trace_file_name     = trace_file_name.split("/")[0]
+    num_of_req          = requests.shape[0]
+    output_file         = open ("../res/" + trace_file_name + "_FN_by_staleness.res", "a")
+    
+    print("now = ", datetime.now(), 'running FN_by_uInterval_sim sim')
+    for bpe in [2]: #[2, 4, 8, 16]:
+        for uInterval in [8192, 4096, 2048, 1024, 512, 256]: #[8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2]:
+            tic()
+            sm = sim.Simulator(output_file, trace_file_name, sim.ALG_MEAURE_FP_FN, requests, DS_cost,    
+                               verbose = 0, bpe = bpe, uInterval = uInterval, use_given_loc_per_item = False)
+            sm.run_simulator()
+            toc()
 
 
 def calc_opt_service_cost (accs_cost, comp_miss_cnt, missp, num_of_req):
@@ -241,15 +257,7 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
-# list_of_dicts1 = [{'1' : 'a', '2' : 'b'}, {'1' : 'a', '2' : 'c'}, {'1' : 'a', '2' : 'b'}]
-# item = {'1' : 'a', '2' : 'b'}
-# if (item in list_of_dicts1):
-#     print ('Bingo')
-# print (list_of_dicts) 
-# for item1 in list_of_dicts:
-#     for item2 in list_of_dicts:
-#         if  (item1 == item2):
-#             print ('bingo', item1)
+run_FN_by_uInterval_sim (trace_file_name)
 
 # run_tbl_sim(trace_file_name)
 # run_FN_by_staleness_sim ()
@@ -258,7 +266,7 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 
 # run_cache_size_sim(trace_file_name)
 # run_num_of_caches_sim  (trace_file_name, use_homo_DS_cost = True)
-run_k_loc_sim (trace_file_name)
+# run_k_loc_sim (trace_file_name)
 
 
 # # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.

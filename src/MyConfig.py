@@ -112,6 +112,8 @@ def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_lo
         return settings_str + 'FNA'
     elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_ANALYSIS):
         return settings_str + 'FNAA'
+    elif (alg_mode == sim.ALG_MEAURE_FP_FN):
+        return settings_str + 'measure_fn'
 
 def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
     """

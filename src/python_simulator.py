@@ -23,9 +23,11 @@ ALG_PGM_FNO                     = 7 # PGM alg', detailed in Access Strategies jo
 ALG_PGM_FNA_MR1_BY_ANALYSIS     = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
 ALG_PGM_FNA_MR1_BY_HIST         = 10 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
 ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
+ALG_MEAURE_FP_FN                = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
 ALG_OPT_HOMO                    = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
 
 CNT_FN_BY_STALENESS = 5
+
 
 # client action: updated according to what client does
 # 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
@@ -178,12 +180,10 @@ class Simulator(object):
         This func' is usually called once at the end of each run of the python_simulator.
         """
         if (self.verbose == CNT_FN_BY_STALENESS):
-            printf (self.output_file, '\n\nbpe = {}\n' .format (self.bpe))
+            printf (self.output_file, 'FN cnt by staleness      = {}\n' .format (self.FN_by_staleness))
+            printf (self.output_file, 'PI hits cnt by staleness = {}\n' .format (self.PI_hits_by_staleness))
             for bin in range (len(self.FN_by_staleness)):
                 printf (self.output_file, '({:.0f}, {:.07f})' .format (2**(bin+1), self.FN_by_staleness[bin]/self.PI_hits_by_staleness[bin]))
-            # printf (self.output_file, '\n// FN cnt by staleness      = {}\n' .format (self.FN_by_staleness))
-            # printf (self.output_file, '// PI hits cnt by staleness = {}\n\n' .format (self.PI_hits_by_staleness))
-            return
         self.total_access_cost  = np.sum ( [client.total_access_cost for client in self.client_list ] ) 
         self.hit_cnt            = np.sum ( [client.hit_cnt for client in self.client_list ] )
         self.hit_ratio          = float(self.hit_cnt) / self.req_cnt
@@ -208,6 +208,23 @@ class Simulator(object):
         if (self.num_of_clients == 1):
             printf (self.output_file, '// single client\n')
 
+    def run_trace_measure_fp_fn (self):
+        """
+        Run a trace on a single cache, only to measure the FN.
+        """
+        self.hit_cnt     = 0
+        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+            self.cur_req = self.req_df.iloc[self.req_cnt]  
+            if (self.cur_req.key in self.DS_list[0]): #hit 
+                self.hit_cnt += 1
+                if (self.cur_req.key in self.DS_list[0].stale_indicator): # True positive                    
+                    self.DS_list[0].access(self.cur_req.key)
+                else: # FN
+                    self.FN_miss_cnt += 1
+                    self.DS_list[0].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = True)
+            else: # miss
+                self.DS_list[0].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = True)
+        printf (self.output_file, '({}, {})' .format (self.uInterval, self.FN_miss_cnt/self.hit_cnt))               
 
     def run_trace_opt_hetro (self):
         """
@@ -308,9 +325,11 @@ class Simulator(object):
         """
         np.random.seed(self.rand_seed)
         num_of_req = self.req_df.shape[0]
-        settings_str = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, num_of_req, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
-        print ('running', settings_str)
-        if self.alg_mode == ALG_OPT:
+        print ('running', MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, num_of_req, self.num_of_DSs, 
+                                                    self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode))
+        if (self.alg_mode == ALG_MEAURE_FP_FN):
+            self.run_trace_measure_fp_fn ()
+        elif self.alg_mode == ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
         elif self.alg_mode == ALG_PGM_FNO:
