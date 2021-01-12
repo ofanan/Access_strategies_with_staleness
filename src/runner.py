@@ -240,7 +240,9 @@ def run_FN_by_uInterval_sim (trace_file_name):
     
     print("now = ", datetime.now(), 'running FN_by_uInterval_sim sim')
     for bpe in [2]: #[2, 4, 8, 16]:
-        for uInterval in [8192, 4096, 2048, 1024, 512, 256]: #[8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2]:
+        #for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128]: #[8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2]:
+        #for uInterval in [64, 32, 16]: 
+        for uInterval in [8, 4, 2]:    
             tic()
             sm = sim.Simulator(output_file, trace_file_name, sim.ALG_MEAURE_FP_FN, requests, DS_cost,    
                                verbose = 0, bpe = bpe, uInterval = uInterval, use_given_loc_per_item = False)
