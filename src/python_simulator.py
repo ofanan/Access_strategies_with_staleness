@@ -178,10 +178,12 @@ class Simulator(object):
         This func' is usually called once at the end of each run of the python_simulator.
         """
         if (self.verbose == CNT_FN_BY_STALENESS):
-            printf (self.output_file, 'FN cnt by staleness      = {}\n' .format (self.FN_by_staleness))
-            printf (self.output_file, 'PI hits cnt by staleness = {}\n' .format (self.PI_hits_by_staleness))
+            printf (self.output_file, '\n\nbpe = {}\n' .format (self.bpe))
             for bin in range (len(self.FN_by_staleness)):
                 printf (self.output_file, '({:.0f}, {:.07f})' .format (2**(bin+1), self.FN_by_staleness[bin]/self.PI_hits_by_staleness[bin]))
+            # printf (self.output_file, '\n// FN cnt by staleness      = {}\n' .format (self.FN_by_staleness))
+            # printf (self.output_file, '// PI hits cnt by staleness = {}\n\n' .format (self.PI_hits_by_staleness))
+            return
         self.total_access_cost  = np.sum ( [client.total_access_cost for client in self.client_list ] ) 
         self.hit_cnt            = np.sum ( [client.hit_cnt for client in self.client_list ] )
         self.hit_ratio          = float(self.hit_cnt) / self.req_cnt

@@ -27,8 +27,8 @@ class Res_file_parser (object):
         self.add_plot_fna2  = '\t\t\\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {\n\t\t'
         self.end_add_plot_str = '\n\t\t};'
         self.add_legend_str = '\n\t\t\\addlegendentry {'
-        self.add_plot_str_dict = {'Opt' : self.add_plot_opt, 'FNA' : self.add_plot_fna2, 'FNO' : self.add_plot_fno2}
-        self.legend_entry_dict = {'Opt' : '\\opt', 'FNA' : '\\pgmfna', 'FNO' : '\\pgmfno'}
+        self.add_plot_str_dict = {'Opt' : self.add_plot_opt, 'FNAA' : self.add_plot_fna2, 'FNO' : self.add_plot_fno2}
+        self.legend_entry_dict = {'Opt' : '\\opt', 'FNAA' : '\\pgmfna', 'FNO' : '\\pgmfno'}
 
     def parse_line (self, line):
         splitted_line = line.split ("|")
@@ -73,10 +73,10 @@ class Res_file_parser (object):
             printf (self.tbl_output_file, '\t\\multirow{3}{*}{')
             printf (self.tbl_output_file, '{}' .format (missp))
             printf (self.tbl_output_file, '}\n')
-            for alg_mode in ['FNO', 'FNA']:
+            for alg_mode in ['FNO', 'FNAA']:
                 if (alg_mode == 'FNO'):
                     printf (self.tbl_output_file, '\t&$\\fno$' .format(alg_mode))
-                if (alg_mode == 'FNA'):
+                if (alg_mode == 'FNAA'):
                     printf (self.tbl_output_file, '\t&$\\fna$' .format(alg_mode))
                     
                 for trace in traces:
@@ -101,16 +101,20 @@ class Res_file_parser (object):
 
         printf (self.bar_k_loc_output_file, 'uInterval\t FNO_kloc1\t FNA_kloc1\t FNO_kloc2\t FNA_kloc2\t FNO_kloc3\t FNA_kloc3\n')
         
-        self.gen_filtered_list(self.list_of_dicts, num_of_req = 1000) 
+        self.gen_filtered_list(self.list_of_dicts, num_of_req = 4300, missp = 1000) 
         for uInterval in [256, 1024]:
             if (uInterval==256):
                 printf (self.bar_k_loc_output_file, '{} \t\t' .format (uInterval))
             else:
                 printf (self.bar_k_loc_output_file, '{}\t\t' .format (uInterval))
             for Kloc in [1, 2, 3]:
-                for alg_mode in ['FNO', 'FNA']:
+                for alg_mode in ['FNO', 'FNAA']:
                     opt_cost = self.gen_filtered_list(self.list_of_dicts, 
-                            uInterval = 256, num_of_DSs = 8, Kloc = Kloc, alg_mode = 'Opt') [0]['cost']
+                            uInterval = 256, num_of_DSs = 8, Kloc = Kloc, alg_mode = 'Opt')
+                    if (opt_cost == []):
+                        opt_cost = self.gen_filtered_list(self.list_of_dicts, 
+                                uInterval = 1024, num_of_DSs = 8, Kloc = Kloc, alg_mode = 'Opt')
+                    opt_cost = opt_cost[0]['cost']
                     alg_cost = self.gen_filtered_list(self.list_of_dicts, 
                             uInterval = uInterval, bpe = 14, num_of_DSs = 8, Kloc = Kloc, alg_mode = alg_mode)[0]['cost']
                     printf (self.bar_k_loc_output_file, ' {:.4f}\t\t' .format(alg_cost / opt_cost))
@@ -135,7 +139,7 @@ class Res_file_parser (object):
             trace_to_print = 'F2\t' if trace == 'umass' else trace 
             printf (self.bar_all_traces_output_file, '{}\t\t' .format (trace_to_print))
             for missp in [50, 100, 500]:
-                for alg_mode in ['FNO', 'FNA']:
+                for alg_mode in ['FNO', 'FNAA']:
                     opt_cost = self.gen_filtered_list(self.list_of_dicts, 
                             trace = trace, cache_size = 10, num_of_DSs = 3, Kloc = 1,missp = missp, alg_mode = 'Opt') \
                             [0]['cost']  
@@ -172,7 +176,7 @@ class Res_file_parser (object):
         if (num_of_req > 0):
             list_to_filter = list (filter (lambda item : item['num_of_req'] == num_of_req, list_to_filter))
         if (not (alg_mode == None)):
-            list_to_filter = list (filter (lambda item : item['alg_mode'] == alg_mode, list_to_filter))
+            list_to_filter = list (filter (lambda item : item['alg_mode'] == alg_mode, list_to_filter))    
         return list_to_filter
 
     def print_single_tikz_plot (self, list_of_dict, key_to_sort, addplot_str = None, add_legend_str = None, legend_entry = None):
@@ -209,7 +213,7 @@ class Res_file_parser (object):
             if (uInterval == 1024):
                 add_legend_str = self.add_legend_str
             printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
-            for alg_mode in ['FNO', 'FNA']:
+            for alg_mode in ['FNO', 'FNAA']:
                 filtered_list  = self.gen_filtered_list(self.list_of_dicts, num_of_DSs = 3, Kloc = 1, missp = 100, 
                                                         alg_mode = alg_mode, uInterval = uInterval)
                 for dict in filtered_list: 
@@ -230,18 +234,18 @@ class Res_file_parser (object):
                                      add_legend_str = self.add_legend_str, legend_entry = 'Opt') 
 
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 256), 
-                                     'cache_size', addplot_str = self.add_plot_fno1, 
+                                     'cache_size', addplot_str = self.add_plot_fno2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 256') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
-                                     'cache_size', addplot_str = self.add_plot_fna1, 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNAA', uInterval = 256), 
+                                     'cache_size', addplot_str = self.add_plot_fna2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 256') 
 
         self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNO', uInterval = 1024), 
                                      'cache_size', addplot_str = self.add_plot_fno2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 1024') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 1024), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNAA', uInterval = 1024), 
                                      'cache_size', addplot_str = self.add_plot_fna2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 1024') 
         
@@ -258,7 +262,7 @@ class Res_file_parser (object):
                                      'bpe', addplot_str = self.add_plot_fno1, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 256') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 256), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNAA', uInterval = 256), 
                                      'bpe', addplot_str = self.add_plot_fna1, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 256') 
         
@@ -266,7 +270,7 @@ class Res_file_parser (object):
                                      'bpe', addplot_str = self.add_plot_fno2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno, uInterval = 1024') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA', uInterval = 1024), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNAA', uInterval = 1024), 
                                      'bpe', addplot_str = self.add_plot_fna2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna, uInterval = 1024') 
         
@@ -284,7 +288,7 @@ class Res_file_parser (object):
                                      'uInterval', addplot_str = self.add_plot_fno2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfno') 
         
-        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNA'), 
+        self.print_single_tikz_plot (self.gen_filtered_list (self.list_of_dicts, alg_mode = 'FNAA'), 
                                      'uInterval', addplot_str = self.add_plot_fna2, 
                                      add_legend_str = self.add_legend_str, legend_entry = '\\pgmfna') 
                 
@@ -293,12 +297,12 @@ class Res_file_parser (object):
         Print a tikz plot of the service cost as a func' of the update interval
         The print shows FNO and FNA, both normalized w.r.t. Opt
         """    
-        filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100, bpe = 14) # Filter only relevant from the results file  
+        filtered_list = self.gen_filtered_list (self.list_of_dicts, cache_size = 10, missp = 100, bpe = 14, num_of_req = 1000) # Filter only relevant from the results file  
         opt_cost = self.gen_filtered_list(self.list_of_dicts, cache_size = 10, num_of_DSs = 3, Kloc = 1, missp = 100, alg_mode = 'Opt')[0]['cost']
 
         if (uInterval > 0 ):
             printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
-        for alg_mode in ['FNO', 'FNA']:
+        for alg_mode in ['FNO', 'FNAA']:
             
             filtered_list  = self.gen_filtered_list(self.list_of_dicts, uInterval = uInterval, cache_size = 10, num_of_DSs = 3, Kloc = 1, missp = 100, alg_mode = alg_mode)
             add_legend_str = self.add_legend_str if print_add_legend else None
@@ -324,12 +328,13 @@ class Res_file_parser (object):
                 continue
            
             self.parse_line(line)
-            self.list_of_dicts.append(self.dict)
+            if ( not(self.dict in self.list_of_dicts)):
+                self.list_of_dicts.append(self.dict)
                 
 
         cache_size = 10 # cache size to plot, in units of [K] entries        
         uInterval  = 1000
-        alg_modes = ['FNA', 'FNO']
+        alg_modes = ['FNAA', 'FNO']
         self.input_file.close
 
     def print_num_of_caches_plot_normalized (self):
@@ -343,8 +348,8 @@ class Res_file_parser (object):
             if (uInterval == 1024):
                 add_legend_str = self.add_legend_str
             printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
-            for alg_mode in ['FNO', 'FNA']:
-                filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 50, 
+            for alg_mode in ['FNO', 'FNAA']:
+                filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 100, 
                                                         alg_mode = alg_mode, uInterval = uInterval)
                 for dict in filtered_list: 
     
@@ -364,7 +369,7 @@ class Res_file_parser (object):
             if (True): #(uInterval == 1024):
                 add_legend_str = self.add_legend_str
             printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
-            for alg_mode in ['Opt', 'FNO', 'FNA']:
+            for alg_mode in ['Opt', 'FNO', 'FNAA']:
                 filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 50, 
                                                         alg_mode = alg_mode, uInterval = uInterval)
                 self.print_single_tikz_plot (filtered_list, key_to_sort = 'num_of_DSs', addplot_str = self.add_plot_str_dict[alg_mode], 
@@ -374,24 +379,29 @@ class Res_file_parser (object):
     
 if __name__ == "__main__":
     my_Res_file_parser = Res_file_parser ()
+    
+#     my_Res_file_parser.parse_file ('tbl.res')
+#     my_Res_file_parser.print_bar_all_traces()
       
 #     my_Res_file_parser.parse_file ('wiki_k_loc.res')
 #     my_Res_file_parser.print_bar_k_loc()          
-                
-#     my_Res_file_parser.parse_file ('gradle_uInterval.res')
+                 
+#     my_Res_file_parser.parse_file ('wiki_uInterval.res')
 #     my_Res_file_parser.print_normalized_plot('uInterval', print_add_legend = True)
-    
-#     my_Res_file_parser.print_bar_all_traces()
+   
 
-    my_Res_file_parser.parse_file('wiki_num_of_caches.res')
-    my_Res_file_parser.print_num_of_caches_plot_normalized()
+#     my_Res_file_parser.parse_file('wiki_num_of_caches.res')
+#     my_Res_file_parser.print_num_of_caches_plot_normalized()
         
 #     my_Res_file_parser.parse_file ('wiki_bpe.res') 
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
-#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = False)
 #     my_Res_file_parser.parse_file ('gradle_bpe.res') 
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+
+    my_Res_file_parser.parse_file ('wiki_cache_size.res') 
+    my_Res_file_parser.print_cache_size_plot_abs()
 
 
 

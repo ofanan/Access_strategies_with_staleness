@@ -134,10 +134,10 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     output_file         = open ("../res/" + trace_file_name + "_bpe.res", "a")
                        
     print("now = ", datetime.now(), 'running bpe sim')
-    for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+    for bpe in [5]: #, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
         for uInterval in [1024]:
-#            for alg_mode in [sim.ALG_PGM_FNO]:             
-            for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:             
+            for alg_mode in [sim.ALG_OPT]: #[sim.ALG_PGM_FNO]:             
+#             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:             
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval)
                 sm.run_simulator()
@@ -199,9 +199,9 @@ def run_k_loc_sim (trace_file_name, use_homo_DS_cost = True):
             DS_cost = calc_DS_cost (num_of_DSs, use_homo_DS_cost)            
             missp    = 50 * np.average (DS_cost)
      
-            for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]: 
+#             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]: 
             # for alg_mode in [sim.ALG_PGM_FNO]: 
-            # for alg_mode in [sim.ALG_OPT]: 
+            for alg_mode in [sim.ALG_OPT]: 
                         
                 print("now = ", datetime.now(), 'running k_loc sim')
                 tic()
@@ -210,20 +210,24 @@ def run_k_loc_sim (trace_file_name, use_homo_DS_cost = True):
                 sm.run_simulator()
                 toc()
 
-def run_FN_by_staleness_sim (trace_file_name): 
+def run_FN_by_staleness_sim (): 
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
-    requests            = gen_requests (trace_file_name, max_num_of_req) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
     DS_cost             = calc_DS_cost ()            
-    trace_file_name     = trace_file_name.split("/")[0]
-    num_of_req          = requests.shape[0]
-    output_file         = open ("../res/" + trace_file_name + "_FN_by_staleness.res", "a")
-
+    output_file         = open ("../res/FN_by_staleness.res", "a")
     print("now = ", datetime.now(), 'running FN_by_staleness sim')
-    tic()
-    sm = sim.Simulator(output_file, trace_file_name, sim.ALG_PGM_FNO, requests, DS_cost,   
-                       verbose = sim.CNT_FN_BY_STALENESS, uInterval = 8192, use_given_loc_per_item = True)
-    sm.run_simulator()
-    toc()
+
+    for trace_file_name in ['scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv', 'umass/storage/F2.3M_req_1000K_3DSs.csv']:
+        requests            = gen_requests (trace_file_name, max_num_of_req) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
+        trace_file_name     = trace_file_name.split("/")[0]
+        num_of_req          = requests.shape[0]
+        printf (output_file, '\n\ntrace = {}\n///////////////////\n' .format (trace_file_name))
+    
+        for bpe in [2, 4, 8, 16]:
+            tic()
+            sm = sim.Simulator(output_file, trace_file_name, sim.ALG_PGM_FNO, requests, DS_cost, bpe = bpe,    
+                               verbose = sim.CNT_FN_BY_STALENESS, uInterval = 8192, use_given_loc_per_item = True)
+            sm.run_simulator()
+            toc()
 
 
 
@@ -237,8 +241,18 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
+# list_of_dicts1 = [{'1' : 'a', '2' : 'b'}, {'1' : 'a', '2' : 'c'}, {'1' : 'a', '2' : 'b'}]
+# item = {'1' : 'a', '2' : 'b'}
+# if (item in list_of_dicts1):
+#     print ('Bingo')
+# print (list_of_dicts) 
+# for item1 in list_of_dicts:
+#     for item2 in list_of_dicts:
+#         if  (item1 == item2):
+#             print ('bingo', item1)
+
 # run_tbl_sim(trace_file_name)
-# run_FN_by_staleness_sim          (trace_file_name)
+# run_FN_by_staleness_sim ()
 # run_bpe_sim              (trace_file_name)
 # run_uInterval_sim(trace_file_name)
 
@@ -247,11 +261,11 @@ trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 run_k_loc_sim (trace_file_name)
 
 
-# Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
-# Hence, it suffices to run Opt only once per trace and network, and then calculate its service cost for other 
-# parameters' values. Below is the relevant auxiliary code. 
-# tot_access_cost= 1784095.0
-# comp_miss_cnt = 108183
+# # Opt's behavior is not depended upon parameters such as the indicaror's size, and miss penalty.
+# # Hence, it suffices to run Opt only once per trace and network, and then calculate its service cost for other 
+# # parameters' values. Below is the relevant auxiliary code. 
+# tot_access_cost= 1805450.0
+# comp_miss_cnt = 104710
 # num_of_req = 1000000
-# for missp in [50, 100, 500]:
+# for missp in [50, 500]:
 #     print ("Opt's service cost is ", calc_service_cost_of_opt (tot_access_cost, comp_miss_cnt, missp, num_of_req))
