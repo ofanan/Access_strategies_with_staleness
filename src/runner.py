@@ -231,17 +231,17 @@ def run_FN_by_staleness_sim ():
 
 
 def run_FN_by_uInterval_sim (trace_file_name): 
-    max_num_of_req      = 100#0000 # Shorten the num of requests for debugging / shorter runs
+    max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     requests            = gen_requests (trace_file_name, max_num_of_req) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
     DS_cost             = calc_DS_cost(num_of_DSs=1)            
     trace_file_name     = trace_file_name.split("/")[0]
     num_of_req          = requests.shape[0]
     
     print("now = ", datetime.now(), 'running FN_by_uInterval_sim sim')
-    for bpe in [2, 4]: #[2, 4, 8, 16]:
+    for bpe in [2]: #[2, 4, 8, 16]:
         output_file         = open ("../res/" + trace_file_name + "_FN_by_uInterval_bpe" + str(bpe) +".res", "a")
 
-        for uInterval in [20, 50]: #[8192, 4096, 2048, 1024, 512, 256, 128]: #[8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2]:
+        for uInterval in [2]: #[1024, 2048, 4096, 8192]:
         #for uInterval in [64, 32, 16]: 
         #for uInterval in [8, 4, 2]:    
             tic()
@@ -255,8 +255,8 @@ def calc_opt_service_cost (accs_cost, comp_miss08_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
 
-trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
-# trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
+# trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
+trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
