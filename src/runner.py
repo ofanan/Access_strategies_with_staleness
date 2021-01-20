@@ -135,9 +135,8 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
                        
     print("now = ", datetime.now(), 'running bpe sim')
     for bpe in [5]: #, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
-        for uInterval in [1024]:
-            for alg_mode in [sim.ALG_OPT]: #[sim.ALG_PGM_FNO]:             
-#             for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:             
+        for uInterval in [256]:
+            for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:             
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval)
                 sm.run_simulator()
@@ -260,11 +259,11 @@ trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
 
-run_FN_by_uInterval_sim (trace_file_name)
+# run_FN_by_uInterval_sim (trace_file_name)
 
 # run_tbl_sim(trace_file_name)
 # run_FN_by_staleness_sim ()
-# run_bpe_sim              (trace_file_name)
+run_bpe_sim              (trace_file_name)
 # run_uInterval_sim(trace_file_name)
 
 # run_cache_size_sim(trace_file_name)

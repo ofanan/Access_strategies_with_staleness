@@ -396,12 +396,12 @@ if __name__ == "__main__":
 #     my_Res_file_parser.parse_file ('wiki_bpe.res') 
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = False)
-#     my_Res_file_parser.parse_file ('gradle_bpe.res') 
-#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
-#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+    my_Res_file_parser.parse_file ('gradle_bpe.res') 
+    my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+    my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
 
-    my_Res_file_parser.parse_file ('wiki_cache_size.res') 
-    my_Res_file_parser.print_cache_size_plot_abs()
+#     my_Res_file_parser.parse_file ('wiki_cache_size.res') 
+#     my_Res_file_parser.print_cache_size_plot_abs()
 
 
 
