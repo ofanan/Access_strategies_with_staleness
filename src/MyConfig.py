@@ -6,9 +6,12 @@ import pandas as pd
 # This file contains several accessory functions, used throughout the project.
 
 
-## Reduces the memory print of the trace by using the smallest type that still supports the values in the trace
-## Note: this configuration can support up to 2^8 locations, and traces of length up to 2^32
 def reduce_trace_mem_print(trace_df, k_loc):
+    """
+    Reduces the memory print of the trace by using the smallest type that still supports the values in the trace
+    Note: this configuration can support up to 2^8 locations, and traces of length up to 2^32
+
+    """
     new_trace_df = trace_df
     new_trace_df['req_id']    = trace_df['req_id'].astype('uint32')        # id (running cnt number) of the request
     new_trace_df['key']       = trace_df['key'].astype('uint32')              # key. No need for value in the sim'
@@ -20,15 +23,20 @@ def reduce_trace_mem_print(trace_df, k_loc):
         new_trace_df['%d'%i] = trace_df['%d'%i].astype('uint8')
     return new_trace_df
 
+
 def  gen_requests (trace_file_name, max_num_of_req, k_loc=1):
+    """
+    Generates a trace of requests, given a trace file.
+    """
     return reduce_trace_mem_print (pd.read_csv (getTracesPath() + trace_file_name).head(max_num_of_req), k_loc)
 
 
-
-# Sizes of the bloom filters (number of cntrs), for chosen DS sizes, k=5 hash funcs, and designed false positive rate.
-# The values are taken from https://hur.st/bloomfilter
-# online resource calculating the optimal values
 def optimal_BF_size_per_DS_size ():
+    """
+    Sizes of the bloom filters (number of cntrs), for chosen DS sizes, k=5 hash funcs, and designed false positive rate.
+    The values are taken from https://hur.st/bloomfilter
+    online resource calculating the optimal values
+    """
     BF_size_for_DS_size = {}
     BF_size_for_DS_size[0.01] = {20: 197, 40: 394, 60: 591, 80: 788, 100: 985, 200: 1970, 400: 3940, 600: 5910, 800: 7880, 1000: 9849, 1200: 11819, 1400: 13789, 1600: 15759, 2000: 19698, 2500: 24623, 3000: 29547}
     BF_size_for_DS_size[0.02] = {20: 164, 40: 328, 60: 491, 80: 655, 100: 819, 200: 1637, 400: 3273, 600: 4909, 800: 6545, 1000: 8181, 1200: 9817, 1400: 11453, 1600: 13089}
@@ -76,6 +84,9 @@ def calcOvhDsCost ():
 
 
 def exponential_window (old_estimate, new_val, alpha):
+    """
+    An accessory function to calculate an exponential averaging window. Currently unused.
+    """
 	return alpha * new_val + (1 - alpha) * old_estimate 
 
 def bw_to_uInterval (DS_size, bpe, num_of_DSs, bw):
@@ -88,6 +99,9 @@ def bw_to_uInterval (DS_size, bpe, num_of_DSs, bw):
 	return int (round (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / bw)
  
 def uInterval_to_Bw (DS_size, bpe, num_of_DSs, uInerval):
+    """
+    Given an update interval, estimate the BW it would require. Currently unused.
+    """
 	return (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / uInterval
 
 def get_optimal_num_of_hashes (bpe):
@@ -106,8 +120,10 @@ def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_lo
 		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw, uInterval)
     if (alg_mode == sim.ALG_OPT):
         return settings_str + 'Opt'     
-    elif (alg_mode == sim.ALG_PGM_FNO):
+    elif (alg_mode == sim.ALG_PGM_FNO_MR1_BY_HIST):
         return settings_str + 'FNO'
+    elif (alg_mode == sim.ALG_PGM_FNO_MR1_BY_ANALYSIS):
+        return settings_str + 'FNOA'
     elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
         return settings_str + 'FNA'
     elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_ANALYSIS):

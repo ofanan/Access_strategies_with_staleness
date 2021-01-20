@@ -13,38 +13,47 @@ from numpy.core._multiarray_umath import dtype
 import MyConfig 
 
 # Codes for access algorithms
-ALG_OPT                         = 1 # Optimal access strategy (perfect indicator)
-ALG_PGM                         = 2 # PGM alg', detailed in Access Strategies journal paper
-ALG_CHEAP                       = 3 # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
-ALG_ALL                         = 4 # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
-ALG_KNAP                        = 5 # Knapsack-based alg'. See Access Strategies papers.
-ALG_POT                         = 6 # Potential-based alg'. See Access Strategies papers.
-ALG_PGM_FNO                     = 7 # PGM alg', detailed in Access Strategies journal paper; Staleness Oblivious
-ALG_PGM_FNA_MR1_BY_ANALYSIS     = 8 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
-ALG_PGM_FNA_MR1_BY_HIST         = 10 # PGM alg', detailed in Access Strategies journal paper; staleness-aware
-ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 11 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
-ALG_MEAURE_FP_FN                = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
-ALG_OPT_HOMO                    = 100 # Optimal access strategy (perfect indicator), faster version for the case of homo' accs costs
+ALG_OPT                         = 1  # Optimal access strategy (perfect indicator)
+ALG_PGM                         = 2  # PGM alg', detailed in Access Strategies journal paper
+ALG_CHEAP                       = 3  # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
+ALG_ALL                         = 4  # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
+ALG_KNAP                        = 5  # Knapsack-based alg'. See Access Strategies papers.
+ALG_POT                         = 6  # Potential-based alg'. See Access Strategies papers.
+ALG_PGM_FNO_MR1_BY_HIST         = 7  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated by the history.
+ALG_PGM_FNO_MR1_BY_ANALYSIS     = 10 # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper. 
+ALG_PGM_FNA_MR1_BY_ANALYSIS     = 11 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper.
+ALG_PGM_FNA_MR1_BY_HIST         = 12 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated by the history.
+ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
+ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
+ALG_OPT_HOMO                    = 30 # Optimal access strategy (perfect indicator).
 
 CNT_FN_BY_STALENESS = 5
 
 
-# client action: updated according to what client does
-# 0: no positive ind , 1: hit upon access of DSs, 2: miss upon access of DSs, 3: high DSs cost, prefer missp, 4: no pos ind, pay missp
 """
 key is an integer
 """
 
 class Simulator(object):
+    """
+    A simulator that accepts system parameters (trace, number and size of caches, algorithm to run etc.), 
+    runs a simulation, and outputs the results to a file.
+    """
 
-    # init a list of empty DSs
     def init_DS_list(self):
+        """
+        Init a list of empty DSs (Data Stores == caches)
+        """
         self.DS_list = [DataStore.DataStore(ID = i, size = self.DS_size, bpe = self.bpe, mr1_estimation_window = self.estimation_window, 
                         max_fpr = self.max_fpr, max_fnr = self.max_fnr, verbose = self.verbose, uInterval = self.uInterval,
                         num_of_insertions_between_estimations = self.num_of_insertions_between_estimations) 
                         for i in range(self.num_of_DSs)]
             
     def init_client_list(self):
+        """
+        Init a list of clients
+        """
+        
         self.client_list = [Client.Client(ID = i, num_of_DSs = self.num_of_DSs, estimation_window = self.estimation_window, verbose = self.verbose, 
         use_redundan_coef = self.use_redundan_coef, k_loc = self.k_loc, use_adaptive_alg = self.use_adaptive_alg, missp = self.missp,
         verbose_file = self.verbose_file) 
@@ -59,13 +68,21 @@ class Simulator(object):
             client_DS_cost:     2D array of costs. entry (i,j) is the cost from client i to DS j
             missp:               miss penalty
             k_loc:              number of DSs a missed key is inserted to
-            DS_size:            size of DS (default 1000)
+            DS_size:            size of DS 
             bpe:                Bits Per Element: number of cntrs in the CBF per a cached element (commonly referred to as m/n)
+            use_redundancy_coef: When true, this allows decreasing the probability of speculative access (namely, and access upon a negative indication).
+            max_fpr, max_fnr:   Allows for sending an update by some maximum allowed (estimated) fpr, fnr. 
+                                When the estimated fnr is above max_fnr, or the estimated fpr is above max_fpr, the DS sends an update.
+                                Currently unused.  
+            verbose :           Amount of info written to output files. When 1 - write at the end of each sim' the cost, number of misses etc.
+            bw:                 BW budged. Used to calculate the update interval when the uInterval isn't explicitly define in the input.
+            uInterval:          update Interval, namely, number of insertions to each cache before this cache advertises a fresh indicator.
+            use_given_loc_per_item: if True, place each missed item in the location(s) defined for it in the trace. Else, select the location of a missed item based on hash. 
+            
         """
         self.output_file    = output_file
         self.trace_file_name= trace_file_name
         self.missp          = missp
-        self.k_loc          = k_loc
         self.DS_size        = DS_size
         self.bpe            = bpe
         self.rand_seed      = rand_seed
@@ -77,6 +94,11 @@ class Simulator(object):
 
         self.num_of_clients     = client_DS_cost.shape[0]
         self.num_of_DSs         = client_DS_cost.shape[1]
+        self.k_loc              = k_loc
+        if (self.k_loc > self.num_of_DSs):
+            print ('error: k_loc must be at most num_of_DSs')
+            exit ()
+
         self.client_DS_cost     = client_DS_cost # client_DS_cost(i,j) will hold the access cost for client i accessing DS j
         self.est_win_factor     = 10
         self.estimation_window  = 100 #self.DS_size / self.est_win_factor # window for parameters' estimation 
@@ -133,7 +155,7 @@ class Simulator(object):
         if (self.verbose > 1):
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.verbose_file = open ("../res/fna.txt", "w", buffering=1)
-            elif (self.alg_mode == ALG_PGM_FNO):
+            elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
                 self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
                 if (self.verbose == CNT_FN_BY_STALENESS):
                     lg_uInterval = np.log2 (self.uInterval).astype (int)
@@ -210,7 +232,7 @@ class Simulator(object):
 
     def run_trace_measure_fp_fn (self):
         """
-        Run a trace on a single cache, only to measure the FN.
+        Run a trace on a single cache, only to measure the FN, or FP ratio.
         """
         self.hit_cnt     = 0
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
@@ -252,6 +274,10 @@ class Simulator(object):
                 self.client_list[self.client_id].hit_cnt += 1
 
     def consider_send_update (self):
+        """
+        Used to decide whether to send an update when updates are sent "globally", namely, by some global requests count, 
+        and not by the number of insertions of each concrete DS. 
+        """
         if (not(self.use_global_uInerval)): # To be used only if we have a "globally calculated uInterval"
             return
         remainder = self.req_cnt % self.uInterval
@@ -265,6 +291,7 @@ class Simulator(object):
     def run_trace_pgm_fno_hetro (self):
         """
         Run a full trace where the access strategy is the PGM, as proposed in the journal paper "Access Strategies for Network Caching".
+        This algorithm is FNO: False-Negative Oblivious, namely, it never accesses a cache with a negative indication.
         """
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.consider_send_update ()
@@ -275,14 +302,18 @@ class Simulator(object):
             self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.updated_indicator) ]) if self.use_only_updated_ind else \
                                 np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.stale_indicator) ])
             if (self.verbose == CNT_FN_BY_STALENESS):
-                self.cnt_fp_by_staleness ()
+                self.cnt_fn_by_staleness ()
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss (consider_fpr_fnr_update = False)
                 continue        
             self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
             self.access_pgm_fno_hetro ()
 
-    def cnt_fp_by_staleness (self):
+    def cnt_fn_by_staleness (self):
+        """
+        Counts the number of False Negative events that happen, as a function of the staleness, namely,
+        the number of insertions since the last advertisement of a fresh indicator.
+        """
         # true_answer_DS_list will hold the list of DSs which indeed have the key
         true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
         for DS_id in true_answer_DS_list:
@@ -296,8 +327,8 @@ class Simulator(object):
     
     def run_trace_pgm_fna_hetro (self):
         """
-        Run a full trace where the access strategy is PGM, at its "false-negative-Aware" version. 
-        The simplified, False-Negative-Oblivious alg' of PGM, is detailed in the journal paper "Access Strategies for Network Caching".
+        Run a full trace where the access strategy is the PGM, as proposed in the journal paper "Access Strategies for Network Caching".
+        This algorithm is FNA: False-Negative Aware, namely, it may access a cache despite a negative indication.
         """
         self.PGM_FNA_partition ()
             
@@ -315,6 +346,11 @@ class Simulator(object):
             self.access_pgm_fna_hetro ()
 
     def calc_client_id (self):
+        """
+        Decides which client will invoke this request. 
+        If self.use_given_loc_per_item==True, this function will output the client selected by the given trace file.
+        Else, the client will be selected uar among all clients.
+        """
         self.client_id = self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1)
 
 
@@ -332,7 +368,7 @@ class Simulator(object):
         elif self.alg_mode == ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
-        elif self.alg_mode == ALG_PGM_FNO:
+        elif self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST:
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
         elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
@@ -372,7 +408,7 @@ class Simulator(object):
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
         self.insert_key_to_DSs (consider_fpr_fnr_update = consider_fpr_fnr_update)
-        if (self.alg_mode == ALG_PGM_FNO):
+        if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
             self.FN_miss_cnt += 1
 
     def handle_miss (self, consider_fpr_fnr_update = True):
@@ -452,7 +488,8 @@ class Simulator(object):
         
     def access_pgm_fno_hetro (self):
         """
-        The PGM FNO (false negative oblivious) alg' detailed in the paper: Access Strategies for Network Caching, Journal verison.
+        Run the PGM alg' detailed in the paper: Access Strategies for Network Caching, Journal version.
+        Run PGM in its FNO (false negative oblivious) variant, namely, consider only caches with positive indications. 
         """ 
         # Now we know that there exists at least one positive indication
         #self.pos_ind_list = [int(i) for i in self.pos_ind_list] # cast pos_ind_list to int
@@ -550,6 +587,10 @@ class Simulator(object):
 
 
     def access_pgm_fna_hetro (self):
+        """
+        Run the PGM alg' detailed in the paper: Access Strategies for Network Caching, Journal version.
+        Run PGM in its FNA (false-negative aware) variant, namely, consider also caches with negative indications. 
+        """ 
 
         req                     = self.cur_req
 
