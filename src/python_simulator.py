@@ -305,8 +305,11 @@ class Simulator(object):
                 self.cnt_fn_by_staleness ()
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss (consider_fpr_fnr_update = False)
-                continue        
-            self.estimate_mr_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]   
+                continue       
+            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):   
+                self.estimate_mr1_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]
+            else: #alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS
+                self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications, fno_mode = True)    
             self.access_pgm_fno_hetro ()
 
     def cnt_fn_by_staleness (self):
@@ -340,7 +343,7 @@ class Simulator(object):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             verbose         = 4 if (self.verbose == 4 and self.req_cnt > 20000) else 0  
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
-                self.mr_of_DS   = self.client_list [self.client_id].get_mr_by_analysis (self.indications)
+                self.mr_of_DS   = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications)
             else:
                 self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose) 
             self.access_pgm_fna_hetro ()
@@ -386,10 +389,10 @@ class Simulator(object):
             printf (self.output_file, 'Wrong alg_mode: {:.0f}\n' .format (self.alg_mode))
 
         
-    def estimate_mr_by_history (self):
+    def estimate_mr1_by_history (self):
         """
-        Update the estimated miss rate of each DS, based on the history.
-        This estimation is good only for non-speculative accesses, i.e. accesses after a positive ind' (mr[1]) 
+        Update the estimated miss rate ("exclusion probability") of each DS, based on the history.
+        This estimation is good only for false-negative-oblivious algorithms, i.e. algorithms that don't access caches with negative ind'  
         """
         self.mr_of_DS = np.array([DS.mr1_cur for DS in self.DS_list]) # For each 1 <= i<= n, Copy the miss rate estimation of DS i to mr_of_DS(i)
 

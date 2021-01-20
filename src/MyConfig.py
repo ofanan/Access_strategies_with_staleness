@@ -121,7 +121,7 @@ def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_lo
     if (alg_mode == sim.ALG_OPT):
         return settings_str + 'Opt'     
     elif (alg_mode == sim.ALG_PGM_FNO_MR1_BY_HIST):
-        return settings_str + 'FNO'
+        return settings_str + 'FNOH'
     elif (alg_mode == sim.ALG_PGM_FNO_MR1_BY_ANALYSIS):
         return settings_str + 'FNOA'
     elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
