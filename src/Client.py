@@ -69,7 +69,7 @@ class Client(object):
         self.DS_accessed[req_id] = DS_index_list
         self.num_DS_accessed.append(len(DS_index_list))
         
-    def estimate_Pone_and_hit_ratio (self):
+    def estimate_Pone_and_hit_ratio (self, indications):
         """
         Estimate Pone (aka "q") - the probability of positive indication; and the hit ratio of each DS.
         Details: The func' does the following:  
@@ -103,7 +103,7 @@ class Client(object):
         - - - Else, assign mr[i] = mr0[i], as estimated by our analysis.
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
-        self.estimate_Pone_and_hit_ratio ()
+        self.estimate_Pone_and_hit_ratio (indications)
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
                 
@@ -140,7 +140,7 @@ class Client(object):
         - - Else, assign mr[i] = mr0[i], as estimated by our analysis.
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
-        self.estimate_Pone_and_hit_ratio ()
+        self.estimate_Pone_and_hit_ratio (indications)
         
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'

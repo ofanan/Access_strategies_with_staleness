@@ -309,7 +309,11 @@ class Simulator(object):
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):   
                 self.estimate_mr1_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]
             else: #alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS
-                self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications, fno_mode = True)    
+                # Generate a vector "indications" containing the indications - to be used by the client
+                indications = np.zeros (self.num_of_DSs, dtype = 'bool') 
+                for i in self.pos_ind_list:
+                    indications[i] = True  
+                self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications, fno_mode = True)    
             self.access_pgm_fno_hetro ()
 
     def cnt_fn_by_staleness (self):

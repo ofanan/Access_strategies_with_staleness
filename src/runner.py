@@ -125,7 +125,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     If the input parameter "homo" is true, the access costs are uniform 1, and the miss penalty is 300/7. 
     Else, the access costs are 1, 2, 4, and the miss penalty is 100.
     """
-    max_num_of_req      = 10#00000 # Shorten the num of requests for debugging / shorter runs
+    max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     num_of_DSs          = 3
     requests            = gen_requests (trace_file_name, max_num_of_req)
     trace_file_name     = trace_file_name.split("/")[0]
@@ -134,9 +134,9 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     output_file         = open ("../res/" + trace_file_name + "_bpe.res", "a")
                        
     print("now = ", datetime.now(), 'running bpe sim')
-    for bpe in [5]: #, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+    for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
         for uInterval in [256]:
-            for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_HIST]:             
+            for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_HIST, sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]:             
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval)
                 sm.run_simulator()

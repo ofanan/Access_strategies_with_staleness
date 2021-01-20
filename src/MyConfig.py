@@ -87,7 +87,7 @@ def exponential_window (old_estimate, new_val, alpha):
     """
     An accessory function to calculate an exponential averaging window. Currently unused.
     """
-	return alpha * new_val + (1 - alpha) * old_estimate 
+    return alpha * new_val + (1 - alpha) * old_estimate 
 
 def bw_to_uInterval (DS_size, bpe, num_of_DSs, bw):
 	"""
@@ -102,7 +102,7 @@ def uInterval_to_Bw (DS_size, bpe, num_of_DSs, uInerval):
     """
     Given an update interval, estimate the BW it would require. Currently unused.
     """
-	return (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / uInterval
+    return (DS_size * bpe * num_of_DSs * (num_of_DSs-1)) / uInterval
 
 def get_optimal_num_of_hashes (bpe):
     """
