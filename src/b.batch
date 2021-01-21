@@ -1,0 +1,14 @@
+#!/bin/bash
+### sbatch config parameters must start with #SBATCH and must precede any other command. to ignore just add another # - like so ##SBATCH
+#SBATCH --partition main ### specify partition name where to run a job. main - 7 days time limit
+#SBATCH --time 6-01:30:00 ### limit the time of job running. Make sure it is not greater than the partition time limit!! Format: D-H:MM:SS
+#SBATCH --job-name K_loc2_256 ### name of the job. replace my_job with your desired job name
+#SBATCH --output my_job-id-%1.out ### output log for running job - %J is the job number variable
+#SBATCH --mail-user=itamarq@post.bgu.ac.il ### users email for sending job status notifications
+#SBATCH --mail-type=BEGIN,END,FAIL ### conditions when to send the email. ALL,BEGIN,END,FAIL, REQUEU, NONE
+### Print some data to output file ###
+echo "SLURM_JOBID”=$SLURM_JOBID
+echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
+### Start you code below ####
+conda activate py37
+python runner.py
