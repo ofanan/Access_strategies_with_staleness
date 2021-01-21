@@ -22,7 +22,7 @@ ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies j
 ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
 
 CNT_FN_BY_STALENESS = 5
-
+TMP                 = 17
 
 """
 key is an integer
@@ -149,8 +149,10 @@ class Simulator(object):
         if (self.verbose > 1):
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.verbose_file = open ("../res/fna.txt", "w", buffering=1)
+            elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_ANALYSIS):
+                self.verbose_file = open ("../res/fnoa.txt", "w", buffering=1)
             elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
-                self.verbose_file = open ("../res/fno.txt", "w", buffering=1)
+                self.verbose_file = open ("../res/fnoh.txt", "w", buffering=1)
                 if (self.verbose == CNT_FN_BY_STALENESS):
                     lg_uInterval = np.log2 (self.uInterval).astype (int)
                     self.PI_hits_by_staleness = np.zeros (lg_uInterval , dtype = 'uint32') #self.PI_hits_by_staleness[i] will hold the number of times in which a requested item is indeed found in any of the caches when the staleness of the respective indicator is at most 2^(i+1)
@@ -307,7 +309,9 @@ class Simulator(object):
                 indications = np.zeros (self.num_of_DSs, dtype = 'bool') 
                 for i in self.pos_ind_list:
                     indications[i] = True  
-                self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications, fno_mode = True)    
+                self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications, fno_mode = True)
+            if (self.verbose == TMP):
+                printf (self.verbose_file, 'req {}. mr = {}' .format (self.req_cnt, self.mr_of_DS))    
             self.access_pgm_fno_hetro ()
 
     def cnt_fn_by_staleness (self):
@@ -582,9 +586,25 @@ class Simulator(object):
         if (self.verbose == 3):
             self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
 
-        # perform access. the function access() returns True if successful, and False otherwise
-        accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in final_sol.DSs_IDs])
-        if any(accesses):   #hit
+        if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
+            # perform access. the function access() returns True if successful, and False otherwise
+            accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in final_sol.DSs_IDs])
+            if any(accesses):   #hit
+                self.client_list[self.client_id].hit_cnt += 1
+            else:               # Miss
+                self.handle_miss ()
+            return
+
+        # Now we know that the alg_mode is ALG_PGM_FNO_MR1_BY_ANALYSIS
+        hit = False # default value
+        for DS_id in final_sol.DSs_IDs:
+            if (self.DS_list[DS_id].access(self.cur_req.key)): # hit
+                hit = True
+                
+                #Upon hit, the DS sends the update evaluation of fpr, fnr, to the clients.
+                self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;   
+                self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
+        if (hit):
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
             self.handle_miss ()
@@ -685,6 +705,8 @@ class Simulator(object):
                     self.                             speculate_hit_cnt += 1  # Update the whole system's speculative hit cnt (used for statistics) 
                     self.client_list [self.client_id].speculate_hit_cnt += 1  # Update the relevant client's speculative hit cnt (used for adaptive / learning alg')
                 hit = True
+                
+                #Upon hit, the DS sends the update evaluation of fpr, fnr, to the clients.
                 self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
                 self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
         if (hit):   

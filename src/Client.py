@@ -114,12 +114,10 @@ class Client(object):
                         self.mr[i] = 0 
                 else:
                     self.mr[i] = self.fpr[i] * (1 - self.hit_ratio[i]) / self.q_estimation[i]
-            else:                
-                # if there're no false-neg, then upon a negative ind', the item is SURELY not in the cache
-                # if q_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1
-                self.mr[i] = 1 if (fno_mode or
-                                   self.fnr[i] == 0 or  
-                                   self.q_estimation[i] == 1 or  
+            else:                                                
+                self.mr[i] = 1 if (fno_mode or 
+                                   self.fnr[i] == 0 or # if there're no false-neg, then upon a negative ind', the item is SURELY not in the cache  
+                                   self.q_estimation[i] == 1 or # if q_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1  
                                    self.hit_ratio[i] == 1) else (1 - self.fpr[i]) * (1 - self.hit_ratio[i]) / (1 - self.q_estimation[i]) 
 
         self.mr = np.maximum (self.zeros_ar, np.minimum (self.mr, self.ones_ar)) # Verify that all mr values are feasible - that is, within [0,1].

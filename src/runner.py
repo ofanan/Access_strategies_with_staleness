@@ -126,9 +126,9 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     print("now = ", datetime.now(), 'running bpe sim')
     for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
         for uInterval in [1024, 256]:
-            for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_HIST, sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]:             
+            for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #sim.ALG_PGM_FNO_MR1_BY_HIST]: #sim.ALG_PGM_FNO_MR1_BY_ANALYSIS             
                 tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval)
+                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval) #, verbose = sim.TMP)
                 sm.run_simulator()
                 toc()
  
