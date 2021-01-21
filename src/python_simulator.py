@@ -14,18 +14,12 @@ import MyConfig
 
 # Codes for access algorithms
 ALG_OPT                         = 1  # Optimal access strategy (perfect indicator)
-ALG_PGM                         = 2  # PGM alg', detailed in Access Strategies journal paper
-ALG_CHEAP                       = 3  # Cheapest (CPI) strategy: in case of a positive indication, access the minimal-cost DS with positive indication 
-ALG_ALL                         = 4  # All (EPI) strategy: in case of positive indications, access all DSs with positive indications
-ALG_KNAP                        = 5  # Knapsack-based alg'. See Access Strategies papers.
-ALG_POT                         = 6  # Potential-based alg'. See Access Strategies papers.
 ALG_PGM_FNO_MR1_BY_HIST         = 7  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated by the history.
-ALG_PGM_FNO_MR1_BY_ANALYSIS     = 10 # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper. 
-ALG_PGM_FNA_MR1_BY_ANALYSIS     = 11 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper.
-ALG_PGM_FNA_MR1_BY_HIST         = 12 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated by the history.
+ALG_PGM_FNO_MR1_BY_ANALYSIS     = 8  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper. 
+ALG_PGM_FNA_MR1_BY_HIST         = 11 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated by the history.
+ALG_PGM_FNA_MR1_BY_ANALYSIS     = 12 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper.
 ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
 ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
-ALG_OPT_HOMO                    = 30 # Optimal access strategy (perfect indicator).
 
 CNT_FN_BY_STALENESS = 5
 
@@ -304,9 +298,9 @@ class Simulator(object):
             if (self.verbose == CNT_FN_BY_STALENESS):
                 self.cnt_fn_by_staleness ()
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
-                self.handle_miss (consider_fpr_fnr_update = False)
+                self.handle_miss ()
                 continue       
-            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST):   
+            if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):   
                 self.estimate_mr1_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]
             else: #alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS
                 # Generate a vector "indications" containing the indications - to be used by the client
@@ -331,7 +325,6 @@ class Simulator(object):
                 self.FN_by_staleness[bin] += 1
 
 
-    
     def run_trace_pgm_fna_hetro (self):
         """
         Run a full trace where the access strategy is the PGM, as proposed in the journal paper "Access Strategies for Network Caching".
@@ -375,10 +368,13 @@ class Simulator(object):
         elif self.alg_mode == ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
-        elif self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST:
+        elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST or 
+              self.alg_mode == ALG_PGM_FNO_MR1_BY_ANALYSIS):
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS or 
+              self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST     or 
+              self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss
@@ -418,10 +414,11 @@ class Simulator(object):
         if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
             self.FN_miss_cnt += 1
 
-    def handle_miss (self, consider_fpr_fnr_update = True):
+    def handle_miss (self):
         """
         Called upon a miss. Check whether the miss is compulsory or not. Increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
+        consider_fpr_fnr_update = False if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST) else True #if all params are evaluated by hist, the DSs don't have to send estimated fpr_fnr updates 
         if (self.is_compulsory_miss()):
             self.handle_compulsory_miss (consider_fpr_fnr_update = consider_fpr_fnr_update)
         else:
@@ -576,7 +573,7 @@ class Simulator(object):
                 min_final_candidate_phi = final_candidate_phi
 
         if (len(final_sol.DSs_IDs) == 0): # the alg' decided to not access any DS
-            self.handle_miss (consider_fpr_fnr_update = False)
+            self.handle_miss ()
             return
 
         # Now we know that the alg' decided to access at least one DS
@@ -590,7 +587,7 @@ class Simulator(object):
         if any(accesses):   #hit
             self.client_list[self.client_id].hit_cnt += 1
         else:               # Miss
-            self.handle_miss (consider_fpr_fnr_update = False)
+            self.handle_miss ()
 
 
     def access_pgm_fna_hetro (self):

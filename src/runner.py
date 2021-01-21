@@ -2,7 +2,6 @@
 Run a simulation, looping over all requested values of parameters 
 (miss penalty, cache sizes, number of caches etc.).
 """
-# A main file for running simulations of Access Strategies with Staleness
 
 from datetime import datetime
 import os
@@ -16,9 +15,33 @@ from printf import printf
 import python_simulator as sim
 from   tictoc import tic, toc
 
-# if (k_loc > num_of_DSs):
-#     print ('error: k_loc must be at most num_of_DSs')
-#     exit ()
+def calc_homo_costs (num_of_DSs, num_of_clients):
+    """
+    Returns a DS_cost matrix, representing an homogeneous access cost of 2 from each client to each DS. 
+    """
+    DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
+    DS_cost.fill(2)
+    return DS_cost
+
+def calc_hetro_costs (num_of_DSs, num_of_clients):
+    """
+    Returns a DS_cost matrix, where the access cost from client i to DS j is j-i+1  
+    """
+    DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
+    for i in range (num_of_clients):
+        for j in range (i, i + num_of_DSs):
+            DS_cost[i][j % num_of_DSs] = j - i + 1
+    return DS_cost
+
+def calc_DS_cost (num_of_DSs = 3, use_homo_DS_cost = False):
+    """
+    Returns a DS_cost matrix - either homo' or hetro', by the user's request  
+    """
+    num_of_clients      = 1 #num_of_DSs
+    if (use_homo_DS_cost):
+        return calc_homo_costs(num_of_DSs, num_of_clients)
+    else:
+        return calc_hetro_costs(num_of_DSs, num_of_clients)
 
 def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     """
@@ -35,17 +58,11 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     
     print("now = ", datetime.now(), 'running tbl sim')
     for missp in [50, 100, 500]:
-        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:
+        for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]:
             tic()
             sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, missp = missp)
             sm.run_simulator()
             toc()
-#     alg_mode = sim.ALG_OPT
-#     missp = 50
-#     tic()
-#     sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
-#     sm.run_simulator()
-#     toc()
 
 def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     """
@@ -60,19 +77,14 @@ def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):
     output_file         = open ("../res/" + trace_file_name + "_uInterval.res", "a")
     
     print("now = ", datetime.now(), 'running uInterval sim')
-#     alg_mode  = sim.ALG_PGM_FNO_MR1_BY_HIST  
-#     for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]: 
-#         tic()
-#         sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)        
-#         sm.run_simulator()
-#         toc()
-
-    alg_mode  = sim.ALG_PGM_FNA_MR1_BY_ANALYSIS
-    for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64]: 
-        tic()
-        sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)        
-        sm.run_simulator()
-        toc()
+    for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #, sim.ALG_PGM_FNA_MR1_BY_ANALYSIS 
+        for uInterval in [8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16]:
+            if (alg_mode == sim.ALG_PGM_FNA_MR1_BY_ANALYSIS and uInterval < 50): # When uInterval < parameters updates interval, FNO and FNA are identical, so no need to run also FNA
+                continue
+            tic()
+            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)        
+            sm.run_simulator()
+            toc()
 
 def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     """
@@ -89,36 +101,14 @@ def run_cache_size_sim (trace_file_name, use_homo_DS_cost = False):
     if (num_of_req < 4300000):
         print ('Note: you used only {} requests for a cache size sim' .format(num_of_req))
     for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
-    #for DS_size in [1000, 2000, 4000, 8000, 16000, 32000]:
-        for uInterval in [1024]:
-#         for uInterval in [256]:
-            for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT, sim.ALG_PGM_FNO_MR1_BY_HIST]:
+        for uInterval in [1024, 256]:
+            for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #[sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_OPT, sim.ALG_PGM_FNO_MR1_BY_HIST]:
                 print("now = ", datetime.now(), 'running cache_size sim')
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, DS_size = DS_size)
                 sm.run_simulator()
                 toc()
                      
-def calc_homo_costs (num_of_DSs, num_of_clients):
-    DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
-    DS_cost.fill(2)
-    return DS_cost
-
-def calc_hetro_costs (num_of_DSs, num_of_clients):
-    DS_cost = np.empty (shape=(num_of_clients,num_of_DSs))
-    for i in range (num_of_clients):
-        for j in range (i, i + num_of_DSs):
-            DS_cost[i][j % num_of_DSs] = j - i + 1
-    return DS_cost
-
-def calc_DS_cost (num_of_DSs = 3, use_homo_DS_cost = False):
-    num_of_clients      = 1 #num_of_DSs
-    if (use_homo_DS_cost):
-        return calc_homo_costs(num_of_DSs, num_of_clients)
-    else:
-        return calc_hetro_costs(num_of_DSs, num_of_clients)
-
-
 def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
     """
     Run a simulation where the running parameter is bpe.
@@ -135,7 +125,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
                        
     print("now = ", datetime.now(), 'running bpe sim')
     for bpe in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
-        for uInterval in [256]:
+        for uInterval in [1024, 256]:
             for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_HIST, sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]:             
                 tic()
                 sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval)
@@ -159,13 +149,12 @@ def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = True):
     if (num_of_req < 4300000):
         print ('Note: you used only {} requests for a num of caches sim' .format(num_of_req))
 
-    for num_of_DSs in [8]: #[1, 2, 3, 4, 5, 6, 7, 8]: 
+    for num_of_DSs in [1, 2, 3, 4, 5, 6, 7, 8]: 
         for uInterval in [1024]:
-
             DS_cost = calc_DS_cost (num_of_DSs, use_homo_DS_cost)            
             missp    = 50 * np.average (DS_cost)
      
-            for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_HIST, sim.ALG_PGM_FNO_MR1_BY_HIST]: #[sim.ALG_OPT, sim.ALG_PGM_FNO_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST]:
+            for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #[sim.ALG_OPT, sim.ALG_PGM_FNO_MR1_BY_HIST, sim.ALG_PGM_FNA_MR1_BY_HIST]:
                         
                 print("now = ", datetime.now(), 'running num of caches sim')
                 tic()
@@ -237,12 +226,10 @@ def run_FN_by_uInterval_sim (trace_file_name):
     num_of_req          = requests.shape[0]
     
     print("now = ", datetime.now(), 'running FN_by_uInterval_sim sim')
-    for bpe in [2]: #[2, 4, 8, 16]:
+    for bpe in [4, 8, 16]:
         output_file         = open ("../res/" + trace_file_name + "_FN_by_uInterval_bpe" + str(bpe) +".res", "a")
 
-        for uInterval in [2]: #[1024, 2048, 4096, 8192]:
-        #for uInterval in [64, 32, 16]: 
-        #for uInterval in [8, 4, 2]:    
+        for uInterval in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]:
             tic()
             sm = sim.Simulator(output_file, trace_file_name, sim.ALG_MEAURE_FP_FN, requests, DS_cost,    
                                verbose = 0, bpe = bpe, uInterval = uInterval, use_given_loc_per_item = False)
