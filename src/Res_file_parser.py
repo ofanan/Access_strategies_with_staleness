@@ -368,11 +368,11 @@ class Res_file_parser (object):
 
         add_legend_str = None
         for uInterval in [256, 1024]:
-            if (True): #(uInterval == 1024):
+            if (uInterval == 1024):
                 add_legend_str = self.add_legend_str
             printf (self.output_file, '%% uInterval = {}\n' .format (uInterval))
             for alg_mode in ['Opt', 'FNOA', 'FNAA']:
-                filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 50, 
+                filtered_list  = self.gen_filtered_list(self.list_of_dicts, Kloc = 1, missp = 100, 
                                                         alg_mode = alg_mode, uInterval = uInterval)
                 self.print_single_tikz_plot (filtered_list, key_to_sort = 'num_of_DSs', addplot_str = self.add_plot_str_dict[alg_mode], 
                                              add_legend_str = add_legend_str,    legend_entry = self.legend_entry_dict[alg_mode]) 
@@ -390,20 +390,22 @@ if __name__ == "__main__":
                  
 #     my_Res_file_parser.parse_file ('wiki_uInterval.res')
 #     my_Res_file_parser.print_normalized_plot('uInterval', print_add_legend = True)
+#     my_Res_file_parser.parse_file ('gradle_uInterval.res')
+#     my_Res_file_parser.print_normalized_plot('uInterval', print_add_legend = True)
    
-
 #     my_Res_file_parser.parse_file('wiki_num_of_caches.res')
-#     my_Res_file_parser.print_num_of_caches_plot_normalized()
+#     my_Res_file_parser.print_num_of_caches_plot_abs()
+
         
 #     my_Res_file_parser.parse_file ('wiki_bpe.res') 
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
 #     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = False)
-    my_Res_file_parser.parse_file ('gradle_bpe.res') 
-    my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
-    my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
+#     my_Res_file_parser.parse_file ('gradle_bpe.res') 
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 256, print_add_legend = False)
+#     my_Res_file_parser.print_normalized_plot('bpe', uInterval = 1024, print_add_legend = True)
 
-#     my_Res_file_parser.parse_file ('wiki_cache_size.res') 
-#     my_Res_file_parser.print_cache_size_plot_abs()
+    my_Res_file_parser.parse_file ('wiki_cache_size.res') 
+    my_Res_file_parser.print_cache_size_plot_abs()
 
 
 
