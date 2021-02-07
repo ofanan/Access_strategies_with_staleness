@@ -152,3 +152,4 @@ class Client(object):
         self.mr = np.maximum (self.zeros_ar, np.minimum (self.mr, self.ones_ar)) # Verify that all mr values are feasible - that is, within [0,1].
         return self.mr
 
+

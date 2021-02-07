@@ -136,3 +136,4 @@ def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
     returns the designed (inherent) fpr of a BF, based on the given cache size, BF size, and number of hash functions used by the BF.
     """
     return pow (1 - pow (1 - 1/BF_size, num_of_hashes * cache_size), num_of_hashes)
+
