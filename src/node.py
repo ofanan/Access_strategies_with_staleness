@@ -1,11 +1,14 @@
+"""
+An accessory function for the PGM access strategy algorithm.
+The function merges 2 input nodes.
+Inputs: 2 nodes to merge, H and L, and r = log(beta)
+Ouput: res_node - the result node, res_node.
+"""
 import numpy as np
 import numpy as np
 import pandas as pd
 import candidate
 
-# Merges 2 input nodes.
-# Inputs: 2 nodes to merge, H and L, and r = log(beta)
-# Ouput: res_node - the result node, res_node.
 def merge(H, L, r, beta):
 
     # init res_node, to an empty set, and dummy candidates with miss rate = 1.1, s.t. every real candidate at the same log' range will replace them

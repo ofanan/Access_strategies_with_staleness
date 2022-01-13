@@ -1,3 +1,11 @@
+"""
+The class for a DataStore (cache).
+The cache stores items using the LRU policy.
+It also implements the cache-side algorithm for estimating FPR (false-positive ratio) and FNR (false-negative ratio),
+as described in the paper:
+"On the Power of False Negative Awareness in Indicator-based Caching Systems", Cohen, Einziger, Scalosub, ICDCS'21.
+"""
+
 import numpy as np
 import mod_pylru
 import itertools

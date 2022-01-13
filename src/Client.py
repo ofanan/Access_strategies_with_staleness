@@ -1,3 +1,8 @@
+"""
+The client-side algorithm (CS_{FNA}), described in the paper:
+"On the Power of False Negative Awareness in Indicator-based Caching Systems", Cohen, Einziger, Scalosub, ICDCS'21.
+"""
+
 import numpy as np
 import math
 

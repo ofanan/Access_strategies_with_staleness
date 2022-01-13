@@ -50,8 +50,7 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     max_num_of_req      = 1000000 # Shorten the num of requests for debugging / shorter runs
     num_of_DSs          = 3
     uInterval           = 1000
-    requests            = gen_requests (trace_file_name, max_num_of_req)
-    trace_file_name     = trace_file_name.split("/")[0]
+    requests            = gen_requests (trace_file_name, max_num_of_req) # Generate a dataframe of requests from the input trace file
     num_of_req          = requests.shape[0]
     DS_cost             = calc_DS_cost (num_of_DSs, use_homo_DS_cost)
     output_file         = open ("../res/tbl.res", "a")
@@ -60,7 +59,7 @@ def run_tbl_sim (trace_file_name, use_homo_DS_cost = False):
     for missp in [50, 100, 500]:
         for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]:
             tic()
-            sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, missp = missp)
+            sm = sim.Simulator(output_file, trace_file_name=trace_file_name.split("/")[0], alg_mode, requests, DS_cost, uInterval = uInterval, missp = missp)
             sm.run_simulator()
             toc()
 
@@ -241,7 +240,7 @@ def calc_opt_service_cost (accs_cost, comp_miss08_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
 
-trace_file_name     = 'wiki/wiki.1190448987_4300K_3DSs.csv'
+trace_file_name       = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'

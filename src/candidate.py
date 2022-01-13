@@ -1,4 +1,6 @@
-# A candidate sol' for the DSS prob', consists of a list of DSs, theirs aggregate (mult' of) miss rate, and aggregate (sum of) accs cost
+"""
+A candidate sol' for the DSS (Data-Store-Selection) prob' (aka the "Cache-Selection" problem), consists of a list of DSs, theirs aggregate (mult' of) miss rate, and aggregate (sum of) accs cost
+"""
 class candidate (object):
     def __init__(self, DSs, mr, ac): # Gen a new candidate, given a list of DSs it contains, theirs total mr and ac (accs cost)
         self.DSs_IDs = [int(i) for i in DSs]

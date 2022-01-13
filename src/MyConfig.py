@@ -1,10 +1,10 @@
+"""
+This file contains several accessory functions, used throughout the project.
+"""
 import os
 import numpy as np
 import python_simulator as sim
 import pandas as pd
-
-# This file contains several accessory functions, used throughout the project.
-
 
 def reduce_trace_mem_print(trace_df, k_loc):
     """
@@ -24,7 +24,7 @@ def reduce_trace_mem_print(trace_df, k_loc):
     return new_trace_df
 
 
-def  gen_requests (trace_file_name, max_num_of_req, k_loc=1):
+def gen_requests (trace_file_name, max_num_of_req, k_loc=1):
     """
     Generates a trace of requests, given a trace file.
     """
@@ -58,16 +58,13 @@ def getTracesPath():
     """
     returns the path in which the traces files are found at this machine.
     This path should be:
-    C:/Users/userName/Google Drive/Comnet/traces
+    C:/Users/user_name/Documents/traces
     """
     if (os.getcwd().split ("\\")[0] == "C:"):
         user_name = os.getcwd().split ("\\")[2]
-        return 'C:/Users/' + user_name + '/Google Drive/Comnet/traces/'
+        return 'C:/Users/' + user_name + '/Documents/cache_traces/'
     else:
-        return ('/home/itamarq/itamarq/traces/')
-# 	trace_path_splitted = os.getcwd().split ("\\")
-# 	return (trace_path_splitted[0] + "/" + trace_path_splitted[1] + "/" + trace_path_splitted[2] + "/Documents/traces/") 
-
+        return ('/home/icohen/cache_traces/')
 
 def calcOvhDsCost ():
 	"""

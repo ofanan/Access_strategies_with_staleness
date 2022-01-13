@@ -1,3 +1,7 @@
+"""
+This script generates the OVH network, and saves it on a .csv file.
+"""
+
 import networkx as nx
 import pandas as pd
 

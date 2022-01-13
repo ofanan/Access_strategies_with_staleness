@@ -1,3 +1,6 @@
+"""
+Implementation of an LRU cache.
+"""
 
 # Cache implementaion with a Least Recently Used (LRU) replacement policy and
 # a basic dictionary interface.

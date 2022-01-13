@@ -1,6 +1,11 @@
-import numpy as np
-import numpy as np
-import pandas as pd
+"""
+This script calculates the cost values for the fully-homogeneous case; and generates a heatmap.
+The cost depends upon Phit, missp, number of caches, false-positive-rate (fpr), and false-negative-rate (fnr).
+The heatmap presents the cost, for given missp and number of functions, where the x,y axes are fpr, fnr.
+"""
+
+import math
+import numpy as np, pandas as pd
 from scipy import special
 from scipy.stats import binom
 
@@ -49,7 +54,7 @@ def calc_k_opt (rho, max_k, cur_missp):
     return k_opt
 
 
-# Calculate k^*, namely, the # of $s to accs - for the conf' of NI
+# Calculate k^*, namely, the optimal # of $s to accs - for the conf' of NI
 def calc_k_opt_NI (rho, max_k, cur_missp):
 
     # By default, k_opt=0, and the minimal found cost is cur_missp
@@ -134,23 +139,77 @@ def calc_imperfect_indicator (n, fpr, fnr):
         C_II += pdf_of_num_of_pos_inds * ECM (calc_rho0 (fpr, fnr, q), calc_rho1 (fpr, fnr, q), num_of_pos_inds)
     return C_II
 
+if __name__ == "__main__":
+
 # ########################################################################################################
 # main for heatmap where the X, Y axes are n, Phit
 # ########################################################################################################
-missp = 100;
-max_n = 10
-NUM_OF_VALS=10
-Phit =
-Phit = np.array (range(1, NUM_OF_VALS) ).astype('float') / NUM_OF_VALS
+# missp = 100;
+# max_n = 10
+# NUM_OF_VALS=10
+# Phit =
+# Phit = np.array (range(1, NUM_OF_VALS) ).astype('float') / NUM_OF_VALS
+#
+# # Calc the cost of NI
+# # C_NI[n] will hold the service cost of NI when there're n caches.
+# C_NI = np.zeros (max_n+1)
+# for n in range (1, max_n+1):
+#     for Phit_idx in range (NUM_OF_VALS)
+#         cur_Phit = Phit[Phit_idx]
+#         Pmiss = 1 - cur_Phit
+#         print('%d %.4f %.4f' % (n, Phit[Phit_idx], calc_perfect_indicator(n), calc_perfect_indicator(n))
+#     print ('')
 
-# Calc the cost of NI
-# C_NI[n] will hold the service cost of NI when there're n caches.
-C_NI = np.zeros (max_n+1)
-for n in range (1, max_n+1):
-    for Phit_idx in range (NUM_OF_VALS)
-        cur_Phit = Phit[Phit_idx]
-        Pmiss = 1 - cur_Phit
-        print('%d %.4f %.4f' % (n, Phit[Phit_idx], calc_perfect_indicator(n), calc_perfect_indicator(n))
-    print ('')
 
+    missp           = 3000000
+    n               = 10010
+    num_of_pos_inds = 10
+    rho0            = 0.4999
+    rho1            = 0.4998999999999
+    his_k0          = 16.99972905
+    his_k1          = 3.9822355
+    
+    his_sol_cost     = cost(k0=his_k0, k1=his_k1, rho0=rho0, rho1=rho1, missp=missp)
+    his_int_sol_cost = min (cost(k0=math.floor(his_k0), k1=math.floor(his_k1), rho0=rho0, rho1=rho1, missp=missp),
+                            cost(k0=math.floor(his_k0), k1=math.ceil (his_k1), rho0=rho0, rho1=rho1, missp=missp),
+                            cost(k0=math.ceil (his_k0), k1=math.floor(his_k1), rho0=rho0, rho1=rho1, missp=missp),
+                            cost(k0=math.ceil (his_k0), k1=math.ceil (his_k1), rho0=rho0, rho1=rho1, missp=missp))
 
+    print ('his sol cost={}'     .format (his_sol_cost))
+    print ('his int sol cost={}' .format (cost(k0=round(his_k0), k1=round(his_k1), rho0=rho0, rho1=rho1, missp=missp)))
+
+    print ('our cost by him={}' .format (cost(k0=11, k1=10, rho0=rho0, rho1=rho1, missp=missp)))
+    
+    min_cost = float ('inf')
+    for k1 in range (num_of_pos_inds+1):
+        k1_cost = cost(k0=0, k1=k1, rho0=rho0, rho1=rho1, missp=missp) 
+        if (k1_cost < min_cost):
+            min_cost = k1_cost
+            k1_opt   = k1
+    print ('k1_opt = {}' .format (k1_opt))   
+
+    our_sol_cost = float ('inf')
+    for k0 in range (n-num_of_pos_inds+1):
+        k0_cost = cost(k0=k0, k1=k1_opt, rho0=rho0, rho1=rho1, missp=missp) 
+        if (k0_cost < our_sol_cost):
+            our_sol_cost = k0_cost
+            k0_opt       = k0
+    print ('k0_opt = {}' .format (k0_opt))
+    print ('our sol: k0_opt={}, k1_opt={}, cost={}' .format (k0_opt, k1_opt, our_sol_cost))    
+    
+    opt_int_sol_cost = float ('inf')
+    for k1 in range (num_of_pos_inds+1):
+        for k0 in range (n-num_of_pos_inds+1):
+            k0_k1_cost = cost(k0=k0, k1=k1, rho0=rho0, rho1=rho1, missp=missp)
+            if (k0_k1_cost < opt_int_sol_cost):
+                opt_int_sol_cost = k0_k1_cost
+                k0_opt, k1_opt = k0, k1 
+    
+    print ('opt int sol: k0_opt={}, k1_opt={}, cost={}' .format (k0_opt, k1_opt, opt_int_sol_cost))    
+    
+    print ('opt_int_sol_cost - our_sol_cost=', opt_int_sol_cost - our_sol_cost)
+
+    print ('his_int_sol_cost - our_sol_cost=', his_int_sol_cost - our_sol_cost)
+# print ('ECM cost=')
+    
+    

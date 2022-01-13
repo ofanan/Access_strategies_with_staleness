@@ -1,3 +1,11 @@
+"""
+Parses a WikiBench trace, 
+Output: a csv file, where:
+        - the first col. is the keys,
+        - the 2nd col. is the id of the clients of this req,
+        - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss. 
+"""
+
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -9,12 +17,6 @@ import sys
 
 from MyConfig import getTracesPath 
 
-
-# Parses a Wiki trace, 
-# Output: a csv file, where:
-#         - the first col. is the keys,
-#         - the 2nd col. is the id of the clients of this req,
-#         - the rest of the cols. are the locations ("k_loc") to which a central controller would enter this req. upon a miss. 
 traces_path = getTracesPath()
 num_of_req = 10000
 input_file_name = 'wiki/wiki1.1190448987.txt'
@@ -59,7 +61,7 @@ permutations_df = pd.DataFrame(permutations_array)
 trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment]))
 trace_df.columns = ['req_id', 'key', 'client_id']
 
-# # For pre=computation of all the hashes for each unique key in advance, instead of calculating them during sim-time, uncomment the lines below
+# # For pre-computation of all the hashes for each unique key in advance, instead of calculating them during sim-time, uncomment the lines below
 # hash_count = 5 # Assuming 5 hash functions
 # key_hash = []
 # seed = 0
@@ -73,6 +75,7 @@ trace_df.columns = ['req_id', 'key', 'client_id']
 full_trace_df = pd.concat([ trace_df, permutations_df ], axis=1)
 
 full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".%dDSs.K%d.csv" %(num_of_clients, num_of_locations), index=False, header=True)
+
 # full_trace_df.to_csv (traces_path + input_file_name.split (".txt")[0] + ".%d" + num_of_clients + "DSs.K" + num_of_locations + ".csv", index=False, header=True)
 
 ## check memory space used by dataframe

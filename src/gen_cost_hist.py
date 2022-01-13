@@ -1,9 +1,13 @@
+"""
+This script enerates a histogram showing the cache access costs for the OVH network
+"""
 import numpy as np
 import pandas as pd
 import python_simulator as sim
 import sys
 import pickle
 import matplotlib.pyplot as plt
+
 
 # Load some of OVH data
 client_DS_dist_df = pd.read_csv('../../Python_Infocom19/ovh_dist.csv',index_col=0)
