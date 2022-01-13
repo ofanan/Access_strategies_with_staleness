@@ -6,9 +6,9 @@ For details about the problem and the algorithms used, please refer to the paper
 
 [1] I. Cohen, Gil Einziger, R. Friedman, and G. Scalosub, [Access Strategies for Network Caching](https://www.researchgate.net/profile/Itamar-Cohen-2/publication/346732877_Access_Strategies_for_Network_Caching/links/5fd27eeea6fdcc697bf6f924/Access-Strategies-for-Network-Caching.pdf), IEEE Transactions on Networking, Vol. 29(2), 2021, pp.609-622.
  
-[2] I. Cohen, Gil Einziger, and G. Scalosub, [On the Power of False Negative Awareness in Indicator-based Caching Systems](https://www.researchgate.net/profile/Itamar-Cohen-2/publication/348917494_On_the_Power_of_False_Negative_Awareness_in_Indicator-based_Caching_Systems/links/607ad7a68ea909241e058cad/On-the-Power-of-False-Negative-Awareness-in-Indicator-based-Caching-Systems.pdf), IEEE ICDCS'21.
+[2] I. Cohen, Gil Einziger, and G. Scalosub, [On the Power of False Negative Awareness in Indicator-based Caching Systems](https://www.researchgate.net/profile/Itamar-Cohen-2/publication/348917494_On_the_Power_of_False_Negative_Awareness_in_Indicator-based_Caching_Systems/links/607ad7a68ea909241e058cad/On-the-Power-of-False-Negative-Awareness-in-Indicator-based-Caching-Systems.pdf), IEEE ICDCS 2021, pp. 46-56.
 
-The source files are described below. Detailed documentation is found within the source files.
+The source files are described below. More detailed documentation is found within the source files.
 
 # Directories
 All source files are written in Python, and found in ./src.
