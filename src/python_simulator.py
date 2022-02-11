@@ -1,16 +1,10 @@
-import numpy as np
 import pandas as pd
-import sys
-import pickle
-import random
-
-import DataStore
-import Client
-import candidate
-import node 
-from   printf import printf
+import sys, pickle, random
+import numpy as np
 from numpy.core._multiarray_umath import dtype
-import MyConfig 
+
+import DataStore, Client, candidate, node, MyConfig 
+from   printf import printf
 
 # Codes for access algorithms
 ALG_OPT                         = 1  # Optimal access strategy (perfect indicator)
@@ -21,8 +15,9 @@ ALG_PGM_FNA_MR1_BY_ANALYSIS     = 12 # PGM alg', detailed in Access Strategies j
 ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
 ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
 
+# levels of verbose
+PRINT_REAL_MR0_MR1  = 2 # print the real values of mr0 (ni, namely, the prob' of miss given neg' ind'), and mr1 (ni, namely, the prob' of a miss given a pos' ind') by statistic collected each time from scratch at each slot of mr1_estimation_window. 
 CNT_FN_BY_STALENESS = 5
-TMP                 = 17
 
 """
 key is an integer
@@ -74,13 +69,13 @@ class Simulator(object):
             use_given_loc_per_item: if True, place each missed item in the location(s) defined for it in the trace. Else, select the location of a missed item based on hash. 
             
         """
-        self.output_file    = output_file
-        self.trace_file_name= trace_file_name
-        self.missp          = missp
-        self.DS_size        = DS_size
-        self.bpe            = bpe
-        self.rand_seed      = rand_seed
-        self.DS_insert_mode = 1  #DS_insert_mode: mode of DS insertion (1: fix, 2: distributed, 3: ego). Currently only insert mode 1 is used
+        self.output_file     = output_file
+        self.trace_file_name = trace_file_name
+        self.missp           = missp
+        self.DS_size         = DS_size
+        self.bpe             = bpe
+        self.rand_seed       = rand_seed
+        self.DS_insert_mode  = 1  #DS_insert_mode: mode of DS insertion (1: fix, 2: distributed, 3: ego). Currently only insert mode 1 is used
 
         if (self.DS_insert_mode != 1):
             print ('sorry, currently only fix insert mode (1) is supported')
@@ -310,8 +305,6 @@ class Simulator(object):
                 for i in self.pos_ind_list:
                     indications[i] = True  
                 self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications, fno_mode = True)
-            if (self.verbose == TMP):
-                printf (self.verbose_file, 'req {}. mr = {}' .format (self.req_cnt, self.mr_of_DS))    
             self.access_pgm_fno_hetro ()
 
     def cnt_fn_by_staleness (self):
@@ -342,11 +335,11 @@ class Simulator(object):
             self.calc_client_id ()
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
-            verbose         = 4 if (self.verbose == 4 and self.req_cnt > 20000) else 0  
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.mr_of_DS   = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications)
             else:
-                self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose) 
+                self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
+             
             self.access_pgm_fna_hetro ()
 
     def calc_client_id (self):

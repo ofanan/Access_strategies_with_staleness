@@ -127,7 +127,7 @@ def run_bpe_sim (trace_file_name, use_homo_DS_cost = False):
         for uInterval in [1024, 256]:
             for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #sim.ALG_PGM_FNO_MR1_BY_HIST]: #sim.ALG_PGM_FNO_MR1_BY_ANALYSIS             
                 tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval) #, verbose = sim.TMP)
+                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, bpe = bpe, uInterval = uInterval) 
                 sm.run_simulator()
                 toc()
  
@@ -226,7 +226,7 @@ def run_FN_by_uInterval_sim (trace_file_name):
     
     print("now = ", datetime.now(), 'running FN_by_uInterval_sim sim')
     for bpe in [4, 8, 16]:
-        output_file         = open ("../res/" + trace_file_name + "_FN_by_uInterval_bpe" + str(bpe) +".res", "a")
+        output_file = open ("../res/" + trace_file_name + "_FN_by_uInterval_bpe" + str(bpe) +".res", "a")
 
         for uInterval in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]:
             tic()
