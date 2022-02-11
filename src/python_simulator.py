@@ -1,7 +1,7 @@
 import pandas as pd
 import sys, pickle, random
 import numpy as np
-from numpy.core._multiarray_umath import dtype
+# from numpy.core._multiarray_umath import dtype
 
 import DataStore, Client, candidate, node, MyConfig 
 from   printf import printf
@@ -16,8 +16,12 @@ ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies j
 ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
 
 # levels of verbose
-PRINT_REAL_MR0_MR1  = 2 # print the real values of mr0 (ni, namely, the prob' of miss given neg' ind'), and mr1 (ni, namely, the prob' of a miss given a pos' ind') by statistic collected each time from scratch at each slot of mr1_estimation_window. 
 CNT_FN_BY_STALENESS = 5
+# mr0 (ni) is the prob' of miss given neg' ind'.
+# mr1 (pi) is the prob' of a miss given a pos' ind'.
+#PRINT_EST_MR0_MR1        = 10 # print the estimated values of mr0 and mr1, as estimated by the client.   
+#PRINT_REAL_MR0_MR1       = 11 # print the real values of mr0 and mr1 by statistic collected each time from scratch at each slot of mr1_estimation_window. 
+#PRINT_EST_N_REAL_MR0_MR1 = 12 # print both the real values and the estimated values of mr0, mr1, as described above.  
 
 """
 key is an integer
@@ -50,7 +54,10 @@ class Simulator(object):
     
     def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 10000, 
                  bpe = 14, rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 1, 
-                 bw = 0, uInterval = -1, use_given_loc_per_item = True):
+                 bw = 0, uInterval = -1, use_given_loc_per_item = True,
+                 est_mr_output_file  = None, # Output file to which the estimated miss rates (the conditional miss ratio) will be written, if requested (by setting to non-None value).
+                 real_mr_output_file = None # Output file to which the real miss rates (the conditional miss ratio) will be written, if requested (by setting to non-None value).
+                 ):
         """
         Return a Simulator object with the following attributes:
             alg_mode:           mode of client: defined by macros above
@@ -120,6 +127,10 @@ class Simulator(object):
         self.FN_miss_cnt        = 0 # num of misses happened due to FN event
         self.tot_num_of_updates = 0
         self.bw       = bw
+        
+        # Output files to which the data about the estimated, and real, stat on mr (the conditional miss ratio) will be written, if requested.
+        self.est_mr_output_file  = est_mr_output_file  if (est_mr_output_file  != None) else None  
+        self.real_mr_output_file = real_mr_output_file if (real_mr_output_file != None) else None
         
         # If the uInterval is given in the input (as a non-negative value) - use it. 
         # Else, calculate uInterval by the given bw parameter.
@@ -340,6 +351,8 @@ class Simulator(object):
             else:
                 self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
              
+            if (self.est_mr_output_file != None):
+                printf (self.est_mr_output_file, '{}\n' .format (self.mr_of_DS[0]))
             self.access_pgm_fna_hetro ()
 
     def calc_client_id (self):
@@ -349,7 +362,6 @@ class Simulator(object):
         Else, the client will be selected uar among all clients.
         """
         self.client_id = self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1)
-
 
 
     def run_simulator (self):

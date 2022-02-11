@@ -9,11 +9,8 @@ Output: a csv file, where:
 import numpy as np
 import pandas as pd
 import datetime as dt
-import hashlib
 import matplotlib as plt
-import datetime
-import mmh3
-import sys
+import datetime, mmh3, sys, hashlib
 
 from MyConfig import getTracesPath 
 
