@@ -7,18 +7,18 @@ as described in the paper:
 """
 
 import numpy as np
-import mod_pylru
-import itertools
+import mod_pylru, itertools, copy
 import CountingBloomFilter as CBF
 import copy
 import MyConfig 
+from printf import printf
 
 
 class DataStore (object):
     
     def __init__(self, ID, size = 1000, bpe = 5, mr1_window_alpha = 0.25, mr1_estimation_window = 100, 
                  max_fnr = 0.03, max_fpr = 0.03, verbose = 0, uInterval = 1,
-                 num_of_insertions_between_estimations = 20):
+                 num_of_insertions_between_estimations = np.uint8 (50)):
         """
         Return a DataStore object with the following attributes:
             ID:                 datastore ID 
@@ -84,7 +84,7 @@ class DataStore (object):
         """
         return (key in self.cache)
             
-    def access(self, key, is_speculative_accs = False):
+    def access(self, key, is_speculative_accs = False, est_vs_real_mr_output_file=None):
         """
         - Accesses a key in the cache.
         - Return True iff the access was a hit.
@@ -94,6 +94,12 @@ class DataStore (object):
         hit = True if (key in self.cache) else False          
         if hit: 
             self.cache[key] #Touch the element, so as to update the LRU mechanism
+
+        if (est_vs_real_mr_output_file != None):
+            if (hit):
+                printf (est_vs_real_mr_output_file, 'FN\n' if is_speculative_accs else 'TP\n')
+            else: #miss
+                printf (est_vs_real_mr_output_file, 'TN\n' if is_speculative_accs else 'FP\n')
 
         if (is_speculative_accs):
             self.spec_accs_cnt += 1
@@ -164,7 +170,7 @@ class DataStore (object):
 
     def update_mr0(self):
         """
-        update the miss-probability in case of a positive indication, using an exponential moving average.
+        update the miss-probability in case of a negative indication, using an exponential moving average.
         """
         self.mr0_cur = self.mr0_alpha_over_window * float(self.tn_events_cnt) + self.one_min_mr0_alpha * self.mr0_cur 
         self.fn_events_cnt = int(0)

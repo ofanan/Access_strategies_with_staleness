@@ -6,6 +6,8 @@ import numpy as np
 import python_simulator as sim
 import pandas as pd
 
+INF_INT = 999999999
+
 def reduce_trace_mem_print(trace_df, k_loc):
     """
     Reduces the memory print of the trace by using the smallest type that still supports the values in the trace

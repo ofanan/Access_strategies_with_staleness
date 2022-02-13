@@ -17,11 +17,7 @@ ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe
 
 # levels of verbose
 CNT_FN_BY_STALENESS = 5
-# mr0 (ni) is the prob' of miss given neg' ind'.
-# mr1 (pi) is the prob' of a miss given a pos' ind'.
-#PRINT_EST_MR0_MR1        = 10 # print the estimated values of mr0 and mr1, as estimated by the client.   
-#PRINT_REAL_MR0_MR1       = 11 # print the real values of mr0 and mr1 by statistic collected each time from scratch at each slot of mr1_estimation_window. 
-#PRINT_EST_N_REAL_MR0_MR1 = 12 # print both the real values and the estimated values of mr0, mr1, as described above.  
+
 
 """
 key is an integer
@@ -55,8 +51,9 @@ class Simulator(object):
     def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 10000, 
                  bpe = 14, rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 1, 
                  bw = 0, uInterval = -1, use_given_loc_per_item = True,
-                 est_mr_output_file  = None, # Output file to which the estimated miss rates (the conditional miss ratio) will be written, if requested (by setting to non-None value).
-                 real_mr_output_file = None # Output file to which the real miss rates (the conditional miss ratio) will be written, if requested (by setting to non-None value).
+                 print_est_vs_real_mr = False # When true, write the estimated ancmiss rates (the conditional miss ratio) to a file.
+                 # print_est_mr  = False, # When true, write the estimated miss rates (the conditional miss ratio) to a file.
+                 # print_real_mr = False  # When true, write the real      miss rates (the conditional miss ratio) to a file.
                  ):
         """
         Return a Simulator object with the following attributes:
@@ -108,7 +105,7 @@ class Simulator(object):
         self.req_cnt            = -1
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
-        self.pos_ind_list    = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
+        self.pos_ind_list       = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
         self.q_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
         
@@ -129,9 +126,9 @@ class Simulator(object):
         self.bw       = bw
         
         # Output files to which the data about the estimated, and real, stat on mr (the conditional miss ratio) will be written, if requested.
-        self.est_mr_output_file  = est_mr_output_file  if (est_mr_output_file  != None) else None  
-        self.real_mr_output_file = real_mr_output_file if (real_mr_output_file != None) else None
-        
+        # self.print_est_mr, self.print_real_mr = print_est_mr, print_real_mr 
+        self.print_est_vs_real_mr = print_est_vs_real_mr
+
         # If the uInterval is given in the input (as a non-negative value) - use it. 
         # Else, calculate uInterval by the given bw parameter.
         if (uInterval == -1): # Should calculate uInterval by the given bw parameter
@@ -142,7 +139,6 @@ class Simulator(object):
             self.use_global_uInerval = False
             self.uInterval = uInterval
         self.cur_updating_DS = 0
-        #self.num_of_insertions_between_estimations_factor = 100
         self.use_only_updated_ind = True if (uInterval == 1) else False
         self.num_of_insertions_between_estimations = np.uint8 (50)
         if (self.num_of_clients == 1):
@@ -166,8 +162,38 @@ class Simulator(object):
 
         self.init_DS_list() #DS_list is the list of DSs
         self.init_client_list ()
+        if (self.print_est_vs_real_mr):
+            self.init_est_vs_real_mr_output_files()
+            self.zeros_ar            = np.zeros (self.num_of_DSs, dtype='uint16') 
+            self.ones_ar             = np.ones  (self.num_of_DSs, dtype='uint16') 
+        # if (self.print_est_mr):
+        #     self.init_est_mr_output_files ()
+        # if (self.print_real_mr):
+        #     self.init_real_mr_output_files ()
             
+    def init_est_vs_real_mr_output_files (self):
+        settings_str = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
+        self.est_vs_real_mr_output_file = [None]*self.num_of_DSs
+        for ds in range (self.num_of_DSs):
+            self.est_vs_real_mr_output_file[ds] = open ('../res/{}_est_vs_real_mr_ds{}.res' .format (settings_str, ds), 'w')
+            printf (self.est_vs_real_mr_output_file[ds], '//format: \n')
 
+    
+    # def init_est_mr_output_files (self):
+    #     """
+    #     Init output files, to which the estimated values of mr0, mr1 will be written during the sim.
+    #     """
+    #     settings_str = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
+    #     self.est_mr0_output_file = open ('../res/{}_est_mr0.res' .format (settings_str), 'w')
+    #     self.est_mr1_output_file = open ('../res/{}_est_mr1.res' .format (settings_str), 'w')
+    #
+    # def init_real_mr_output_files (self):
+    #     """
+    #     Init output files, to which the real (measured in windows along the sime) values of mr0, mr1 will be written during the sim.
+    #     """
+    #     settings_str = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
+    #     self.real_mr0_output_file = open ('../res/{}_real_mr0.res' .format (settings_str), 'w')
+    #     self.real_mr1_output_file = open ('../res/{}_real_mr1.res' .format (settings_str), 'w')
 
     def DS_costs_are_homo (self):
         """
@@ -348,12 +374,31 @@ class Simulator(object):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.mr_of_DS   = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications)
-            else:
+            else: # Use historical data of about mr0, mr1 
                 self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
              
-            if (self.est_mr_output_file != None):
-                printf (self.est_mr_output_file, '{}\n' .format (self.mr_of_DS[0]))
+            # if (self.print_est_mr and self.req_cnt > 200000):
+            #     self.print_est_mr_func ()
+            # if (self.print_real_mr):
+            #     self.print_real_mr_func ()
             self.access_pgm_fna_hetro ()
+
+    def print_est_mr_func (self):
+        """
+        print the extimated mr (miss rate) probabilities.
+        """
+        
+        # Estimate mr0, by letting the clients calculate mr, where they think that all the indications were negative  
+        printf (self.est_mr0_output_file, 'mr0={}, ' .format (self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications=self.zeros_ar, update_mr=False))) 
+        printf (self.est_mr0_output_file, 'q={}, ' .format (self.client_list [self.client_id].q_estimation)) 
+        printf (self.est_mr0_output_file, 'hit ratio={}\n' .format (self.client_list [self.client_id].hit_ratio)) 
+        # printf (self.est_mr1_output_file, 'mr1={}\n' .format (self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications=self.ones_ar,  update_mr=False ))) 
+    
+    def  print_real_mr_func (self):
+        """
+        print the extimated mr (miss rate) probabilities.
+        """
+        return
 
     def calc_client_id (self):
         """
@@ -700,18 +745,23 @@ class Simulator(object):
         # perform access
         self.sol = final_sol.DSs_IDs
         hit = False
+        if (self.print_est_vs_real_mr): # and self.req_cnt > 200000):
+            mr0_estimations = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications=self.zeros_ar, update_mr=False)
+            mr1_estimations = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications=self.ones_ar,  update_mr=False)
+            for DS_id in final_sol.DSs_IDs:
+                printf (self.est_vs_real_mr_output_file[DS_id], 'est_mr0={}, est_mr1={}\n' .format (mr0_estimations[DS_id], mr1_estimations[DS_id]))
         for DS_id in final_sol.DSs_IDs:
             is_speculative_accs = not (self.indications[DS_id])
             if (is_speculative_accs): #A speculative accs 
                 self.                             speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id] # Update the whole system's data (used for statistics)
                 self.client_list [self.client_id].speculate_accs_cost += self.client_DS_cost [self.client_id][DS_id] # Update the relevant client's data (used for adaptive / learning alg') 
-            if (self.DS_list[DS_id].access(self.cur_req.key, is_speculative_accs)): # hit
+            if (self.DS_list[DS_id].access(self.cur_req.key, is_speculative_accs, est_vs_real_mr_output_file=self.est_vs_real_mr_output_file[DS_id] if self.print_est_vs_real_mr else None)): # hit
                 if (not (hit) and (not (self.indications[DS_id]))): # this is the first hit; for each speculative req, we want to count at most a single hit 
                     self.                             speculate_hit_cnt += 1  # Update the whole system's speculative hit cnt (used for statistics) 
                     self.client_list [self.client_id].speculate_hit_cnt += 1  # Update the relevant client's speculative hit cnt (used for adaptive / learning alg')
                 hit = True
                 
-                #Upon hit, the DS sends the update evaluation of fpr, fnr, to the clients.
+                #Upon hit, the DS sends the updated evaluation of fpr, fnr, to the clients.
                 self.client_list [self.client_id].fnr[DS_id] = self.DS_list[DS_id].fnr;  
                 self.client_list [self.client_id].fpr[DS_id] = self.DS_list[DS_id].fpr;  
         if (hit):   

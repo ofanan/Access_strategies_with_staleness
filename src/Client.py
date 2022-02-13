@@ -83,7 +83,7 @@ class Client(object):
         - Update the estimation of q. q[i] holds the prob' that indicator i gives positive indication
         """
         self.ind_cnt += 1 # Received a new set of indications
-        self.pos_ind_cnt += indications #self.pos_ind_cnt[i]++ iff (indications[i]==True)
+        self.pos_ind_cnt += indications 
         if (self.ind_cnt < self.estimation_window ): # Init period - use merely the data collected so far
             self.q_estimation   = self.pos_ind_cnt/self.estimation_window
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
@@ -94,11 +94,12 @@ class Client(object):
 
         self.hit_ratio = np.minimum (self.ones_ar, np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr)))
 
-    def estimate_mr1_mr0_by_analysis (self, indications, fno_mode = False, verbose=0):
+    def estimate_mr1_mr0_by_analysis (self, indications, # vector, where indications[i] is true  iff indicator i gave a positive indication. 
+                                      fno_mode  = False, # When True, discard false-negatives, by assuming that mr0 is always 1 (namely, a negative ind' is always true)
+                                      update_mr = True,  # When True, not only estimate the mr, but also write it to self.mr, so that this would be the next estimation 
+                                      verbose=0, ):
         """
         Calculate and return the expected miss prob' ("exclusion probability") of each DS
-        Input: 
-        indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
         Details: The func' does the following:  
         - Update the estimations of Pone ("q") and the hit ratio.
         - For each DS:
@@ -108,39 +109,43 @@ class Client(object):
         - - - Else, assign mr[i] = mr0[i], as estimated by our analysis.
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
+        mr = np.zeros (self.num_of_DSs)
         self.estimate_Pone_and_hit_ratio (indications)
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
                 
                 if (self.q_estimation[i] == 0): 
-                    self.mr[i] = 1
+                    mr[i] = 1
                 elif (self.fpr[i] == 0 or # If there're no FP, then upon a positive ind', the prob' that the item is NOT in the cache is 0 
                       self.hit_ratio[i] == 1): #If the hit ratio is 1, then upon ANY indication (and, in particular, positive ind'), the prob' that the item is NOT in the cache is 0
-                        self.mr[i] = 0 
+                        mr[i] = 0 
                 else:
-                    self.mr[i] = self.fpr[i] * (1 - self.hit_ratio[i]) / self.q_estimation[i]
+                    mr[i] = self.fpr[i] * (1 - self.hit_ratio[i]) / self.q_estimation[i]
             else:                                                
-                self.mr[i] = 1 if (fno_mode or 
+                mr[i] = 1 if (fno_mode or 
                                    self.fnr[i] == 0 or # if there're no false-neg, then upon a negative ind', the item is SURELY not in the cache  
                                    self.q_estimation[i] == 1 or # if q_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1  
                                    self.hit_ratio[i] == 1) else (1 - self.fpr[i]) * (1 - self.hit_ratio[i]) / (1 - self.q_estimation[i]) 
 
-        self.mr = np.maximum (self.zeros_ar, np.minimum (self.mr, self.ones_ar)) # Verify that all mr values are feasible - that is, within [0,1].
-        return self.mr
+        mr = np.maximum (self.zeros_ar, np.minimum (mr, self.ones_ar)) # Verify that all mr values are feasible - that is, within [0,1].
+        if (update_mr):
+            self.mr = mr
+        return mr
 
 
     def get_mr_given_mr1 (self, indications, mr0, mr1, verbose):
         """
         Calculate and return the expected miss prob' of each DS, based on its indication.
         Input: 
-        indications - a vector, where indications[i] is true  iff indicator i gave a positive indication.
-        mr0 - a vector. mr0[i] is the estimation (based on historic data) of the miss probab' in cache i, given a pos' ind' by indicator i
-        mr1 - a vector. mr1[i] is the estimation (based on historic data) of the miss probab' in cache i, given a neg' ind' by indicator i        
+        indications - a vector, where indications[i] is true iff indicator i gave a positive indication.
+        mr0 - a vector. mr0[i] is the estimation (based on historic data) of the miss probab' in cache i, given a neg' ind' by indicator i
+        mr1 - a vector. mr1[i] is the estimation (based on historic data) of the miss probab' in cache i, given a pos' ind' by indicator i        
         Details: The func' does the following:  
         - Update the estimations of Pone ("q") and the hit ratio.
         - For each DS:
         - - If indication[i] == True, then assign mr[i] = mr1[i], according to the given history vector. 
         - - Else, assign mr[i] = mr0[i], as estimated by our analysis.
+        - - Handle corner cases (e.g., probabilities calculated are below 0 or above 1)
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
         self.estimate_Pone_and_hit_ratio (indications)
