@@ -57,7 +57,7 @@ class DataStore (object):
         self.max_fpr                = max_fpr
         self.updated_indicator      = CBF.CountingBloomFilter (size = self.BF_size, num_of_hashes = self.num_of_hashes)
         self.stale_indicator        = self.updated_indicator.gen_SimpleBloomFilter ()         
-        self.mr1_cur                = 0.5 
+        self.mr1_cur                = 0 # Initially assume that there're no FP events, that is: the miss prob' in case of a positive ind' is 0. 
         self.mr0_cur                = 1 # Initially assume that there're no FN events, that is: the miss prob' in case of a negative ind' is 1.
         self.cache                  = mod_pylru.lrucache(self.cache_size) # LRU cache. for documentation, see: https://pypi.org/project/pylru/
         self.fnr                    = 0 # Initially, there are no false indications
@@ -95,24 +95,27 @@ class DataStore (object):
         if hit: 
             self.cache[key] #Touch the element, so as to update the LRU mechanism
 
-        if (est_vs_real_mr_output_file != None):
-            if (hit):
-                printf (est_vs_real_mr_output_file, 'FN\n' if is_speculative_accs else 'TP\n')
-            else: #miss
-                printf (est_vs_real_mr_output_file, 'TN\n' if is_speculative_accs else 'FP\n')
-
+        # If no need to collect/print further stat, we can return
+        if (est_vs_real_mr_output_file==None):
+            return hit 
+        
+        # Now we know that we have to collect and print some stat
         if (is_speculative_accs):
             self.spec_accs_cnt += 1
             if (not(hit)):
                 self.tn_events_cnt += 1
-            if (self.spec_accs_cnt % self.mr0_estimation_window == 0):
-                self.update_mr0()
+            if (self.spec_accs_cnt == self.mr0_estimation_window):
+                self.update_mr0(est_vs_real_mr_output_file)
+                self.spec_accs_cnt = 0
+                    
         else: # regular accs
             self.reg_accs_cnt  += 1
             if (not(hit)):
                 self.fp_events_cnt += 1
-            if (self.reg_accs_cnt % self.mr1_estimation_window == 0):
-                self.update_mr1()
+            if (self.reg_accs_cnt == self.mr1_estimation_window):
+                self.update_mr1(est_vs_real_mr_output_file)
+                self.reg_accs_cnt = 0
+                
         return hit 
 
     def insert(self, key, use_indicator = True, req_cnt = -1, consider_fpr_fnr_update = True):
@@ -168,26 +171,24 @@ class DataStore (object):
         self.fnr                                = 0 # Immediately after sending an update, the expected fnr is 0
         self.ins_since_last_fpr_fnr_estimation  = 0
 
-    def update_mr0(self):
+    def update_mr0(self, est_vs_real_mr_output_file=None):
         """
         update the miss-probability in case of a negative indication, using an exponential moving average.
         """
         self.mr0_cur = self.mr0_alpha_over_window * float(self.tn_events_cnt) + self.one_min_mr0_alpha * self.mr0_cur 
-        self.fn_events_cnt = int(0)
+        if (est_vs_real_mr_output_file != None):
+            printf (est_vs_real_mr_output_file, 'real_mr0={}, ema_real_mr0={}\n' .format (float(self.tn_events_cnt)/self.mr0_estimation_window, self.mr0_cur))
+        self.tn_events_cnt = int(0)
         
-    def update_mr1(self):
+    def update_mr1(self, est_vs_real_mr_output_file=None):
         """
         update the miss-probability in case of a positive indication, using an exponential moving average.
         """
         self.mr1_cur = self.mr1_alpha_over_window * float(self.fp_events_cnt) + self.one_min_mr1_alpha * self.mr1_cur 
+        if (est_vs_real_mr_output_file != None):
+            printf (est_vs_real_mr_output_file, 'real_mr1={}, ema_real_mr1={}\n' .format (float(self.fp_events_cnt)/self.mr1_estimation_window, self.mr1_cur))
         self.fp_events_cnt = int(0)
         
-    def get_mr(self): 
-        """
-        get the current miss-rate estimate
-        """
-        return self.mr1_cur
-
     def print_cache(self, head = 5):
         """
         test to see if key is in the cache

@@ -36,7 +36,7 @@ class Client(object):
         self.mr                 = np.zeros (self.num_of_DSs) # mr[i] will hold the estimated prob' of a miss, given the ind' of DS[i]'s indicator
         self.ind_cnt            = 0  # Number of indications requested by this client during this window 
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs) #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
-        self.q_estimation       = 0.5 * np.ones (self.num_of_DSs) # q_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
+        self.pr_of_pos_ind_estimation       = 0.5 * np.ones (self.num_of_DSs) # pr_of_pos_ind_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.first_estimate     = True # indicates whether this is the first estimation window
         self.estimation_window  = np.uint16 (estimation_window) # Number of requests performed by this client during each window
         self.window_alpha       = window_alpha # window's alpha parameter 
@@ -74,34 +74,40 @@ class Client(object):
         self.DS_accessed[req_id] = DS_index_list
         self.num_DS_accessed.append(len(DS_index_list))
         
-    def estimate_Pone_and_hit_ratio (self, indications):
+    def estimate_pr_of_post_ind_and_hit_ratio (self, indications):
         """
         Estimate Pone (aka "q") - the probability of positive indication; and the hit ratio of each DS.
         Details: The func' does the following:  
-        - Increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together  
+        - If inc_ind_cnt==True, increment ind_cnt (the cntr of queries to each indicator). Currently we always query all indicators, so 1 cntr suffices for all indicators together
+          Else (namely, inc_ind_cnt==False) don't increment the indicator counter. This allows using this 
         - Increment pos_ind_cnt[j] (the cntr of queries to indicator i in the current window), for each indicator j which gave positive indication  
         - Update the estimation of q. q[i] holds the prob' that indicator i gives positive indication
         """
         self.ind_cnt += 1 # Received a new set of indications
         self.pos_ind_cnt += indications 
         if (self.ind_cnt < self.estimation_window ): # Init period - use merely the data collected so far
-            self.q_estimation   = self.pos_ind_cnt/self.estimation_window
+            self.pr_of_pos_ind_estimation   = self.pos_ind_cnt/self.estimation_window
         elif (self.ind_cnt % self.estimation_window == 0): # run period - update the estimation once in a self.estimation_window time
             if (self.verbose == 3 and self.ID == 0):
-                print ('q = ', self.q_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
-            self.q_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.q_estimation
+                print ('q = ', self.pr_of_pos_ind_estimation, ', new q = ', self.pos_ind_cnt/self.estimation_window)
+            self.pr_of_pos_ind_estimation   = self.alpha_over_window * self.pos_ind_cnt + self.one_min_alpha * self.pr_of_pos_ind_estimation
             self.pos_ind_cnt    = np.zeros (self.num_of_DSs , dtype='uint16') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
 
-        self.hit_ratio = np.minimum (self.ones_ar, np.maximum (self.zeros_ar, (self.q_estimation - self.fpr) / (1 - self.fpr - self.fnr)))
+        self.hit_ratio = np.minimum (self.ones_ar, np.maximum (self.zeros_ar, (self.pr_of_pos_ind_estimation - self.fpr) / (1 - self.fpr - self.fnr)))
 
     def estimate_mr1_mr0_by_analysis (self, indications, # vector, where indications[i] is true  iff indicator i gave a positive indication. 
-                                      fno_mode  = False, # When True, discard false-negatives, by assuming that mr0 is always 1 (namely, a negative ind' is always true)
-                                      update_mr = True,  # When True, not only estimate the mr, but also write it to self.mr, so that this would be the next estimation 
-                                      verbose=0, ):
+                                      fno_mode  = False, # When True, discard false-negatives, by assuming that mr0 is always 1 (namely, a negative ind' is always true) 
+                                      verbose=0, 
+                                      quiet = False      # # When True, only estimate the mr and other variables (e.g., prob' of pos' ind'), but don't write them. This allows calling this func' for debugging / collecting stat only.
+                                      ):
         """
         Calculate and return the expected miss prob' ("exclusion probability") of each DS
         Details: The func' does the following:  
-        - Update the estimations of Pone ("q") and the hit ratio.
+        - If the call to the function is in "quiet" mode
+        -- use the current estimations of the probability of pos' ind', and of the hit ratio.
+        -- This is because we don't like to distort the counters of number of number of indications etc. by extra calls to this func', that are actually used only for stat / debugging.
+        - Else (namely, not running in quiet mode):
+        - - Update the estimations of Pone ("q") and the hit ratio.
         - For each DS:
         - - If indication[i] == True, then assign mr[i] = mr1[i], according to the given history vector. 
         - - Else:
@@ -110,25 +116,26 @@ class Client(object):
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
         mr = np.zeros (self.num_of_DSs)
-        self.estimate_Pone_and_hit_ratio (indications)
+        if (not (quiet)):
+            self.estimate_pr_of_post_ind_and_hit_ratio (indications)
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
                 
-                if (self.q_estimation[i] == 0): 
+                if (self.pr_of_pos_ind_estimation[i] == 0): 
                     mr[i] = 1
                 elif (self.fpr[i] == 0 or # If there're no FP, then upon a positive ind', the prob' that the item is NOT in the cache is 0 
                       self.hit_ratio[i] == 1): #If the hit ratio is 1, then upon ANY indication (and, in particular, positive ind'), the prob' that the item is NOT in the cache is 0
                         mr[i] = 0 
                 else:
-                    mr[i] = self.fpr[i] * (1 - self.hit_ratio[i]) / self.q_estimation[i]
+                    mr[i] = self.fpr[i] * (1 - self.hit_ratio[i]) / self.pr_of_pos_ind_estimation[i]
             else:                                                
                 mr[i] = 1 if (fno_mode or 
                                    self.fnr[i] == 0 or # if there're no false-neg, then upon a negative ind', the item is SURELY not in the cache  
-                                   self.q_estimation[i] == 1 or # if q_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1  
-                                   self.hit_ratio[i] == 1) else (1 - self.fpr[i]) * (1 - self.hit_ratio[i]) / (1 - self.q_estimation[i]) 
+                                   self.pr_of_pos_ind_estimation[i] == 1 or # if pr_of_pos_ind_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1  
+                                   self.hit_ratio[i] == 1) else (1 - self.fpr[i]) * (1 - self.hit_ratio[i]) / (1 - self.pr_of_pos_ind_estimation[i]) 
 
         mr = np.maximum (self.zeros_ar, np.minimum (mr, self.ones_ar)) # Verify that all mr values are feasible - that is, within [0,1].
-        if (update_mr):
+        if (not (quiet)):
             self.mr = mr
         return mr
 
@@ -148,14 +155,14 @@ class Client(object):
         - - Handle corner cases (e.g., probabilities calculated are below 0 or above 1)
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
-        self.estimate_Pone_and_hit_ratio (indications)
+        self.estimate_pr_of_post_ind_and_hit_ratio (indications)
         
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
                 self.mr[i] = mr1[i]     #
             else:
-                self.mr[i] = 1 if (self.fnr[i] == 0 or self.q_estimation[i] == 1 or self.hit_ratio[i]==1) \
-                else (1 - self.fpr[i]) * (1 - self.hit_ratio[i]) / (1 - self.q_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
+                self.mr[i] = 1 if (self.fnr[i] == 0 or self.pr_of_pos_ind_estimation[i] == 1 or self.hit_ratio[i]==1) \
+                else (1 - self.fpr[i]) * (1 - self.hit_ratio[i]) / (1 - self.pr_of_pos_ind_estimation[i]) # if DS i gave neg' ind', then the estimated prob' that a datum is not in DS i, given a neg' indication for x
                 if (verbose == 4):
                     printf (self.verbose_file, 'mr_0[{}]: by analysis = {}, by hist = {}\n' .format (i, self.mr[i], mr0[i]))
 

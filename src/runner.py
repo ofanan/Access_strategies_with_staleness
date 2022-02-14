@@ -58,14 +58,14 @@ def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=T
     # real_mr_output_file = 1 if (print_real_mr) else None
     
     print("now = ", datetime.now(), 'running tbl sim')
-    for missp in [50, 100, 500]:
+    for missp in [50]: #, 100, 500]:
         for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:
             tic()
             sm = sim.Simulator(output_file, trace_file_name.split("/")[0], 
                                alg_mode, requests, DS_cost, 
                                uInterval = uInterval, missp = missp,
                                print_est_vs_real_mr = True,
-                               DS_size = 100)
+                               DS_size = 10000)
             sm.run_simulator()
             toc()
 
