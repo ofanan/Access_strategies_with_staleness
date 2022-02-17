@@ -44,7 +44,7 @@ def calc_DS_cost (num_of_DSs = 3, use_homo_DS_cost = False):
     else:
         return calc_hetro_costs(num_of_DSs, num_of_clients)
 
-def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=True, print_real_mr=False, max_num_of_req=700000):
+def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=True, print_real_mr=False, max_num_of_req=200000):
     """
     Run a simulation with different miss penalties for the initial table
     """
@@ -57,7 +57,7 @@ def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=T
     # est_mr_output_file  = open (('../res/{}_est_mr.res' .format (trace_file_name.split ('/')[1].split('.csv')[0])), 'w') if (print_est_mr)  else None
     # real_mr_output_file = 1 if (print_real_mr) else None
     
-    print("now = ", datetime.now(), 'running tbl sim')
+    print("now = ", datetime.now(), 'running var_missp sim')
     for missp in [50]: #, 100, 500]:
         for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:
             tic()

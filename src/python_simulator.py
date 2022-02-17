@@ -234,8 +234,6 @@ class Simulator(object):
             printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
             printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
                                 .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
-        if (self.num_of_clients == 1):
-            printf (self.output_file, '// single client\n')
 
     def run_trace_measure_fp_fn (self):
         """
@@ -346,7 +344,7 @@ class Simulator(object):
         self.PGM_FNA_partition ()
             
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
-            if (self.req_cnt > 200000 and self.est_vs_real_mr_output_file!=None): # requested to print to output estimated and real (historic stat) about the miss rate, and the initial warmup time is finished.
+            if (self.est_vs_real_mr_output_file!=None): # requested to print to output estimated and real (historic stat) about the miss rate, and the initial warmup time is finished.
                 self.print_est_vs_real_mr = True
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
