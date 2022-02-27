@@ -47,9 +47,6 @@ def parse_wiki_trace (trace_file_name      = 'wiki1.1190448987.txt',
     # generate client assignments for each request
     client_assignment = np.random.RandomState(seed=42).randint(0 , num_of_clients , df.shape[0]).astype('uint8')
     
-    # generate request ids
-    req_id = np.array(range(df.shape[0])).astype('uint32')
-    
     # generate permutation for each unique key in the trace
     unique_permutations_array  = np.array ([np.random.RandomState(seed=i).permutation(range(num_of_locations)) for i in range(unique_urls.size)]).astype('uint8')
     permutation_lut_dict = dict(zip(unique_urls , unique_permutations_array)) # generate dictionary to serve as a LUT of unique_key -> permutation
@@ -57,8 +54,8 @@ def parse_wiki_trace (trace_file_name      = 'wiki1.1190448987.txt',
     permutations_array = np.array([permutation_lut_dict[url] for url in df[2]]).astype('uint8')
     permutations_df = pd.DataFrame(permutations_array)
     
-    trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment]))
-    trace_df.columns = ['req_id', 'key', 'client_id']
+    trace_df = pd.DataFrame(np.transpose([keys, client_assignment]))
+    trace_df.columns = ['key', 'client_id']
     
     # # For pre-computation of all the hashes for each unique key in advance, instead of calculating them during sim-time, uncomment the lines below
     # hash_count = 5 # Assuming 5 hash functions
@@ -68,8 +65,8 @@ def parse_wiki_trace (trace_file_name      = 'wiki1.1190448987.txt',
     # key_hash = np.empty([hash_count, keys.size])
     # for seed in range(hash_count):
     # 	key_hash [seed, :] = np.array ([mmh3.hash(key, seed) for key in keys]).astype('uint32') 
-    # trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment, key_hash[0, :], key_hash[1, :], key_hash[2, :], key_hash[3, :], key_hash[4, :]]))
-    # trace_df.columns = ['req_id', 'key', 'client_id', 'hash0', 'hash1', 'hash2', 'hash3', 'hash4']
+    # trace_df = pd.DataFrame(np.transpose([keys, client_assignment, key_hash[0, :], key_hash[1, :], key_hash[2, :], key_hash[3, :], key_hash[4, :]]))
+    # trace_df.columns = ['key', 'client_id', 'hash0', 'hash1', 'hash2', 'hash3', 'hash4']
     
     full_trace_df = pd.concat([ trace_df, permutations_df ], axis=1)
     

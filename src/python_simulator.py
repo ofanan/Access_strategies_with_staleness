@@ -28,7 +28,17 @@ class Simulator(object):
     A simulator that accepts system parameters (trace, number and size of caches, algorithm to run etc.), 
     runs a simulation, and outputs the results to a file.
     """
+    
+    # Called upon a miss. Check whether the miss is compulsory or not. Increments the relevant counter, and inserts the key to self.k_loc DSs.
+    handle_miss = lambda self: self.handle_compulsory_miss (consider_fpr_fnr_update = (self.alg_mode != ALG_PGM_FNO_MR1_BY_HIST)) if (self.is_compulsory_miss()) else self.handle_non_compulsory_miss (consider_fpr_fnr_update = (self.alg_mode != ALG_PGM_FNO_MR1_BY_HIST))
 
+    # Decides which client will invoke this request. 
+    # If there's a single client, the client_id always 1.
+    # Else: 
+    # - If self.use_given_loc_per_item==True, this function will output the client selected by the given trace file.
+    # - Else, the client will be selected uar among all clients.
+    calc_client_id = lambda self: 0 if (self.num_of_clients==0) else (self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1))
+      
     def init_DS_list(self):
         """
         Init a list of empty DSs (Data Stores == caches)
@@ -260,7 +270,7 @@ class Simulator(object):
         """
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.calc_client_id()
+            self.client_id = self.calc_client_id()
             # get the list of caches holding the request
             true_answer_DS_list = np.array([DS_id for DS_id in range(self.num_of_DSs) if (self.cur_req.key in self.DS_list[DS_id])])
 
@@ -302,7 +312,7 @@ class Simulator(object):
         for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.calc_client_id()
+            self.client_id = self.calc_client_id()
             
             # self.pos_ind_list will hold the list of DSs with positive indications
             self.pos_ind_list = np.array ([int(DS.ID) for DS in self.DS_list if (self.cur_req.key in DS.updated_indicator) ]) if self.use_only_updated_ind else \
@@ -349,7 +359,7 @@ class Simulator(object):
                 self.print_est_vs_real_mr = True
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
-            self.calc_client_id ()
+            self.client_id = self.calc_client_id ()
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
@@ -374,15 +384,6 @@ class Simulator(object):
         print the extimated mr (miss rate) probabilities.
         """
         return
-
-    def calc_client_id (self):
-        """
-        Decides which client will invoke this request. 
-        If self.use_given_loc_per_item==True, this function will output the client selected by the given trace file.
-        Else, the client will be selected uar among all clients.
-        """
-        self.client_id = self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1)
-
 
     def run_simulator (self):
         """
@@ -442,16 +443,6 @@ class Simulator(object):
         self.insert_key_to_DSs (consider_fpr_fnr_update = consider_fpr_fnr_update)
         if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
             self.FN_miss_cnt += 1
-
-    def handle_miss (self):
-        """
-        Called upon a miss. Check whether the miss is compulsory or not. Increments the relevant counter, and inserts the key to self.k_loc DSs.
-        """
-        consider_fpr_fnr_update = False if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST) else True #if all params are evaluated by hist, the DSs don't have to send estimated fpr_fnr updates 
-        if (self.is_compulsory_miss()):
-            self.handle_compulsory_miss (consider_fpr_fnr_update = consider_fpr_fnr_update)
-        else:
-            self.handle_non_compulsory_miss (consider_fpr_fnr_update = consider_fpr_fnr_update)
 
     def insert_key_to_closest_DS(self, req):
         """
