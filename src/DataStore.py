@@ -16,7 +16,7 @@ from printf import printf
 
 class DataStore (object):
     
-    def __init__(self, ID, size = 1000, bpe = 5, mr1_window_alpha = 0.25, mr1_estimation_window = 100, 
+    def __init__(self, ID, size = 1000, bpe = 14, mr1_window_alpha = 0.25, mr1_estimation_window = 100, 
                  max_fnr = 0.03, max_fpr = 0.03, verbose = 0, uInterval = 1,
                  num_of_insertions_between_estimations = np.uint8 (50)):
         """

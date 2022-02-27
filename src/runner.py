@@ -59,14 +59,14 @@ def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=T
     
     print("now = ", datetime.now(), 'running var_missp sim')
     for missp in [50]: #, 100, 500]:
-        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]:
+        for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #ALG_PGM_FNA_MR1_BY_ANALYSIS
             tic()
             sm = sim.Simulator(output_file, trace_file_name.split("/")[0], 
                                alg_mode, requests, DS_cost, 
                                uInterval = uInterval, missp = missp,
                                print_est_vs_real_mr = True,
                                DS_size = 10000)
-            sm.run_simulator()
+            sm.run_simulator(interval_between_mid_reports=100000)
             toc()
 
 def run_uInterval_sim (trace_file_name, use_homo_DS_cost = False):

@@ -46,6 +46,9 @@ class Simulator(object):
     # Else, the DS is picked by a simplified "hash func'" of the key (actually, merely the key modulo the number of DSs. 
     select_DS_to_insert = lambda self, i : self.DS_list[self.cur_req['%d'%i]] if (self.use_given_loc_per_item) else self.DS_list[(self.cur_req.key+i) % self.num_of_DSs]    
 
+    # Check whether it's time for a mid-report, and if so - output a mid-report
+    mid_report = lambda self : self.gather_statistics() if (self.req_cnt % self.interval_between_mid_reports == 0 and self.req_cnt>0) else None
+
     def init_DS_list(self):
         """
         Init a list of empty DSs (Data Stores == caches)
@@ -114,7 +117,8 @@ class Simulator(object):
         self.max_fpr            = max_fpr
         self.verbose            = verbose # Used for debug / analysis: a higher level verbose prints more msgs to the Screen / output file.
         self.mr_of_DS           = np.zeros(self.num_of_DSs) # mr_of_DS[i] will hold the estimated miss rate of DS i 
-        self.req_df             = req_df        
+        self.req_df             = req_df
+        self.trace_len          = self.req_df.shape[0]
         self.use_redundan_coef  = use_redundan_coef
         self.use_adaptive_alg   = True if alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False        
         # self.req_cnt            = -1 # The number of the current request. As it's incremented at the  
@@ -184,7 +188,7 @@ class Simulator(object):
         Init per-DS output file, to which the simulator writes data about the estimated mr (conditional miss rates, namely pr of a miss given a negative ind (mr0), or a positive ind (mr1)).
         The simulator also writes to this data (via Datastore.py) about each access whether it results in a True Positive, True Negative, False Positive, or False negative.
         """
-        settings_str = MyConfig.settings_string (trace_file_name=self.trace_file_name, DS_size=self.DS_size, bpe=self.bpe, num_of_req=self.req_df.shape[0], 
+        settings_str = MyConfig.settings_string (trace_file_name=self.trace_file_name, DS_size=self.DS_size, bpe=self.bpe, num_of_req=self.trace_len, 
                                                  num_of_DSs=self.num_of_DSs, k_loc=self.k_loc, missp=self.missp, bw=self.bw, uInterval=self.uInterval, alg_mode=self.alg_mode)
         self.est_vs_real_mr_output_file = [None]*self.num_of_DSs
         for ds in range (self.num_of_DSs):
@@ -258,7 +262,7 @@ class Simulator(object):
         Run a trace on a single cache, only to measure the FN, or FP ratio.
         """
         self.hit_cnt     = 0
-        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+        for self.req_cnt in range(self.trace_len): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             if (self.cur_req.key in self.DS_list[0]): #hit 
                 self.hit_cnt += 1
@@ -275,7 +279,7 @@ class Simulator(object):
         """
         Run a full trace as Opt access strat' when the DS costs are heterogeneous
         """
-        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+        for self.req_cnt in range(self.trace_len): # for each request in the trace... 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.calc_client_id()
             # get the list of caches holding the request
@@ -295,6 +299,7 @@ class Simulator(object):
                 # perform access. we know it will be successful
                 self.DS_list[access_DS_id].access(self.cur_req.key)
                 self.client_list[self.client_id].hit_cnt += 1
+            self.mid_report ()
 
     def consider_send_update (self):
         """
@@ -316,7 +321,7 @@ class Simulator(object):
         Run a full trace where the access strategy is the PGM, as proposed in the journal paper "Access Strategies for Network Caching".
         This algorithm is FNO: False-Negative Oblivious, namely, it never accesses a cache with a negative indication.
         """
-        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+        for self.req_cnt in range(self.trace_len): # for each request in the trace... 
             self.consider_send_update ()
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.calc_client_id()
@@ -338,6 +343,7 @@ class Simulator(object):
                     indications[i] = True  
                 self.mr_of_DS = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (indications, fno_mode = True)
             self.access_pgm_fno_hetro ()
+            self.mid_report ()
 
     def cnt_fn_by_staleness (self):
         """
@@ -361,7 +367,7 @@ class Simulator(object):
         """
         self.PGM_FNA_partition ()
             
-        for self.req_cnt in range(self.req_df.shape[0]): # for each request in the trace... 
+        for self.req_cnt in range(self.trace_len): # for each request in the trace... 
             if (self.est_vs_real_mr_output_file!=None): # requested to print to output estimated and real (historic stat) about the miss rate, and the initial warmup time is finished.
                 self.print_est_vs_real_mr = True
             self.consider_send_update ()
@@ -373,8 +379,8 @@ class Simulator(object):
                 self.mr_of_DS   = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications)
             else: # Use historical data of about mr0, mr1 
                 self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
-             
             self.access_pgm_fna_hetro ()
+            self.mid_report ()
 
     def print_est_mr_func (self):
         """
@@ -392,14 +398,15 @@ class Simulator(object):
         """
         return
 
-    def run_simulator (self):
+    def run_simulator (self, interval_between_mid_reports):
         """
         Run a simulation, gather statistics and prints outputs
         """
         np.random.seed(self.rand_seed)
-        num_of_req = self.req_df.shape[0]
+        num_of_req = self.trace_len
         print ('running', MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, num_of_req, self.num_of_DSs, 
                                                     self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode))
+        self.interval_between_mid_reports = interval_between_mid_reports if (interval_between_mid_reports != None) else self.trace_len # if the user didn't request mid_reports, have only a single report, at the end of the trace
         if (self.alg_mode == ALG_MEAURE_FP_FN):
             self.run_trace_measure_fp_fn ()
         elif self.alg_mode == ALG_OPT:
@@ -439,7 +446,7 @@ class Simulator(object):
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].comp_miss_cnt += 1
-        self.insert_key_to_DSs (use_indicator=(self.mode != ALG_OPT),  consider_fpr_fnr_update = consider_fpr_fnr_update)
+        self.insert_key_to_DSs (use_indicator=(self.alg_mode != ALG_OPT),  consider_fpr_fnr_update = consider_fpr_fnr_update)
 
     def handle_non_compulsory_miss (self, consider_fpr_fnr_update = True):
         """
@@ -467,7 +474,7 @@ class Simulator(object):
         - Chosen as a "hash" (actually, merely a modulo calculation) of the key 
         """
         for i in range(self.k_loc):
-            self.select_DS_to_insert().insert (key = self.cur_req.key, req_cnt = self.req_cnt, use_indicator = use_indicator, consider_fpr_fnr_update = consider_fpr_fnr_update)
+            self.select_DS_to_insert(i).insert (key = self.cur_req.key, req_cnt = self.req_cnt, use_indicator = use_indicator, consider_fpr_fnr_update = consider_fpr_fnr_update)
                     
     def is_compulsory_miss (self):
         """
