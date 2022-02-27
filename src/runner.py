@@ -44,7 +44,7 @@ def calc_DS_cost (num_of_DSs = 3, use_homo_DS_cost = False):
     else:
         return calc_hetro_costs(num_of_DSs, num_of_clients)
 
-def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=True, print_real_mr=False, max_num_of_req=200000):
+def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=True, print_real_mr=False, max_num_of_req=1000000):
     """
     Run a simulation with different miss penalties for the initial table
     """
@@ -250,7 +250,7 @@ def calc_opt_service_cost (accs_cost, comp_miss08_cnt, missp, num_of_req):
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
-run_var_missp_sim(trace_file_name = 'wiki/wiki.1190448987_4300K_3DSs.csv')
+run_var_missp_sim(trace_file_name = 'wiki/wiki1.1190448987_1000K_1DSs.csv')
 
 # run_FN_by_uInterval_sim (trace_file_name)
 

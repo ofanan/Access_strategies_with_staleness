@@ -52,7 +52,7 @@ permutations_array = np.array([permutation_lut_dict[url] for url in df[0]]).asty
 permutations_df = pd.DataFrame(permutations_array)
 
 trace_df = pd.DataFrame(np.transpose([req_id, keys, client_assignment]))
-trace_df.columns = ['req_id', 'key', 'client_id']
+trace_df.columns = ['key', 'client_id']
 
 # # For Calculating all the hashes for each unique key in advance, then during sim-time, uncomment the lines below
 # hash_count = 5 # Assuming 5 hash functions

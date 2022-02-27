@@ -100,7 +100,7 @@ class Simulator(object):
         self.req_df             = req_df        
         self.use_redundan_coef  = use_redundan_coef
         self.use_adaptive_alg   = True if alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False        
-        self.req_cnt            = -1
+        # self.req_cnt            = -1 # The number of the current request. As it's incremented at the  
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
         self.pos_ind_list       = [] #np.array (0, dtype = 'uint8') #list of the DSs with pos' ind' (positive indication) for the current request
@@ -167,7 +167,8 @@ class Simulator(object):
         Init per-DS output file, to which the simulator writes data about the estimated mr (conditional miss rates, namely pr of a miss given a negative ind (mr0), or a positive ind (mr1)).
         The simulator also writes to this data (via Datastore.py) about each access whether it results in a True Positive, True Negative, False Positive, or False negative.
         """
-        settings_str = MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, self.req_cnt, self.num_of_DSs, self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode)
+        settings_str = MyConfig.settings_string (trace_file_name=self.trace_file_name, DS_size=self.DS_size, bpe=self.bpe, num_of_req=self.req_df.shape[0], 
+                                                 num_of_DSs=self.num_of_DSs, k_loc=self.k_loc, missp=self.missp, bw=self.bw, uInterval=self.uInterval, alg_mode=self.alg_mode)
         self.est_vs_real_mr_output_file = [None]*self.num_of_DSs
         for ds in range (self.num_of_DSs):
             self.est_vs_real_mr_output_file[ds] = open ('../res/{}_est_vs_real_mr_ds{}.mr' .format (settings_str, ds), 'w')
@@ -608,7 +609,7 @@ class Simulator(object):
         # Add the costs and IDs of the selected DSs to the statistics
         self.client_list[self.client_id].total_access_cost += final_sol.ac
         if (self.verbose == 3):
-            self.client_list[self.client_id].add_DS_accessed(self.cur_req.req_id, final_sol.DSs_IDs)
+            self.client_list[self.client_id].add_DS_accessed(self.req_cnt, final_sol.DSs_IDs)
 
         if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
             # perform access. the function access() returns True if successful, and False otherwise

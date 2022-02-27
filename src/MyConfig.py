@@ -15,7 +15,6 @@ def reduce_trace_mem_print(trace_df, k_loc):
 
     """
     new_trace_df = trace_df
-    new_trace_df['req_id']    = trace_df['req_id'].astype('uint32')        # id (running cnt number) of the request
     new_trace_df['key']       = trace_df['key'].astype('uint32')              # key. No need for value in the sim'
     new_trace_df['client_id'] = trace_df['client_id'].astype('uint8')   # client to which this request is assigned
     # max_k_loc = min (num_of_DSs, 5)
@@ -62,11 +61,7 @@ def getTracesPath():
     This path should be:
     C:/Users/user_name/Documents/traces
     """
-    if (os.getcwd().split ("\\")[0] == "C:"):
-        user_name = os.getcwd().split ("\\")[2]
-        return 'C:/Users/' + user_name + '/Documents/cache_traces/'
-    else:
-        return ('/home/icohen/cache_traces/')
+    return 'C:/Users/' + os.getcwd().split ("\\")[2] + '/Documents/traces/' if (os.getcwd().split ("\\")[0] == "C:") else '/home/icohen/traces/'
 
 def calcOvhDsCost ():
 	"""
