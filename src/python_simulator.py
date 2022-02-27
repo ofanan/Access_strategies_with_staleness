@@ -38,7 +38,14 @@ class Simulator(object):
     # - If self.use_given_loc_per_item==True, this function will output the client selected by the given trace file.
     # - Else, the client will be selected uar among all clients.
     calc_client_id = lambda self: 0 if (self.num_of_clients==0) else (self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1))
-      
+    
+    # Returns the datastore (DS) to which a missed key should be inserted.
+    # "i" means that this is the i-th DS to which this missed key is inserted. 
+    # Note that 0 <= i <= k_loc - 1.
+    # If self.use_given_loc_per_item==True, the returned DSs is the one stated in the given trace ("req_df").
+    # Else, the DS is picked by a simplified "hash func'" of the key (actually, merely the key modulo the number of DSs. 
+    select_DS_to_insert = lambda self, i : self.DS_list[self.cur_req['%d'%i]] if (self.use_given_loc_per_item) else self.DS_list[(self.cur_req.key+i) % self.num_of_DSs]    
+
     def init_DS_list(self):
         """
         Init a list of empty DSs (Data Stores == caches)
@@ -276,7 +283,7 @@ class Simulator(object):
 
             if true_answer_DS_list.size == 0: # Miss: request is indeed not found in any DS 
                 self.client_list[self.client_id].comp_miss_cnt += 1
-                self.insert_key_to_DSs_without_indicator () # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
+                self.insert_key_to_DSs (use_indicator=False, consider_fpr_fnr_update=False) # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
             else:  # hit
                 # find the cheapest DS holding the request
                 access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[self.client_id] , true_answer_DS_list ) )]
@@ -432,7 +439,7 @@ class Simulator(object):
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].comp_miss_cnt += 1
-        self.insert_key_to_DSs (consider_fpr_fnr_update = consider_fpr_fnr_update)
+        self.insert_key_to_DSs (use_indicator=(self.mode != ALG_OPT),  consider_fpr_fnr_update = consider_fpr_fnr_update)
 
     def handle_non_compulsory_miss (self, consider_fpr_fnr_update = True):
         """
@@ -452,36 +459,16 @@ class Simulator(object):
         if self.DS_insert_mode == 2:
             self.DS_list[self.client_id].insert(req.key)
 
-    def insert_key_to_DSs_without_indicator (self):
+    def insert_key_to_DSs (self, use_indicator=True, consider_fpr_fnr_update=True):
         """
         insert key to all k_loc DSs.
         The DSs to which the key is inserted are either: 
         - Defined by the input (parsed) trace (if self.use_given_loc_per_item==True)
         - Chosen as a "hash" (actually, merely a modulo calculation) of the key 
-        Do not use indicator. Used for Opt, which doesn't need indicators.
         """
-        if (self.use_given_loc_per_item):
-            for i in range(self.k_loc):
-                self.DS_list[self.cur_req['%d'%i]].insert (key = self.cur_req.key, use_indicator = False)
-        else:
-            for i in range(self.k_loc):
-                self.DS_list[(self.cur_req.key+i) % self.num_of_DSs].insert (key = self.cur_req.key, use_indicator = False)
-            
-    def insert_key_to_DSs(self, consider_fpr_fnr_update = True):
-        """
-        insert key to all k_loc DSs.
-        The DSs to which the key is inserted are either: 
-        - Defined by the input (parsed) trace (if self.use_given_loc_per_item==True)
-        - Chosen as a "hash" (actually, merely a modulo calculation) of the key v
-        """
-        if (self.use_given_loc_per_item):
-            for i in range(self.k_loc):
-                self.DS_list[self.cur_req['%d'%i ]].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
-        else:
-            for i in range(self.k_loc):
-                self.DS_list[(self.cur_req.key+i) % self.num_of_DSs].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = consider_fpr_fnr_update)
-        
-        
+        for i in range(self.k_loc):
+            self.select_DS_to_insert().insert (key = self.cur_req.key, req_cnt = self.req_cnt, use_indicator = use_indicator, consider_fpr_fnr_update = consider_fpr_fnr_update)
+                    
     def is_compulsory_miss (self):
         """
         Returns true iff the access is compulsory miss, namely, the requested datum is indeed not found in any DS.
