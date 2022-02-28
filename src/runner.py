@@ -4,11 +4,9 @@ Run a simulation, looping over all requested values of parameters
 """
 
 from datetime import datetime
-import os
-import pickle
-import sys
+import os, pickle, sys
 
-import MyConfig
+# import MyConfig
 from MyConfig import getTracesPath, settings_string, calc_service_cost_of_opt, reduce_trace_mem_print, gen_requests
 import numpy as np
 import pandas as pd
@@ -58,8 +56,8 @@ def run_var_missp_sim (trace_file_name, use_homo_DS_cost = False, print_est_mr=T
     # real_mr_output_file = 1 if (print_real_mr) else None
     
     print("now = ", datetime.now(), 'running var_missp sim')
-    for missp in [50]: #, 100, 500]:
-        for alg_mode in [sim.ALG_PGM_FNO_MR1_BY_ANALYSIS]: #ALG_PGM_FNA_MR1_BY_ANALYSIS
+    for missp in [100]: #50, 100, 500]:
+        for alg_mode in [sim.ALG_PGM_FNA_MR1_BY_ANALYSIS]: #ALG_PGM_FNA_MR1_BY_ANALYSIS
             tic()
             sm = sim.Simulator(output_file, trace_file_name.split("/")[0], 
                                alg_mode, requests, DS_cost, 
@@ -163,8 +161,7 @@ def run_num_of_caches_sim (trace_file_name, use_homo_DS_cost = True):
                         
                 print("now = ", datetime.now(), 'running num of caches sim')
                 tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, 
-                                   use_given_loc_per_item = False)
+                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval)
                 sm.run_simulator()
                 toc()
 
@@ -198,8 +195,7 @@ def run_k_loc_sim (trace_file_name, use_homo_DS_cost = True):
                         
                 print("now = ", datetime.now(), 'running k_loc sim')
                 tic()
-                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, k_loc = k_loc, 
-                                   use_given_loc_per_item = False)
+                sm = sim.Simulator(output_file, trace_file_name, alg_mode, requests, DS_cost, uInterval = uInterval, k_loc = k_loc)
                 sm.run_simulator()
                 toc()
 
@@ -210,7 +206,7 @@ def run_FN_by_staleness_sim ():
     print("now = ", datetime.now(), 'running FN_by_staleness sim')
 
     for trace_file_name in ['scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv', 'umass/storage/F2.3M_req_1000K_3DSs.csv']:
-        requests            = gen_requests (trace_file_name, max_num_of_req) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries. 
+        requests            = gen_requests (trace_file_name, max_num_of_req)  
         trace_file_name     = trace_file_name.split("/")[0]
         num_of_req          = requests.shape[0]
         printf (output_file, '\n\ntrace = {}\n///////////////////\n' .format (trace_file_name))
@@ -218,7 +214,7 @@ def run_FN_by_staleness_sim ():
         for bpe in [2, 4, 8, 16]:
             tic()
             sm = sim.Simulator(output_file, trace_file_name, sim.ALG_PGM_FNO_MR1_BY_HIST, requests, DS_cost, bpe = bpe,    
-                               verbose = sim.CNT_FN_BY_STALENESS, uInterval = 8192, use_given_loc_per_item = True)
+                               verbose = sim.CNT_FN_BY_STALENESS, uInterval = 8192) # In this sim', each item's location will be calculated as a hash of the key. Hence we actually don't use the k_loc pre-computed entries.
             sm.run_simulator()
             toc()
 
@@ -237,7 +233,7 @@ def run_FN_by_uInterval_sim (trace_file_name):
         for uInterval in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]:
             tic()
             sm = sim.Simulator(output_file, trace_file_name, sim.ALG_MEAURE_FP_FN, requests, DS_cost,    
-                               verbose = 0, bpe = bpe, uInterval = uInterval, use_given_loc_per_item = False)
+                               verbose = 0, bpe = bpe, uInterval = uInterval)
             sm.run_simulator()
             toc()
 
@@ -250,7 +246,8 @@ def calc_opt_service_cost (accs_cost, comp_miss08_cnt, missp, num_of_req):
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
 # trace_file_name     = 'umass/storage/F2.3M_req_1000K_3DSs.csv'
-run_var_missp_sim(trace_file_name = 'wiki/wiki1.1190448987_1000K_1DSs.csv')
+run_var_missp_sim(trace_file_name = 'gradle/gradle.build-cache.xz.txt', max_num_of_req=500000)
+# print (gen_requests ('wiki/wiki2.1191403252.gz.txt', max_num_of_req=5))
 
 # run_FN_by_uInterval_sim (trace_file_name)
 

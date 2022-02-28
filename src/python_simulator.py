@@ -35,16 +35,16 @@ class Simulator(object):
     # Decides which client will invoke this request. 
     # If there's a single client, the client_id always 1.
     # Else: 
-    # - If self.use_given_loc_per_item==True, this function will output the client selected by the given trace file.
+    # - If self.use_given_client_per_item==True, this function will output the client selected by the given trace file.
     # - Else, the client will be selected uar among all clients.
-    calc_client_id = lambda self: 0 if (self.num_of_clients==0) else (self.cur_req.client_id if (self.use_given_loc_per_item) else random.randint(0, self.num_of_clients-1))
+    calc_client_id = lambda self: 0 if (self.num_of_clients==0) else (self.cur_req.client_id if (self.use_given_client_per_item) else random.randint(0, self.num_of_clients-1))
     
     # Returns the datastore (DS) to which a missed key should be inserted.
     # "i" means that this is the i-th DS to which this missed key is inserted. 
     # Note that 0 <= i <= k_loc - 1.
-    # If self.use_given_loc_per_item==True, the returned DSs is the one stated in the given trace ("req_df").
+    # If self.use_given_DS_per_item==True, the returned DSs is the one stated in the given trace ("req_df").
     # Else, the DS is picked by a simplified "hash func'" of the key (actually, merely the key modulo the number of DSs. 
-    select_DS_to_insert = lambda self, i : self.DS_list[self.cur_req['%d'%i]] if (self.use_given_loc_per_item) else self.DS_list[(self.cur_req.key+i) % self.num_of_DSs]    
+    select_DS_to_insert = lambda self, i : self.DS_list[self.cur_req['%d'%i]] if (self.use_given_DS_per_item) else self.DS_list[(self.cur_req.key+i) % self.num_of_DSs]    
 
     # Check whether it's time for a mid-report, and if so - output a mid-report
     mid_report = lambda self : self.gather_statistics() if (self.req_cnt % self.interval_between_mid_reports == 0 and self.req_cnt>0) else None
@@ -70,7 +70,10 @@ class Simulator(object):
     
     def __init__(self, output_file, trace_file_name, alg_mode, req_df, client_DS_cost, missp=100, k_loc=1, DS_size = 10000, 
                  bpe = 14, rand_seed = 42, use_redundan_coef = False, max_fpr = 0.01, max_fnr = 0.01, verbose = 1, 
-                 bw = 0, uInterval = -1, use_given_loc_per_item = True,
+                 bw = 0, # Determine the update interval by a given bandwidth (currently usused)
+                 uInterval = -1, # update interval, namely, number of new insertions to a datastore between sequencing advertisements of a fresh indicator 
+                 use_given_client_per_item = False, # When true, associate each request with the client determined in the input trace ("req_df")                 
+                 use_given_DS_per_item = False, # When true, insert each missed request with the datastore(s) determined in the input trace ("req_df")
                  print_est_vs_real_mr = False # When true, write the estimated and real miss rates (the conditional miss ratio) to a file.
                  ):
         """
@@ -88,7 +91,7 @@ class Simulator(object):
             verbose :           Amount of info written to output files. When 1 - write at the end of each sim' the cost, number of misses etc.
             bw:                 BW budged. Used to calculate the update interval when the uInterval isn't explicitly define in the input.
             uInterval:          update Interval, namely, number of insertions to each cache before this cache advertises a fresh indicator.
-            use_given_loc_per_item: if True, place each missed item in the location(s) defined for it in the trace. Else, select the location of a missed item based on hash. 
+            use_given_client_per_item: if True, place each missed item in the location(s) defined for it in the trace. Else, select the location of a missed item based on hash. 
             
         """
         self.output_file     = output_file
@@ -157,9 +160,10 @@ class Simulator(object):
         self.use_only_updated_ind = True if (uInterval == 1) else False
         self.num_of_insertions_between_estimations = np.uint8 (50)
         if (self.num_of_clients == 1):
-            self.use_given_loc_per_item = False # if there's only 1 client, all requests belong to this client, disregarding what was pre-computed in the trace file.
+            self.use_given_client_per_item = False # if there's only 1 client, all requests belong to this client, disregarding what was pre-computed in the trace file.
         else:
-            self.use_given_loc_per_item = use_given_loc_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
+            self.use_given_client_per_item = use_given_client_per_item # When True, upon miss, the missed item is inserted to the location(s) specified in the given request traces input. When False, it's randomized for each miss request.
+        self.use_given_DS_per_item = use_given_DS_per_item
 
         self.avg_DS_accessed_per_req = float(0)
         self.verbose_file = None
@@ -470,7 +474,7 @@ class Simulator(object):
         """
         insert key to all k_loc DSs.
         The DSs to which the key is inserted are either: 
-        - Defined by the input (parsed) trace (if self.use_given_loc_per_item==True)
+        - Defined by the input (parsed) trace (if self.use_given_client_per_item==True)
         - Chosen as a "hash" (actually, merely a modulo calculation) of the key 
         """
         for i in range(self.k_loc):
