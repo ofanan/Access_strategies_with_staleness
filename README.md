@@ -6,7 +6,9 @@ For details about the problem and the algorithms used, please refer to the paper
 
 [1] I. Cohen, Gil Einziger, R. Friedman, and G. Scalosub, [Access Strategies for Network Caching](https://www.researchgate.net/profile/Itamar-Cohen-2/publication/346732877_Access_Strategies_for_Network_Caching/links/5fd27eeea6fdcc697bf6f924/Access-Strategies-for-Network-Caching.pdf), IEEE Transactions on Networking, Vol. 29(2), 2021, pp.609-622.
  
-[2] I. Cohen, Gil Einziger, and G. Scalosub, [On the Power of False Negative Awareness in Indicator-based Caching Systems](https://www.researchgate.net/profile/Itamar-Cohen-2/publication/348917494_On_the_Power_of_False_Negative_Awareness_in_Indicator-based_Caching_Systems/links/607ad7a68ea909241e058cad/On-the-Power-of-False-Negative-Awareness-in-Indicator-based-Caching-Systems.pdf), IEEE ICDCS 2021, pp. 46-56.
+[2] I. Cohen, Gil Einziger, and G. Scalosub, [False Negative Awareness in Indicator-based Caching Systems](https://www.researchgate.net/publication/361178366_False_Negative_Awareness_in_Indicator-Based_Caching_Systems), IEEE Transactions on Networking, 2022, pp. 46-56.
+
+
 
 The source files are described below. More detailed documentation is found within the source files.
 
@@ -86,6 +88,5 @@ An accessory function for format-printing to a file.
 
 ##### check_fpr_fnr_formulas.py
 A script to compare the fpr, fnr, calculated by either the paper [2], or by an an older paper, which uses different model:
-[3] Y. Zhu and H. Jiang, ‚ÄúFalse rate analysis of bloom filter replicas in distributed systems‚Äù, in ICPP, 2006, pp. 255‚Äì262.
-
+[3] Y. Zhu and H. Jiang, ìFalse rate analysis of bloom filter replicas in distributed systemsî, in ICPP, 2006, pp. 255ñ262.
 
