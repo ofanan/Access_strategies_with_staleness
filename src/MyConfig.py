@@ -126,6 +126,10 @@ def get_optimal_num_of_hashes (bpe):
     """
     return int (bpe * np.log (2))
 
+def error (str):
+    print (str)
+    exit ()
+
 
 def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_loc, missp, bw, uInterval, alg_mode):
     """
@@ -168,6 +172,10 @@ def parse_list_of_keys (input_file_name,
     """
 
     traces_path = getTracesPath()
+    if not (os.path.exists (traces_path)):
+        error ('error: the traces directory {} does not exist' .format (traces_path))
+    if not (os.path.isfile (traces_path + input_file_name)):
+        error ('error: the trace {} was not found' .format (traces_path + input_file_name))
     df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
         
     # associate each unique "url" in the input with a unique key 
