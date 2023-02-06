@@ -1,0 +1,8 @@
+\addplot[color=black,     mark=triangle,     width = \plotwidth] coordinates {
+(64 ,23.9890)(128 ,28.7271)(256 ,32.1332)(512 ,31.3964)(1024 ,23.6721)(2048 ,22.2466)(4096 ,24.8097)(8192 ,30.9688)
+};\addlegendentry {FNA}
+
+\addplot[color=red,          mark=o,                 width = \plotwidth] coordinates {
+(16 ,16.8939)(32 ,19.3233)(64 ,23.0369)(128 ,27.8298)(256 ,32.8258)(512 ,37.2823)(1024 ,41.0888)(2048 ,43.8402)(4096 ,47.0278)(8192 ,50.7635)
+};\addlegendentry {FNO}
+

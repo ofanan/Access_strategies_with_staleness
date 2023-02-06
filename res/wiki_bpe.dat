@@ -1,0 +1,18 @@
+% uInterval = 256
+		\addplot [color = black, mark = square,      mark options = {mark size = 2, fill = black}, line width = \plotLineWidth] coordinates {
+		(5, 1.5643)(6, 1.5698)(7, 1.5552)(8, 1.5594)(9, 1.5689)(10, 1.5627)(11, 1.5564)(12, 1.5586)(13, 1.5613)(14, 1.5600)(15, 1.5561)
+		};
+
+		\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {
+		(5, 1.4966)(6, 1.4595)(7, 1.4487)(8, 1.3930)(9, 1.3677)(10, 1.3628)(11, 1.3327)(12, 1.2973)(13, 1.2677)(14, 1.2555)(15, 1.2405)
+		};
+
+% uInterval = 1024
+		\addplot [color = black, mark = square,      mark options = {mark size = 2, fill = black}, line width = \plotLineWidth] coordinates {
+		(5, 2.1211)(6, 2.1794)(7, 2.1834)(8, 2.2236)(9, 2.2598)(10, 2.2592)(11, 2.2748)(12, 2.3011)(13, 2.3274)(14, 2.3163)(15, 2.3342)
+		};
+
+		\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {
+		(5, 1.6672)(6, 1.6392)(7, 1.5904)(8, 1.5265)(9, 1.4882)(10, 1.4697)(11, 1.4614)(12, 1.4206)(13, 1.3717)(14, 1.3632)(15, 1.3303)
+		};
+

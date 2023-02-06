@@ -1,0 +1,109 @@
+
+settings: wiki.C4000.bpe10.800Kreq.19DSs.Kloc1.M1000.fpr0.10.FNO
+tot_cost = 229153586.98888326, tot_access_cost= 8123586.988883266, hit_ratio = 0.72, non_comp_miss_cnt = 126441, comp_miss_cnt = 94589
+FN miss cnt = 126441, total bw = 6990123.03
+
+settings: wiki.C4000.bpe10.800Kreq.19DSs.Kloc1.M1000.fpr0.10.FNA_by_hist
+tot_cost = 225014631.76704496, tot_access_cost= 9247631.767044974, hit_ratio = 0.73, non_comp_miss_cnt = 121180, comp_miss_cnt = 94587
+, spec accs cost = 1393484, num of spec hits = 8125, total bw = 7000330
+
+settings: gradle.C400.bpe5.50Kreq.3DSs.Kloc1.M100.fpr0.03.Opt
+tot_cost = 1136030.0, tot_access_cost= 39030.0, hit_ratio = 0.78, non_comp_miss_cnt = 0, comp_miss_cnt = 10970
+
+settings: gradle.C400.bpe5.50Kreq.3DSs.Kloc1.M100.fpr0.03.FNA_by_hist
+tot_cost = 1146790.0, tot_access_cost= 48790.0, hit_ratio = 0.78, non_comp_miss_cnt = 5, comp_miss_cnt = 10975
+, spec accs cost = 0, num of spec hits = 0, total bw = 409664
+
+settings: gradle.C100.bpe5.50Kreq.3DSs.Kloc1.M100.fpr0.10.FNA_by_hist
+tot_cost = 2363839.0, tot_access_cost= 54639.0, hit_ratio = 0.54, non_comp_miss_cnt = 266, comp_miss_cnt = 22826
+, spec accs cost = 16093, num of spec hits = 83, total bw = 674839
+
+settings: gradle.C100.bpe5.50Kreq.3DSs.Kloc1.M100.fpr0.10.Opt
+tot_cost = 2312150.0, tot_access_cost= 27150.0, hit_ratio = 0.54, non_comp_miss_cnt = 0, comp_miss_cnt = 22850
+
+settings: gradle.C100.bpe5.50Kreq.3DSs.Kloc1.M100.fpr0.10.FNO
+tot_cost = 2358450.0, tot_access_cost= 38450.0, hit_ratio = 0.54, non_comp_miss_cnt = 373, comp_miss_cnt = 22827
+FN miss cnt = 373, total bw = 656017.47
+
+settings: scarab.C4000.bpe5.50Kreq.3DSs.Kloc1.M1000.fpr0.10.FNO
+tot_cost = 20829390.0, tot_access_cost= 30390.0, hit_ratio = 0.58, non_comp_miss_cnt = 12129, comp_miss_cnt = 8670
+FN miss cnt = 12129, total bw = 294369.74
+
+settings: scarab.C4000.bpe5.50Kreq.3DSs.Kloc1.M1000.fpr0.10.FNA_by_hist
+tot_cost = 9123709.0, tot_access_cost= 120709.0, hit_ratio = 0.82, non_comp_miss_cnt = 333, comp_miss_cnt = 8670
+, spec accs cost = 90319, num of spec hits = 11796, total bw = 295220
+
+settings: scarab.C4000.bpe5.50Kreq.3DSs.Kloc1.M1000.fpr0.10.FNA_by_hist
+tot_cost = 9123709.0, tot_access_cost= 120709.0, hit_ratio = 0.82, non_comp_miss_cnt = 333, comp_miss_cnt = 8670
+, spec accs cost = 90319, num of spec hits = 11796, avg update bw per req = 2, avg update interval = 0
+
+RE-CALCULATING ONCE IN A FEW INSERTIONS
+
+settings: scarab.C4000.bpe5.50Kreq.3DSs.Kloc1.M1000.fpr0.10.FNO
+tot_cost = 21576653.0, tot_access_cost= 29653.0, hit_ratio = 0.57, non_comp_miss_cnt = 12877, comp_miss_cnt = 8670
+FN miss cnt = 12877, total bw = 297012.96
+
+settings: scarab.C4000.bpe5.50Kreq.3DSs.Kloc1.M1000.fpr0.10.FNA_by_hist
+tot_cost = 9496561.0, tot_access_cost= 117561.0, hit_ratio = 0.81, non_comp_miss_cnt = 709, comp_miss_cnt = 8670
+, spec accs cost = 87908, num of spec hits = 12168, avg update bw per req = 2, avg update interval = 0
+
+settings: scarab.C40.bpe5.10Kreq.3DSs.Kloc1.M1000.fpr0.00.FNA_by_hist
+tot_cost = 4934339.0, tot_access_cost= 7339.0, hit_ratio = 0.51, non_comp_miss_cnt = 66, comp_miss_cnt = 4861
+, spec accs cost = 0, num of spec hits = 0, avg update bw per req = 3.9905, avg num of updates = 1620.3333, avg update interval = 0
+
+settings: scarab.C40.bpe5.10Kreq.3DSs.Kloc1.M1000.fpr0.10.FNA_by_hist
+tot_cost = 4994249.0, tot_access_cost= 11249.0, hit_ratio = 0.5, non_comp_miss_cnt = 98, comp_miss_cnt = 4885
+, spec accs cost = 3582, num of spec hits = 62, avg update bw per req = 3.7693, avg num of updates = 1383.0000, avg update interval = 0
+
+
+settings: scarab.C1000.bpe10.20Kreq.3DSs.Kloc1.M1000.fpr0.10.FNA_by_hist
+tot_cost = 4361501.0, tot_access_cost= 39501.0, hit_ratio = 0.78, non_comp_miss_cnt = 127, comp_miss_cnt = 4195
+, spec accs cost = 25767, num of spec hits = 2091, avg update bw per req = 4.6782, avg num of updates = 162.6667, avg update interval = 0
+
+settings: scarab.C1000.bpe10.50Kreq.3DSs.Kloc1.M100.U20.FNO
+tot_cost = 1001709.0, tot_access_cost= 41009.0, hit_ratio = 0.81, non_comp_miss_cnt = 48, comp_miss_cnt = 9559
+
+settings: scarab.C1000.bpe10.50Kreq.3DSs.Kloc1.M100.U20.FNA_by_hist
+tot_cost = 1001709.0, tot_access_cost= 41009.0, hit_ratio = 0.81, non_comp_miss_cnt = 48, comp_miss_cnt = 9559
+
+settings: scarab.C1000.bpe10.50Kreq.3DSs.Kloc1.M100.U20.FNO
+tot_cost = 1001709.0, tot_access_cost= 41009.0, hit_ratio = 0.81, non_comp_miss_cnt = 48, comp_miss_cnt = 9559
+FN miss cnt = 48
+
+
+settings: scarab.C1000.bpe10.10Kreq.3DSs.Kloc1.M100.U20.FNA_by_hist
+tot_cost = 239191.0, tot_access_cost= 7691.0, hit_ratio = 0.77, non_comp_miss_cnt = 92, comp_miss_cnt = 2223
+spec accs cost = 0, num of spec hits = 0, avg update bw per req = 996.0996, num of updates = 498, avg update interval = 20
+
+settings: scarab.C1000.bpe10.50Kreq.3DSs.Kloc1.M100.U20.FNO
+tot_cost = 1019929.0, tot_access_cost= 40829.0, hit_ratio = 0.8, non_comp_miss_cnt = 233, comp_miss_cnt = 9558
+FN miss cnt = 233
+
+settings: scarab.C1000.bpe10.50Kreq.3DSs.Kloc1.M100.U20.FNA_by_hist
+tot_cost = 1019929.0, tot_access_cost= 40829.0, hit_ratio = 0.8, non_comp_miss_cnt = 233, comp_miss_cnt = 9558
+spec accs cost = 0, num of spec hits = 0, avg update bw per req = 113.6356, num of updates = 2273, avg update interval = 22
+
+settings: scarab.C1000.bpe10.50Kreq.3DSs.Kloc1.M100.U100.FNO
+tot_cost = 1033687.0, tot_access_cost= 40687.0, hit_ratio = 0.8, non_comp_miss_cnt = 373, comp_miss_cnt = 9557
+FN miss cnt = 373
+
+gradle.C100.bpe14.1Kreq.3DSs.Kloc1.M100.U20.FNOtot_cost = 96351.0, update bw = 5
+tot_access_cost= 51.0, hit_ratio = 0.037, non_comp_miss_cnt = 36, comp_miss_cnt = 927
+FN miss cnt = 36
+
+gradle.C100.bpe14.1Kreq.3DSs.Kloc1.M100.U20.FNO | tot_cost = 96351.0 | update bw = 5
+tot_access_cost= 51.0, hit_ratio = 0.037, non_comp_miss_cnt = 36, comp_miss_cnt = 927
+FN miss cnt = 36
+
+gradle.C100.bpe14.1Kreq.3DSs.Kloc1.M100.FNO.Bw5 | tot_cost = 96351.0
+tot_access_cost= 51.0, hit_ratio = 0.037, non_comp_miss_cnt = 36, comp_miss_cnt = 927
+FN miss cnt = 36
+
+gradle.C100.bpe14.1Kreq.3DSs.Kloc1.M100.FNO.Bw5 | tot_cost = 96351.0
+// tot_access_cost= 51.0, hit_ratio = 0.037, non_comp_miss_cnt = 36, comp_miss_cnt = 927
+FN miss cnt = 36
+
+gradle.C100.bpe14.1Kreq.3DSs.Kloc1.M100.FNO.Bw5 | tot_cost = 96351.0
+// tot_access_cost= 51.0, hit_ratio = 0.037, non_comp_miss_cnt = 36, comp_miss_cnt = 927
+FN miss cnt = 36
+

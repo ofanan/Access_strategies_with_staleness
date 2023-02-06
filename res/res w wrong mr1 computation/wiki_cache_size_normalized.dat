@@ -1,0 +1,22 @@
+% uInterval = 256
+		\addplot [color = cyan, mark=x, line width = \plotLineWidth] coordinates {
+		(1, 1.1045)(2, 1.1212)(4, 1.1672)(8, 1.1593)(16, 1.1580)
+		};
+
+		\addplot [color = black, mark=triangle, line width = \plotLineWidth] coordinates {
+		(1, 1.1148)(2, 1.1581)(4, 1.2694)(8, 1.2507)
+		};
+
+% uInterval = 1024
+		\addplot [color = cyan, mark=x, line width = \plotLineWidth] coordinates {
+		(1, 1.2882)(2, 1.4062)(4, 1.6790)(8, 1.6453)(16, 1.6454)
+		};		
+		\addlegendentry {\pgmfno}
+
+
+		\addplot [color = black, mark=triangle, line width = \plotLineWidth] coordinates {
+		(1, 1.1475)(2, 1.1879)(4, 1.2766)(8, 1.2650)
+		};		
+		\addlegendentry {\pgmfna}
+
+

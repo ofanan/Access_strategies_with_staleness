@@ -6,15 +6,6 @@ import numpy as np
 import DataStore, Client, candidate, node, MyConfig 
 from   printf import printf
 
-# Codes for access algorithms
-ALG_OPT                         = 1  # Optimal access strategy (perfect indicator)
-ALG_PGM_FNO_MR1_BY_HIST         = 7  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated by the history.
-ALG_PGM_FNO_MR1_BY_ANALYSIS     = 8  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper. 
-ALG_PGM_FNA_MR1_BY_HIST         = 11 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated by the history.
-ALG_PGM_FNA_MR1_BY_ANALYSIS     = 12 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper.
-ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
-ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
-
 # levels of verbose
 CNT_FN_BY_STALENESS = 5
 
@@ -30,7 +21,7 @@ class Simulator(object):
     """
     
     # Called upon a miss. Check whether the miss is compulsory or not. Increments the relevant counter, and inserts the key to self.k_loc DSs.
-    handle_miss = lambda self: self.handle_compulsory_miss (consider_fpr_fnr_update = (self.alg_mode != ALG_PGM_FNO_MR1_BY_HIST)) if (self.is_compulsory_miss()) else self.handle_non_compulsory_miss (consider_fpr_fnr_update = (self.alg_mode != ALG_PGM_FNO_MR1_BY_HIST))
+    handle_miss = lambda self: self.handle_compulsory_miss (consider_fpr_fnr_update = (self.alg_mode != MyConfig.ALG_PGM_FNO_MR1_BY_HIST)) if (self.is_compulsory_miss()) else self.handle_non_compulsory_miss (consider_fpr_fnr_update = (self.alg_mode != MyConfig.ALG_PGM_FNO_MR1_BY_HIST))
 
     # Decides which client will invoke this request. 
     # If there's a single client, the client_id always 1.
@@ -123,7 +114,7 @@ class Simulator(object):
         self.req_df             = req_df
         self.trace_len          = self.req_df.shape[0]
         self.use_redundan_coef  = use_redundan_coef
-        self.use_adaptive_alg   = True if alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False        
+        self.use_adaptive_alg   = True if alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST_ADAPT else False        
         # self.req_cnt            = -1 # The number of the current request. As it's incremented at the  
         self.pos_ind_cnt        = np.zeros (self.num_of_DSs , dtype='uint') #pos_ind_cnt[i] will hold the number of positive indications of indicator i in the current window
         self.leaf_of_DS         = np.array(np.floor(np.log2(self.client_DS_cost))).astype('uint8') # lg_client_DS_cost(i,j) will hold the lg2 of access cost for client i accessing DS j
@@ -131,7 +122,7 @@ class Simulator(object):
         self.pr_of_pos_ind_estimation       = np.zeros (self.num_of_DSs , dtype='uint') #pr_of_pos_ind_estimation[i] will hold the estimation for the prob' that DS[i] gives positive ind' for a requested item.  
         self.window_alhpa       = 0.25 # window's alpha parameter for estimated parameters       
         
-        if (alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+        if (alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             print ('You chose an obsolete alg mode. Please verify the relevant code.')
             exit ()
         self.alg_mode           = alg_mode
@@ -168,11 +159,11 @@ class Simulator(object):
         self.avg_DS_accessed_per_req = float(0)
         self.verbose_file = None
         if (self.verbose > 1):
-            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
+            if (self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.verbose_file = open ("../res/fna.txt", "w", buffering=1)
-            elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_ANALYSIS):
+            elif (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_ANALYSIS):
                 self.verbose_file = open ("../res/fnoa.txt", "w", buffering=1)
-            elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
+            elif (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_HIST):
                 self.verbose_file = open ("../res/fnoh.txt", "w", buffering=1)
                 if (self.verbose == CNT_FN_BY_STALENESS):
                     lg_uInterval = np.log2 (self.uInterval).astype (int)
@@ -256,7 +247,7 @@ class Simulator(object):
            (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
         printf (self.output_file, '// estimation window = {}, ' .format (self.estimation_window))
-        if (self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
+        if (self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS):
             printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
             printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
                                 .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
@@ -338,9 +329,9 @@ class Simulator(object):
             if (len(self.pos_ind_list) == 0): # No positive indications --> FNO alg' has a miss
                 self.handle_miss ()
                 continue       
-            if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):   
+            if (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_HIST):   
                 self.estimate_mr1_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]
-            else: #alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS
+            else: #alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS
                 # Generate a vector "indications" containing the indications - to be used by the client
                 indications = np.zeros (self.num_of_DSs, dtype = 'bool') 
                 for i in self.pos_ind_list:
@@ -369,20 +360,20 @@ class Simulator(object):
         Run a full trace where the access strategy is the PGM, as proposed in the journal paper "Access Strategies for Network Caching".
         This algorithm is FNA: False-Negative Aware, namely, it may access a cache despite a negative indication.
         """
-        self.PGM_FNA_partition ()
+        self.PGM_FNA_partition () # Performs the partition stage in the PGM-Staeleness-Aware alg'.
             
         for self.req_cnt in range(self.trace_len): # for each request in the trace... 
             if (self.est_vs_real_mr_output_file!=None): # requested to print to output estimated and real (historic stat) about the miss rate, and the initial warmup time is finished.
                 self.print_est_vs_real_mr = True
-            self.consider_send_update ()
+            self.consider_send_update () # If updates are sent "globally", namely, by all $s simultaneously, maybe we should send update now 
             self.cur_req = self.req_df.iloc[self.req_cnt]  
             self.client_id = self.calc_client_id ()
             for i in range (self.num_of_DSs):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
-            if (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
+            if (self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.mr_of_DS   = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications)
             else: # Use historical data of about mr0, mr1 
-                self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr1 (self.indications, np.array([DS.mr0_cur for DS in self.DS_list]), np.array([DS.mr1_cur for DS in self.DS_list]), verbose)
+                self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr0_mr1 (indications=self.indications, mr0=np.array([DS.mr0_cur for DS in self.DS_list]), mr1=np.array([DS.mr1_cur for DS in self.DS_list]), verbose=verbose)
             self.access_pgm_fna_hetro ()
             self.mid_report ()
 
@@ -411,18 +402,18 @@ class Simulator(object):
         print ('running', MyConfig.settings_string (self.trace_file_name, self.DS_size, self.bpe, num_of_req, self.num_of_DSs, 
                                                     self.k_loc, self.missp, self.bw, self.uInterval, self.alg_mode))
         self.interval_between_mid_reports = interval_between_mid_reports if (interval_between_mid_reports != None) else self.trace_len # if the user didn't request mid_reports, have only a single report, at the end of the trace
-        if (self.alg_mode == ALG_MEAURE_FP_FN):
+        if (self.alg_mode == MyConfig.ALG_MEAURE_FP_FN):
             self.run_trace_measure_fp_fn ()
-        elif self.alg_mode == ALG_OPT:
+        elif self.alg_mode == MyConfig.ALG_OPT:
             self.run_trace_opt_hetro ()
             self.gather_statistics ()
-        elif (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST or 
-              self.alg_mode == ALG_PGM_FNO_MR1_BY_ANALYSIS):
+        elif (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_HIST or 
+              self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_ANALYSIS):
             self.run_trace_pgm_fno_hetro ()
             self.gather_statistics ()
-        elif (self.alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS or 
-              self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST     or 
-              self.alg_mode == ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
+        elif (self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS or 
+              self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST     or 
+              self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST_ADAPT):
             self.speculate_accs_cost    = 0 # Total accs cost paid for speculative accs
             self.speculate_accs_cnt     = 0 # num of speculative accss, that is, accesses to a DS despite a miss indication
             self.speculate_hit_cnt      = 0 # num of hits among speculative accss
@@ -450,7 +441,7 @@ class Simulator(object):
         The func' increments the relevant counter, and inserts the key to self.k_loc DSs.
         """
         self.client_list[self.client_id].comp_miss_cnt += 1
-        self.insert_key_to_DSs (use_indicator=(self.alg_mode != ALG_OPT),  consider_fpr_fnr_update = consider_fpr_fnr_update)
+        self.insert_key_to_DSs (use_indicator=(self.alg_mode != MyConfig.ALG_OPT),  consider_fpr_fnr_update = consider_fpr_fnr_update)
 
     def handle_non_compulsory_miss (self, consider_fpr_fnr_update = True):
         """
@@ -459,7 +450,7 @@ class Simulator(object):
         """
         self.client_list[self.client_id].non_comp_miss_cnt += 1
         self.insert_key_to_DSs (consider_fpr_fnr_update = consider_fpr_fnr_update)
-        if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
+        if (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_HIST):
             self.FN_miss_cnt += 1
 
     def insert_key_to_closest_DS(self, req):
@@ -600,7 +591,7 @@ class Simulator(object):
         if (self.verbose == 3):
             self.client_list[self.client_id].add_DS_accessed(self.req_cnt, final_sol.DSs_IDs)
 
-        if (self.alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
+        if (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_HIST):
             # perform access. the function access() returns True if successful, and False otherwise
             accesses = np.array([self.DS_list[DS_id].access(self.cur_req.key) for DS_id in final_sol.DSs_IDs])
             if any(accesses):   #hit
@@ -609,7 +600,7 @@ class Simulator(object):
                 self.handle_miss ()
             return
 
-        # Now we know that the alg_mode is ALG_PGM_FNO_MR1_BY_ANALYSIS
+        # Now we know that the alg_mode is MyConfig.ALG_PGM_FNO_MR1_BY_ANALYSIS
         hit = False # default value
         for DS_id in final_sol.DSs_IDs:
             if (self.DS_list[DS_id].access(self.cur_req.key)): # hit

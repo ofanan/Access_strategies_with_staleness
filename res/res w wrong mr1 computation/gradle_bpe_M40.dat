@@ -1,0 +1,30 @@
+		\addplot [color = green, mark=+, line width = \plotLineWidth] coordinates {
+		(14, 4.7712)		
+		};
+		\addlegendentry {Opt}
+
+		\addplot [color = blue, mark=square, line width = \plotLineWidth] coordinates {
+				
+		};
+		\addlegendentry {FNO, FNA, uInterval = 16}
+
+		\addplot [color = purple, mark=o, line width = \plotLineWidth] coordinates {
+		(5, 8.8841)(6, 8.8666)(7, 8.9394)(8, 8.8810)(9, 8.7459)(10, 8.6619)(11, 8.6412)(12, 8.6280)(13, 8.5873)(14, 8.5574)(15, 8.5955)		
+		};
+		\addlegendentry {FNO, uInterval = 256}
+
+		\addplot [color = red, mark=triangle*, line width = \plotLineWidth] coordinates {
+		(5, 10.1471)(6, 9.9893)(7, 9.7423)(8, 9.5514)(9, 9.4071)(10, 9.3030)(11, 9.2749)(12, 9.1520)(13, 9.0761)(14, 9.0623)(15, 9.0119)		
+		};
+		\addlegendentry {FNA, uInterval = 256}
+
+		\addplot [color = cyan, mark=x, line width = \plotLineWidth]    coordinates {
+		(5, 12.4759)(6, 12.3746)(7, 12.4687)(8, 12.4984)(9, 12.4472)(10, 12.3202)(11, 12.3961)(12, 12.4269)(13, 12.3892)(14, 12.3102)(15, 12.3477)		
+		};
+		\addlegendentry {FNO, uInterval = 1024}
+
+		\addplot [color = black, mark=triangle, line width = \plotLineWidth]coordinates {
+		(5, 12.9572)(7, 12.6801)(8, 12.4261)(9, 12.0489)(10, 11.9960)(11, 11.7616)(12, 11.4631)(13, 11.3968)(14, 11.2547)(15, 11.1211)		
+		};
+		\addlegendentry {FNA, uInterval = 1024}
+

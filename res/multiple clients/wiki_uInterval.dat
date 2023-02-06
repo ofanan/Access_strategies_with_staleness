@@ -1,0 +1,12 @@
+		\addplot [color = black, mark = square,      mark options = {mark size = 2, fill = black}, line width = \plotLineWidth] coordinates {
+		(16, 1.0877)(32, 1.1366)(64, 1.2084)(128, 1.3028)(256, 1.5532)(512, 1.9426)(1024, 2.2944)(2048, 2.6143)(4096, 2.9439)(8192, 3.2719)
+		};		
+		\addlegendentry {\pgmfno}
+
+
+		\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {
+		(64, 1.1857)(128, 1.2249)(256, 1.2882)(512, 1.2689)(1024, 1.2805)(2048, 1.3610)(4096, 1.5304)(8192, 1.8869)
+		};		
+		\addlegendentry {\pgmfna}
+
+

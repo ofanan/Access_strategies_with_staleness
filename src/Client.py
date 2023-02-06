@@ -140,7 +140,7 @@ class Client(object):
         return mr
 
 
-    def get_mr_given_mr1 (self, indications, mr0, mr1, verbose):
+    def get_mr_given_mr0_mr1 (self, indications, mr0, mr1, verbose):
         """
         Calculate and return the expected miss prob' of each DS, based on its indication.
         Input: 

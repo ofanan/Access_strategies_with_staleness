@@ -1,0 +1,38 @@
+% uInterval = 256
+		\addplot [color = green, mark=+, line width = \plotLineWidth] coordinates {
+		(1, 7.7477)(2, 7.3128)(3, 7.0514)(4, 6.8621)(5, 6.7141)(6, 6.5895)(7, 6.4822)(8, 6.3881)
+		};		
+		\addlegendentry {\opt}
+
+
+		\addplot [color = cyan, mark=x, line width = \plotLineWidth] coordinates {
+		(1, 8.1571)(2, 8.0088)(3, 8.1117)(4, 8.2869)(5, 8.5043)(6, 8.8192)(7, 9.2283)(8, 9.5599)
+		};		
+		\addlegendentry {\pgmfno}
+
+
+		\addplot [color = black, mark=triangle, line width = \plotLineWidth] coordinates {
+		(1, 7.8940)(2, 7.7233)(3, 7.7829)(4, 7.8769)(8, 9.3577)
+		};		
+		\addlegendentry {\pgmfna}
+
+
+% uInterval = 1024
+		\addplot [color = green, mark=+, line width = \plotLineWidth] coordinates {
+		
+		};		
+		\addlegendentry {\opt}
+
+
+		\addplot [color = cyan, mark=x, line width = \plotLineWidth] coordinates {
+		
+		};		
+		\addlegendentry {\pgmfno}
+
+
+		\addplot [color = black, mark=triangle, line width = \plotLineWidth] coordinates {
+		
+		};		
+		\addlegendentry {\pgmfna}
+
+

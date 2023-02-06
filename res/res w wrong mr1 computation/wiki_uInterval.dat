@@ -1,0 +1,12 @@
+		\addplot [color = cyan, mark=x, line width = \plotLineWidth] coordinates {
+		(16, 1.0874)(32, 1.1315)(64, 1.2092)(128, 1.3077)(256, 1.5451)(512, 1.9256)(1024, 2.2771)(2048, 2.5864)(4096, 2.8710)(8192, 3.2353)
+		};		
+		\addlegendentry {\pgmfno}
+
+
+		\addplot [color = black, mark=triangle, line width = \plotLineWidth] coordinates {
+		(16, 1.0874)(32, 1.1441)(64, 1.2097)(128, 1.2612)(256, 1.3394)(512, 1.4065)(1024, 1.3763)(2048, 1.4234)(4096, 1.5661)(8192, 1.8921)
+		};		
+		\addlegendentry {\pgmfna}
+
+

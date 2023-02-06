@@ -1,0 +1,32 @@
+% uInterval = 256
+		\addplot [color = green, mark=+, line width = \plotLineWidth] coordinates {
+		(1, 15.4953)(2, 14.6255)(3, 14.1027)(4, 13.7243)(5, 13.4282)(6, 13.1790)(7, 12.9644)(8, 12.7762)
+		};
+
+		\addplot [color = black, mark = square,      mark options = {mark size = 2, fill = black}, line width = \plotLineWidth] coordinates {
+		(1, 16.3143)(2, 16.0114)(3, 16.2093)(4, 16.4719)(5, 16.9283)(6, 17.7537)(7, 18.3746)(8, 19.0733)
+		};
+
+		\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {
+		(1, 15.7881)(2, 15.3972)(3, 16.2298)(4, 16.0001)(5, 16.5326)(6, 17.3598)(7, 18.2090)(8, 18.9169)
+		};
+
+% uInterval = 1024
+		\addplot [color = green, mark=+, line width = \plotLineWidth] coordinates {
+		(1, 15.4953)(2, 14.6255)(3, 14.1027)(4, 13.7243)(5, 13.4282)(6, 13.1790)(7, 12.9644)(8, 12.7762)
+		};		
+		\addlegendentry {\opt}
+
+
+		\addplot [color = black, mark = square,      mark options = {mark size = 2, fill = black}, line width = \plotLineWidth] coordinates {
+		(1, 18.0085)(2, 20.7707)(3, 23.2892)(4, 24.8814)(5, 25.7820)(6, 26.6699)(7, 27.1717)(8, 27.7612)
+		};		
+		\addlegendentry {\pgmfno}
+
+
+		\addplot [color = blue,  mark = *, mark options = {mark size = 2, fill = blue},  line width = \plotLineWidth] coordinates {
+		(1, 16.0475)(2, 15.8436)(3, 16.0115)(4, 17.7375)(5, 20.7803)(6, 23.1451)(7, 24.7284)(8, 25.8567)
+		};		
+		\addlegendentry {\pgmfna}
+
+

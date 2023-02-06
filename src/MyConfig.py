@@ -12,6 +12,18 @@ import numpy as np
 import python_simulator as sim
 import pandas as pd
 
+# Codes for access algorithms
+ALG_OPT                         = 1  # Optimal access strategy (perfect indicator)
+ALG_PGM_FNO_MR1_BY_HIST         = 7  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated by the history.
+ALG_PGM_FNO_MR1_BY_ANALYSIS     = 8  # PGM alg', detailed in Access Strategies journal paper; False-negative-Oblivious. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper. 
+ALG_PGM_FNA_MR1_BY_HIST         = 11 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated by the history.
+ALG_PGM_FNA_MR1_BY_ANALYSIS     = 12 # PGM alg', detailed in Access Strategies journal paper; False-negative-Aware. The exclusion probabilities (mr1) are calculated an analysis of the Bloom filter, as detailed in ICDCS paper.
+ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
+ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
+
+# levels of verbose
+CNT_FN_BY_STALENESS = 5
+
 INF_INT = 999999999
 
 def reduce_trace_mem_print(trace_df, k_loc=1, read_clients_from_trace=False, read_locs_from_trace=False):
@@ -71,7 +83,12 @@ def getTracesPath():
     This path should be:
     C:/Users/user_name/Documents/traces
     """
-    return 'C:/Users/' + os.getcwd().split ("\\")[2] + '/Documents/traces/' if (os.getcwd().split ("\\")[0] == "C:") else '/home/icohen/traces/'
+#    return 'C:/Users/' + os.getcwd().split ("\\")[2] + '/Documents/traces/' if (os.getcwd().split ("\\")[0] == "C:") else '/home/icohen/traces/'
+    # return 
+    full_path = 'G:/'
+    print (os.listdir(full_path)) #$$$
+    exit ()
+    # return 'G:/Google Drive/Comnet/traces/האחסון שלי'
 
 def calcOvhDsCost ():
 	"""
@@ -155,7 +172,8 @@ def parse_list_of_keys (input_file_name,
             - the 2nd col. is the id of the clients of this req,
     """
 
-    traces_path = getTracesPath()
+    traces_path = '' ##$$$$ getTracesPath()
+    input_file_name = 'gamad.txt'
     df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
         
     # associate each unique "url" in the input with a unique key 
