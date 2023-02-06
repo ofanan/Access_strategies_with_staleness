@@ -139,17 +139,17 @@ def settings_string (trace_file_name, DS_size, bpe, num_of_req, num_of_DSs, k_lo
     # homo_or_hetro = 'homo' if is_homo else 'hetro'
     settings_str = '{}.C{:.0f}K.bpe{:.0f}.{:.0f}Kreq.{:.0f}DSs.Kloc{:.0f}.M{:.0f}.B{:.0f}.U{:.0f}.' .format (
 		trace_file_name, DS_size/1000, bpe, num_of_req/1000, num_of_DSs, k_loc, missp, bw, uInterval)
-    if (alg_mode == sim.ALG_OPT):
+    if (alg_mode == ALG_OPT):
         return settings_str + 'Opt'     
-    elif (alg_mode == sim.ALG_PGM_FNO_MR1_BY_HIST):
+    elif (alg_mode == ALG_PGM_FNO_MR1_BY_HIST):
         return settings_str + 'FNOH'
-    elif (alg_mode == sim.ALG_PGM_FNO_MR1_BY_ANALYSIS):
+    elif (alg_mode == ALG_PGM_FNO_MR1_BY_ANALYSIS):
         return settings_str + 'FNOA'
-    elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_HIST):
+    elif (alg_mode == ALG_PGM_FNA_MR1_BY_HIST):
         return settings_str + 'FNA'
-    elif (alg_mode == sim.ALG_PGM_FNA_MR1_BY_ANALYSIS):
+    elif (alg_mode == ALG_PGM_FNA_MR1_BY_ANALYSIS):
         return settings_str + 'FNAA'
-    elif (alg_mode == sim.ALG_MEAURE_FP_FN):
+    elif (alg_mode == ALG_MEAURE_FP_FN):
         return settings_str + 'measure_fn'
 
 def calc_designed_fpr (cache_size, BF_size, num_of_hashes):
@@ -172,8 +172,7 @@ def parse_list_of_keys (input_file_name,
             - the 2nd col. is the id of the clients of this req,
     """
 
-    traces_path = '' ##$$$$ getTracesPath()
-    input_file_name = 'gamad.txt'
+    traces_path = '../traces/' ##$$$$ getTracesPath()
     df = pd.read_csv (traces_path + input_file_name, sep=' ', header=None, nrows = num_of_req)
         
     # associate each unique "url" in the input with a unique key 
