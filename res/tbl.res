@@ -226,3 +226,4 @@ umass.C10K.bpe14.1000Kreq.3DSs.Kloc1.M500.B0.U1000.FNOA | service_cost = 167.282
 scarab.C10K.bpe14.1000Kreq.3DSs.Kloc1.M500.B0.U1000.FNOA | service_cost = 176.9016319016319
 // tot_access_cost= 1370955.0, hit_ratio = 0.65, non_comp_miss_cnt = 246351, comp_miss_cnt = 104710
 // estimation window = 100, // single client
+

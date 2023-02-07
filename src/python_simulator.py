@@ -331,7 +331,7 @@ class Simulator(object):
                 continue       
             if (self.alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_HIST):   
                 self.estimate_mr1_by_history () # Update the estimated miss rates of the DSs; the updated miss rates of DS i will be written to mr_of_DS[i]
-            else: #alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS
+            else: #alg_mode == MyConfig.ALG_PGM_FNO_MR1_BY_ANALYSIS
                 # Generate a vector "indications" containing the indications - to be used by the client
                 indications = np.zeros (self.num_of_DSs, dtype = 'bool') 
                 for i in self.pos_ind_list:

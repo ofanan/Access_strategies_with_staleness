@@ -74,7 +74,7 @@ class Client(object):
         self.DS_accessed[req_id] = DS_index_list
         self.num_DS_accessed.append(len(DS_index_list))
         
-    def estimate_pr_of_post_ind_and_hit_ratio (self, indications):
+    def estimate_pr_of_pos_ind_and_hit_ratio (self, indications):
         """
         Estimate Pone (aka "q") - the probability of positive indication; and the hit ratio of each DS.
         Details: The func' does the following:  
@@ -117,9 +117,9 @@ class Client(object):
         """
         mr = np.zeros (self.num_of_DSs)
         if (not (quiet)):
-            self.estimate_pr_of_post_ind_and_hit_ratio (indications)
+            self.estimate_pr_of_pos_ind_and_hit_ratio (indications)
         for i in range (self.num_of_DSs):
-            if (indications[i]): #positive ind'
+            if (indications[i]): # positive ind'
                 
                 if (self.pr_of_pos_ind_estimation[i] == 0): 
                     mr[i] = 1
@@ -128,7 +128,7 @@ class Client(object):
                         mr[i] = 0 
                 else:
                     mr[i] = self.fpr[i] * (1 - self.hit_ratio[i]) / self.pr_of_pos_ind_estimation[i]
-            else:                                                
+            else: # negative ind'                                               
                 mr[i] = 1 if (fno_mode or 
                                    self.fnr[i] == 0 or # if there're no false-neg, then upon a negative ind', the item is SURELY not in the cache  
                                    self.pr_of_pos_ind_estimation[i] == 1 or # if pr_of_pos_ind_estimation is 1, the denominator of our formula is 0, so mr[i] should get its maximal value --> 1  
@@ -155,7 +155,7 @@ class Client(object):
         - - Handle corner cases (e.g., probabilities calculated are below 0 or above 1)
         - Returns the vector mr, where mr[i] is the estimated miss ratio of DS i, given its indication
         """
-        self.estimate_pr_of_post_ind_and_hit_ratio (indications)
+        self.estimate_pr_of_pos_ind_and_hit_ratio (indications)
         
         for i in range (self.num_of_DSs):
             if (indications[i]): #positive ind'
