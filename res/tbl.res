@@ -227,3 +227,9 @@ scarab.C10K.bpe14.1000Kreq.3DSs.Kloc1.M500.B0.U1000.FNOA | service_cost = 176.90
 // tot_access_cost= 1370955.0, hit_ratio = 0.65, non_comp_miss_cnt = 246351, comp_miss_cnt = 104710
 // estimation window = 100, // single client
 
+
+
+gradle.C10K.bpe14.0Kreq.3DSs.Kloc1.M100.B0.U1000.FNAA | service_cost = 100.20040080160321
+// tot_access_cost= 0, hit_ratio = 0.0, non_comp_miss_cnt = 64, comp_miss_cnt = 436
+// estimation window = 100, // num of insertions between fpr_fnr estimations = 50
+// avg num of fpr_fnr_updates = 3, fpr_fnr_updates bw = 0.0060

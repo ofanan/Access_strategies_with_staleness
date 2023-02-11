@@ -21,8 +21,6 @@ ALG_PGM_FNA_MR1_BY_ANALYSIS     = 12 # PGM alg', detailed in Access Strategies j
 ALG_PGM_FNA_MR1_BY_HIST_ADAPT   = 13 # PGM alg', detailed in Access Strategies journal paper; staleness-aware, with adaptive alg'
 ALG_MEAURE_FP_FN                = 20 # Run a single cache with an always-believe-indicator access strategy, to measure the fpr, fnr, as func' of the update interval.
 
-
-
 # levels of verbose
 CNT_FN_BY_STALENESS = 5
 

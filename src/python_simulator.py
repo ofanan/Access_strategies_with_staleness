@@ -1,7 +1,6 @@
 import pandas as pd
 import sys, pickle, random
 import numpy as np
-# from numpy.core._multiarray_umath import dtype
 
 import DataStore, Client, candidate, node, MyConfig 
 from   printf import printf

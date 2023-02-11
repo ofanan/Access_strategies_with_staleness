@@ -10,5 +10,5 @@ alias g="grep"
 alias aliaser="source .myalias"
 alias h=history
 alias commit='c; git add -A; git commit'
-alias pusher="git push -f https://github.com/ofanan/Access_strategies_with_staleness HEAD:main"
+source ../../‏‏.alias_pusher_Access_strategies_with_staleness.txt
 alias compush='c; commit; pusher'
