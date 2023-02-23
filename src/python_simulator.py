@@ -246,7 +246,8 @@ class Simulator(object):
            (self.total_access_cost, self.hit_ratio, self.non_comp_miss_cnt, self.comp_miss_cnt) )                                 
         num_of_fpr_fnr_updates = sum (DS.num_of_fpr_fnr_updates for DS in self.DS_list) / self.num_of_DSs
         printf (self.output_file, '// estimation window = {}, ' .format (self.estimation_window))
-        if (self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST or self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS):
+        if (self.alg_mode == MyConfig.
+ or self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS):
             printf (self.output_file, '// num of insertions between fpr_fnr estimations = {}\n' .format (self.num_of_insertions_between_estimations))
             printf (self.output_file, '// avg num of fpr_fnr_updates = {:.0f}, fpr_fnr_updates bw = {:.4f}\n' 
                                 .format (num_of_fpr_fnr_updates, num_of_fpr_fnr_updates/self.req_cnt))
@@ -371,14 +372,14 @@ class Simulator(object):
                 self.indications[i] = True if (self.cur_req.key in self.DS_list[i].stale_indicator) else False #self.indication[i] holds the indication of DS i for the cur request
             if (self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_ANALYSIS):
                 self.mr_of_DS   = self.client_list [self.client_id].estimate_mr1_mr0_by_analysis (self.indications)
-            else: # Use historical data of about mr0, mr1 
+            else: # Use historical data of mr0, mr1  # self.alg_mode == MyConfig.ALG_PGM_FNA_MR1_BY_HIST
                 self.mr_of_DS   = self.client_list [self.client_id].get_mr_given_mr0_mr1 (indications=self.indications, mr0=np.array([DS.mr0_cur for DS in self.DS_list]), mr1=np.array([DS.mr1_cur for DS in self.DS_list]), verbose=verbose)
             self.access_pgm_fna_hetro ()
             self.mid_report ()
 
     def print_est_mr_func (self):
         """
-        print the extimated mr (miss rate) probabilities.
+        print the estimated mr (miss rate) probabilities.
         """
         
         # Estimate mr0, by letting the clients calculate mr, where they think that all the indications were negative  
