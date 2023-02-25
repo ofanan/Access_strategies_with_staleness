@@ -265,9 +265,9 @@ class Simulator(object):
                     self.DS_list[0].access(self.cur_req.key)
                 else: # FN
                     self.FN_miss_cnt += 1
-                    self.DS_list[0].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = True)
+                    self.DS_list[0].insert (key = self.cur_req.key, req_cnt = self.req_cnt)
             else: # miss
-                self.DS_list[0].insert (key = self.cur_req.key, req_cnt = self.req_cnt, consider_fpr_fnr_update = True)
+                self.DS_list[0].insert (key = self.cur_req.key, req_cnt = self.req_cnt)
         printf (self.output_file, '({}, {})' .format (self.uInterval, self.FN_miss_cnt/self.hit_cnt))               
 
     def run_trace_opt_hetro (self):
@@ -282,7 +282,7 @@ class Simulator(object):
 
             if true_answer_DS_list.size == 0: # Miss: request is indeed not found in any DS 
                 self.client_list[self.client_id].comp_miss_cnt += 1
-                self.insert_key_to_DSs (use_indicator=False, consider_fpr_fnr_update=False) # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
+                self.insert_key_to_DSs (use_indicator=False) # Opt doesn't really use indicators - it "knows" the actual contents of the DSs
             else:  # hit
                 # find the cheapest DS holding the request
                 access_DS_id = true_answer_DS_list[np.argmin( np.take( self.client_DS_cost[self.client_id] , true_answer_DS_list ) )]
