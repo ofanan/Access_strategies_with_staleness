@@ -1,7 +1,7 @@
 ## Access Strategies for Network Caching with Staleness
 
 This project provides tools to simulate several access strategies for distributed caching. 
-The simulator considers a user equipped with several caches, and receives periodical updates about the cached content. These updates are not totally accurate. In particular, there exist not only false-positives, but also false-negatives, due to the staleness of the indicator that the user has. 
+The simulator considers a user equipped with several caches, that receives periodical updates about the cached content. These updates are not totally accurate. In particular, there exist not only false-positives, but also false-negatives, due to the staleness of the indicator that the user has. 
 The user has to select which caches to access, to obtain the requested datum at the lowest price and maximum certainty possible.
 For details about the problem and the algorithms used, please refer to the papers:
 
