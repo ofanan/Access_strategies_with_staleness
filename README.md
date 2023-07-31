@@ -9,8 +9,6 @@ For details about the problem and the algorithms used, please refer to the paper
  
 [2] I. Cohen, Gil Einziger, and G. Scalosub, [False Negative Awareness in Indicator-based Caching Systems](https://www.researchgate.net/publication/361178366_False_Negative_Awareness_in_Indicator-Based_Caching_Systems), IEEE Transactions on Networking, 2022, pp. 46-56.
 
-
-
 The source files are described below. More detailed documentation is found within the source files.
 
 # Directories
@@ -41,12 +39,8 @@ Implementation of an LRU cache. Source code is taken from:
 Copyright (C) Jay Hutchinson
 https://github.com/jlhutch/pylru
 
-##### CountingBloomFilter.py
-A counting Bloom filter. for documentation, see:
-http://www.maxburstein.com/blog/creating-a-simple-bloom-filter/
-https://hur.st/bloomfilter/
-http://pages.cs.wisc.edu/~cao/papers/summary-cache/node8.html
-Bloom filter survey: https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf
+##### SimpleBloomFilter.py, CountingBloomFilter.py, 
+A Simple and a Counting Bloom filter. To study more about Bloom filters, consider the following links: [1](http://www.maxburstein.com/blog/creating-a-simple-bloom-filter), [2](https://hur.st/bloomfilter), [3](http://pages.cs.wisc.edu/~cao/papers/summary-cache/node8.html), [4](https://www.eecs.harvard.edu/~michaelm/postscripts/im2005b.pdf).
 
 ##### Wiki_parser.py
 Parses a WikiBench trace, 
@@ -69,9 +63,6 @@ generates the OVH network which exemplifies a commercial CDN (Content Delivery N
 ###### gen_cost_hist.py
 Generates a histogram showing the cache access costs for the OVH network
 
-###### SimpleBloomFilter.py
-A simple Bloom filter. 
-
 ##### MyConfig.py
 This file contains several accessory functions, used throughout the project, e.g. for generating the string describing the settings of the simulation, and generate the list of requests from the trace.
 
@@ -89,5 +80,5 @@ An accessory function for format-printing to a file.
 
 ##### check_fpr_fnr_formulas.py
 A script to compare the fpr, fnr, calculated by either the paper [2], or by an an older paper, which uses different model:
-[3] Y. Zhu and H. Jiang, “False rate analysis of bloom filter replicas in distributed systems”, in ICPP, 2006, pp. 255–262.
+[3] Y. Zhu and H. Jiang, [False rate analysis of bloom filter replicas in distributed systems](https://ieeexplore.ieee.org/iel5/11126/35641/01690627.pdf?casa_token=pSq-4ffVpNQAAAAA:olg2HqQzUd4-tj054HUiYce2xRoxswYKlEFnOnSmKy_Sta5-7KLWjPRjZUFwip9B5ez1qlJHSA), ICPP, 2006, pp. 255-262.
 

@@ -242,6 +242,10 @@ def calc_opt_service_cost (accs_cost, comp_miss08_cnt, missp, num_of_req):
     print ('Opt service cost is ', (accs_cost + comp_miss_cnt * missp) / num_of_req)
 
 
+# trace_file_name = 'wiki/wiki1.1190448987.txt'
+# trace_file_name = 'gradle/gradle.build-cache.xz.txt'
+# trace_file_name = 'scarab/scarab.recs.trace.20160808T073231Z.xz.txt'
+
 # trace_file_name       = 'wiki/wiki.1190448987_4300K_3DSs.csv'
 # trace_file_name     = 'gradle/gradle.build-cache_full_1000K_3DSs.csv'
 # trace_file_name     = 'scarab/scarab.recs.trace.20160808T073231Z.15M_req_1000K_3DSs.csv'
